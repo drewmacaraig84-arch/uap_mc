@@ -1,0 +1,13 @@
+# Local environment files - never commit real credentials
+includes/config.php
+
+# Uploaded files - these are real user data, not code
+uploads/*
+!uploads/.gitkeep
+receipts/*
+!receipts/.gitkeep
+
+# OS/editor junk
+.DS_Store
+Thumbs.db
+.vscode/

@@ -1,0 +1,371 @@
+﻿<!DOCTYPE html>
+<html lang="en" id="htmlElement">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Login</title>
+<link rel="stylesheet" href="/dues-system/includes/theme.css">
+<style>
+  * { box-sizing: border-box; }
+  body {
+    font-family: Inter, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+    background: radial-gradient(circle at top left, #f7f9fd 0%, #eef3fb 38%, #f5f2ff 100%);
+    background-attachment: fixed;
+    margin: 0;
+    color: #18243a;
+    min-height: 100vh;
+    line-height: 1.55;
+  }
+  a { color: #3760a8; }
+  nav {
+    background: linear-gradient(120deg, #0f172a 0%, #1d3557 45%, #355ca8 100%);
+    color: #fff;
+    padding: 18px 28px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 14px;
+    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.2);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    backdrop-filter: blur(10px);
+  }
+  .nav-links { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center; }
+  nav a {
+    color: #fff;
+    text-decoration: none;
+    font-size: 14px;
+    opacity: 0.95;
+    transition: opacity 0.15s, transform 0.15s;
+  }
+  nav a:hover { opacity: 1; transform: translateY(-1px); }
+  .nav-brand { font-weight: 700; font-size: 16px; letter-spacing: 0.2px; display: flex; align-items: center; gap: 12px; color: #fff; }
+  .nav-brand img { height: 38px; width: 38px; object-fit: contain; border-radius: 8px; background: #fff; padding: 2px; }
+  .nav-title { display: flex; flex-direction: column; line-height: 1.2; color: #fff; }
+  .nav-subtitle { font-size: 12px; font-weight: 500; opacity: 0.8; color: #fff; }
+  .menu-toggle {
+    display: none;
+    border: 0;
+    background: rgba(255,255,255,0.16);
+    color: #fff;
+    width: 42px;
+    height: 42px;
+    border-radius: 10px;
+    font-size: 20px;
+    cursor: pointer;
+  }
+  .container { max-width: 1180px; margin: 28px auto 40px; padding: 0 16px; }
+  .card {
+    background: rgba(255,255,255,0.94);
+    border-radius: 18px;
+    padding: 24px 28px;
+    margin-bottom: 22px;
+    box-shadow: 0 14px 40px rgba(15, 23, 42, 0.08);
+    border: 1px solid rgba(15, 23, 42, 0.06);
+    overflow: hidden;
+  }
+  .page-hero {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 18px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+  }
+  .eyebrow {
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    font-size: 11px;
+    font-weight: 800;
+    color: #5b6c89;
+    margin: 0 0 6px;
+  }
+  h1 { font-size: 24px; margin: 0 0 6px; color: #14213d; font-weight: 800; }
+  h2 { font-size: 18px; color: #26314a; margin-top: 0; }
+  .page-subtitle { color: #5b6c89; font-size: 14px; margin: 0; }
+  .hero-badge {
+    padding: 10px 14px;
+    border-radius: 999px;
+    background: linear-gradient(120deg, #ebf2ff, #f7f2ff);
+    color: #3f5da8;
+    font-size: 13px;
+    font-weight: 700;
+    border: 1px solid rgba(63, 93, 168, 0.14);
+  }
+  .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; margin: 18px 0 22px; }
+  .stat-card {
+    padding: 16px 18px;
+    border-radius: 14px;
+    background: linear-gradient(135deg, #f9fbff 0%, #f4f7ff 100%);
+    border: 1px solid rgba(15, 23, 42, 0.05);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.75);
+  }
+  .stat-card strong { display: block; font-size: 22px; color: #14213d; margin-top: 6px; }
+  .table-shell { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; margin-top: 8px; min-width: 680px; }
+  th, td { text-align: left; padding: 12px 10px; border-bottom: 1px solid #edf0f5; font-size: 14px; }
+  th {
+    background: linear-gradient(180deg, #f5f8fd 0%, #eef3fb 100%);
+    font-weight: 700;
+    color: #3c4f6e;
+    text-transform: uppercase;
+    font-size: 11px;
+    letter-spacing: 0.06em;
+  }
+  tr:hover td { background: rgba(58,90,156,0.03); }
+  .badge { padding: 4px 12px; border-radius: 999px; font-size: 12px; font-weight: 700; letter-spacing: 0.2px; display: inline-block; }
+  .badge-unpaid { background: linear-gradient(120deg, #ffe2e0, #ffd1ce); color: #b3261e; }
+  .badge-pending { background: linear-gradient(120deg, #fff3cd, #ffe9a8); color: #8a6500; }
+  .badge-paid { background: linear-gradient(120deg, #d4f4dd, #bdeccb); color: #1e7e34; }
+  .badge-rejected { background: linear-gradient(120deg, #e6e7ea, #dcdde2); color: #41464b; }
+  .badge-partial { background: linear-gradient(120deg, #fff3cd, #ffe9a8); color: #8a6500; }
+  .btn {
+    display: inline-block;
+    background: linear-gradient(120deg, #1d3557 0%, #3a5a9c 100%);
+    color: #fff;
+    border: none;
+    padding: 10px 18px;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    text-decoration: none;
+    transition: transform 0.12s, box-shadow 0.15s;
+    box-shadow: 0 8px 18px rgba(29,53,87,0.18);
+  }
+  .btn:hover { box-shadow: 0 10px 22px rgba(29,53,87,0.24); transform: translateY(-1px); }
+  .btn-sm { padding: 7px 12px; font-size: 13px; }
+  .btn-danger { background: linear-gradient(120deg, #b3261e 0%, #d9483f 100%); box-shadow: 0 8px 18px rgba(179,38,30,0.18); }
+  .btn-danger:hover { box-shadow: 0 10px 22px rgba(179,38,30,0.24); }
+  .btn-success { background: linear-gradient(120deg, #1e7e34 0%, #2fa84f 100%); box-shadow: 0 8px 18px rgba(30,126,52,0.18); }
+  .btn-success:hover { box-shadow: 0 10px 22px rgba(30,126,52,0.24); }
+  form.inline { display: inline; }
+  input, select, textarea {
+    padding: 11px 12px;
+    border: 1px solid #d8dde6;
+    border-radius: 10px;
+    width: 100%;
+    font-size: 14px;
+    margin-top: 4px;
+    background: #fcfdff;
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
+  input:focus, select:focus, textarea:focus {
+    outline: none;
+    border-color: #3a5a9c;
+    box-shadow: 0 0 0 3px rgba(58,90,156,0.12);
+  }
+  label { font-size: 13px; font-weight: 700; color: #3a4a6b; }
+  .field { margin-bottom: 16px; }
+  .alert { padding: 12px 16px; border-radius: 12px; margin-bottom: 16px; font-size: 14px; font-weight: 600; }
+  .alert-error { background: linear-gradient(120deg, #ffe2e0, #ffd6d3); color: #b3261e; }
+  .alert-success { background: linear-gradient(120deg, #d4f4dd, #c2efce); color: #1e7e34; }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+  .auth-shell { max-width: 980px; margin: 44px auto; padding: 0 16px; }
+  .auth-card {
+    display: grid;
+    grid-template-columns: 1.1fr 0.9fr;
+    gap: 0;
+    background: var(--card-bg);
+    border-radius: 22px;
+    overflow: hidden;
+    box-shadow: var(--shadow-md);
+    border: 1px solid var(--card-border);
+  }
+  .auth-illustration {
+    background: linear-gradient(135deg, #0f172a 0%, #1d3557 50%, #355ca8 100%);
+    padding: 34px 28px;
+    color: #fff;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+  .auth-illustration h2 { color: #fff; font-size: 22px; margin-bottom: 8px; }
+  .auth-illustration p { opacity: 0.9; margin: 0; }
+  .auth-form { padding: 30px 28px; background: var(--bg-primary); color: var(--text-primary); }
+  .toolbar { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; }
+  .toolbar .search-box { flex: 1; min-width: 220px; }
+  .toolbar .filter-box { width: 220px; }
+  .footer { max-width: 1180px; margin: 0 auto 28px; padding: 0 16px 10px; color: #64748b; font-size: 13px; text-align: center; }
+  @media (max-width: 900px) {
+    nav { padding: 14px 16px; align-items: flex-start; }
+    .nav-brand { width: 100%; justify-content: space-between; }
+    .menu-toggle { display: inline-flex; align-items: center; justify-content: center; }
+    .nav-links {
+      display: none;
+      width: 100%;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 8px;
+      padding-top: 10px;
+    }
+    .nav-links.open { display: flex; }
+    .auth-card { grid-template-columns: 1fr; }
+    .auth-illustration { min-height: 220px; }
+  }
+  @media (max-width: 600px) {
+    .grid-2 { grid-template-columns: 1fr; }
+    .container { margin-top: 20px; }
+    .card { padding: 18px; }
+    .auth-form, .auth-illustration { padding: 20px; }
+    .toolbar { flex-direction: column; }
+    .toolbar .search-box, .toolbar .filter-box { width: 100%; }
+    .page-hero { align-items: flex-start; }
+    .hero-badge { width: 100%; text-align: center; }
+    .stat-grid { grid-template-columns: 1fr; }
+    .btn, .btn-sm { width: 100%; text-align: center; }
+    form.inline { display: block; }
+    form.inline .btn { margin-top: 6px; }
+    table { min-width: 560px; }
+  }
+  .muted { color: #6b7280; font-size: 13px; }
+
+  /* Theme Variable Overrides */
+  body {
+    background: var(--gradient-bg);
+    color: var(--text-primary);
+  }
+  a { color: var(--accent-primary); }
+  nav { background: var(--nav-bg); color: var(--text-primary); }
+  nav a { color: #fff; }
+  .theme-toggle { background: rgba(255,255,255,0.16); border: none; color: #fff; width: 40px; height: 40px; border-radius: 8px; font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
+  .theme-toggle:hover { background: rgba(255,255,255,0.24); }
+  .card { background: var(--card-bg); border: 1px solid var(--card-border); color: var(--text-primary); box-shadow: var(--shadow-lg); }
+  h1, h2, h3, h4, h5, h6 { color: var(--text-primary); }
+  .eyebrow { color: var(--text-secondary); }
+  .page-subtitle { color: var(--text-secondary); }
+  .muted { color: var(--text-secondary); }
+  .hero-badge { background: var(--bg-secondary); color: var(--accent-primary); border: 1px solid var(--border-color); }
+  .stat-card { background: var(--bg-secondary); border: 1px solid var(--border-color); color: var(--text-primary); }
+  .stat-card strong { color: var(--text-primary); }
+  table { color: var(--text-primary); }
+  th { background: var(--th-bg); color: var(--th-text); }
+  td { border-color: var(--border-color); color: var(--text-primary); }
+  tr:hover td { background: var(--hover-row-bg); }
+  .badge-unpaid { background: var(--badge-unpaid-bg); color: var(--badge-unpaid-text); }
+  .badge-pending { background: var(--badge-pending-bg); color: var(--badge-pending-text); }
+  .badge-paid { background: var(--badge-paid-bg); color: var(--badge-paid-text); }
+  .btn { background: var(--button-bg); color: #000; box-shadow: var(--button-shadow); }
+  .btn:hover { box-shadow: var(--button-hover-shadow); }
+  input, select, textarea { background: var(--input-bg); border-color: var(--input-border); color: var(--text-primary); }
+  input:focus, select:focus, textarea:focus { border-color: var(--accent-primary); box-shadow: 0 0 0 3px rgba(229, 169, 30, 0.12); }
+  label { color: var(--text-primary); }
+  .alert { color: var(--text-primary); }
+  .footer { color: var(--text-secondary); }
+  .auth-illustration { background: var(--nav-bg); color: #fff; }
+  .auth-illustration h2 { color: #fff; }
+</style>
+</head>
+<body>
+<nav>
+  <div class="nav-brand">
+        <div class="nav-title">
+      <span>UAP Mindoro Chapter Payment System</span>
+      <span class="nav-subtitle">Professional dues and payment management</span>
+    </div>
+  </div>
+  <button class="menu-toggle" type="button" aria-label="Toggle navigation" onclick="toggleMobileMenu()">☰</button>
+  <div class="nav-links" id="mobileNavLinks">
+          <a href="/dues-system/login.php">Login</a>
+      <a href="/dues-system/register.php">Register</a>
+      <button class="theme-toggle" id="themeToggle" title="Toggle dark/light mode" onclick="toggleTheme()">🌙</button>
+      </div>
+</nav>
+<div class="container">
+<div class="auth-shell">
+  <div class="auth-card">
+    <div class="auth-illustration">
+      <h2>Welcome back</h2>
+      <p>Access your dues, payments, and account history from one secure portal.</p>
+    </div>
+    <div class="auth-form">
+      <div style="text-align:center;margin-bottom:16px;">
+        <img src="/dues-system/uploads/uap_logo.jpg" alt="UAP MC Logo" style="height:84px;width:84px;object-fit:contain;border-radius:12px;">
+      </div>
+      <h1>Login</h1>
+      <p class="page-subtitle">Sign in to continue managing your payment records.</p>
+                  <form method="post">
+        <div class="field"><label>PRC ID No.</label><input name="id_number" required autofocus></div>
+        <div class="field"><label>Password</label><input type="password" name="password" required></div>
+        <button class="btn" type="submit" style="width:100%;">Login</button>
+      </form>
+      <p class="muted" style="margin-top:14px;">No account yet? <a href="/dues-system/register.php">Register here</a></p>
+    </div>
+  </div>
+</div>
+</div>
+<footer class="footer">
+    <div class="footer-content">
+        <div>
+            © 2026 United Architects of the Philippines – Mindoro Chapter
+        </div>
+
+        <div class="developer-credit">
+            UAP Mindoro Portal | Developed by <strong>Drew Macaraig</strong>
+        </div>
+    </div>
+</footer>
+<script>
+// Theme Management
+function initTheme() {
+  const savedTheme = localStorage.getItem('theme') || 'light';
+  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  const theme = savedTheme || (prefersDark ? 'dark' : 'light');
+  applyTheme(theme);
+}
+
+function applyTheme(theme) {
+  const html = document.getElementById('htmlElement');
+  const toggle = document.getElementById('themeToggle');
+  
+  if (theme === 'dark') {
+    html.setAttribute('data-theme', 'dark');
+    if (toggle) toggle.textContent = '☀️';
+    localStorage.setItem('theme', 'dark');
+  } else {
+    html.removeAttribute('data-theme');
+    if (toggle) toggle.textContent = '🌙';
+    localStorage.setItem('theme', 'light');
+  }
+}
+
+function toggleTheme() {
+  const html = document.getElementById('htmlElement');
+  const currentTheme = html.getAttribute('data-theme');
+  const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+  applyTheme(newTheme);
+}
+
+// Initialize theme on page load
+initTheme();
+
+// Toggle mobile menu
+function toggleMobileMenu() {
+  const menu = document.getElementById('mobileNavLinks');
+  if (menu) {
+    menu.classList.toggle('open');
+  }
+}
+
+document.addEventListener('click', function (event) {
+  const menu = document.getElementById('mobileNavLinks');
+  const toggle = document.querySelector('.menu-toggle');
+  if (!menu || !toggle) return;
+  const clickedInside = menu.contains(event.target) || toggle.contains(event.target);
+  if (window.innerWidth <= 900 && !clickedInside) {
+    menu.classList.remove('open');
+  }
+});
+
+window.addEventListener('resize', function () {
+  const menu = document.getElementById('mobileNavLinks');
+  if (menu && window.innerWidth > 900) {
+    menu.classList.remove('open');
+  }
+});
+</script>
+</body>
+</html>
+

@@ -1,0 +1,1689 @@
+<!DOCTYPE html>
+<html lang="en" id="htmlElement">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Members</title>
+<link rel="stylesheet" href="/dues-system/includes/theme.css">
+<style>
+  * { box-sizing: border-box; }
+  body {
+    font-family: Inter, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+    background: radial-gradient(circle at top left, #f7f9fd 0%, #eef3fb 38%, #f5f2ff 100%);
+    background-attachment: fixed;
+    margin: 0;
+    color: #18243a;
+    min-height: 100vh;
+    line-height: 1.55;
+  }
+  a { color: #3760a8; }
+  nav {
+    background: linear-gradient(120deg, #0f172a 0%, #1d3557 45%, #355ca8 100%);
+    color: #fff;
+    padding: 18px 28px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 14px;
+    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.2);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    backdrop-filter: blur(10px);
+  }
+  .nav-links { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center; }
+  nav a {
+    color: #fff;
+    text-decoration: none;
+    font-size: 14px;
+    opacity: 0.95;
+    transition: opacity 0.15s, transform 0.15s;
+  }
+  nav a:hover { opacity: 1; transform: translateY(-1px); }
+  .nav-brand { font-weight: 700; font-size: 16px; letter-spacing: 0.2px; display: flex; align-items: center; gap: 12px; color: #fff; }
+  .nav-brand img { height: 38px; width: 38px; object-fit: contain; border-radius: 8px; background: #fff; padding: 2px; }
+  .nav-title { display: flex; flex-direction: column; line-height: 1.2; color: #fff; }
+  .nav-subtitle { font-size: 12px; font-weight: 500; opacity: 0.8; color: #fff; }
+  .menu-toggle {
+    display: none;
+    border: 0;
+    background: rgba(255,255,255,0.16);
+    color: #fff;
+    width: 42px;
+    height: 42px;
+    border-radius: 10px;
+    font-size: 20px;
+    cursor: pointer;
+  }
+  .container { max-width: 1180px; margin: 28px auto 40px; padding: 0 16px; }
+  .card {
+    background: rgba(255,255,255,0.94);
+    border-radius: 18px;
+    padding: 24px 28px;
+    margin-bottom: 22px;
+    box-shadow: 0 14px 40px rgba(15, 23, 42, 0.08);
+    border: 1px solid rgba(15, 23, 42, 0.06);
+    overflow: hidden;
+  }
+  .page-hero {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 18px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+  }
+  .eyebrow {
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    font-size: 11px;
+    font-weight: 800;
+    color: #5b6c89;
+    margin: 0 0 6px;
+  }
+  h1 { font-size: 24px; margin: 0 0 6px; color: #14213d; font-weight: 800; }
+  h2 { font-size: 18px; color: #26314a; margin-top: 0; }
+  .page-subtitle { color: #5b6c89; font-size: 14px; margin: 0; }
+  .hero-badge {
+    padding: 10px 14px;
+    border-radius: 999px;
+    background: linear-gradient(120deg, #ebf2ff, #f7f2ff);
+    color: #3f5da8;
+    font-size: 13px;
+    font-weight: 700;
+    border: 1px solid rgba(63, 93, 168, 0.14);
+  }
+  .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; margin: 18px 0 22px; }
+  .stat-card {
+    padding: 16px 18px;
+    border-radius: 14px;
+    background: linear-gradient(135deg, #f9fbff 0%, #f4f7ff 100%);
+    border: 1px solid rgba(15, 23, 42, 0.05);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.75);
+  }
+  .stat-card strong { display: block; font-size: 22px; color: #14213d; margin-top: 6px; }
+  .table-shell { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; margin-top: 8px; min-width: 680px; }
+  th, td { text-align: left; padding: 12px 10px; border-bottom: 1px solid #edf0f5; font-size: 14px; }
+  th {
+    background: linear-gradient(180deg, #f5f8fd 0%, #eef3fb 100%);
+    font-weight: 700;
+    color: #3c4f6e;
+    text-transform: uppercase;
+    font-size: 11px;
+    letter-spacing: 0.06em;
+  }
+  tr:hover td { background: rgba(58,90,156,0.03); }
+  .badge { padding: 4px 12px; border-radius: 999px; font-size: 12px; font-weight: 700; letter-spacing: 0.2px; display: inline-block; }
+  .badge-unpaid { background: linear-gradient(120deg, #ffe2e0, #ffd1ce); color: #b3261e; }
+  .badge-pending { background: linear-gradient(120deg, #fff3cd, #ffe9a8); color: #8a6500; }
+  .badge-paid { background: linear-gradient(120deg, #d4f4dd, #bdeccb); color: #1e7e34; }
+  .badge-rejected { background: linear-gradient(120deg, #e6e7ea, #dcdde2); color: #41464b; }
+  .badge-partial { background: linear-gradient(120deg, #fff3cd, #ffe9a8); color: #8a6500; }
+  .btn {
+    display: inline-block;
+    background: linear-gradient(120deg, #1d3557 0%, #3a5a9c 100%);
+    color: #fff;
+    border: none;
+    padding: 10px 18px;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    text-decoration: none;
+    transition: transform 0.12s, box-shadow 0.15s;
+    box-shadow: 0 8px 18px rgba(29,53,87,0.18);
+  }
+  .btn:hover { box-shadow: 0 10px 22px rgba(29,53,87,0.24); transform: translateY(-1px); }
+  .btn-sm { padding: 7px 12px; font-size: 13px; }
+  .btn-danger { background: linear-gradient(120deg, #b3261e 0%, #d9483f 100%); box-shadow: 0 8px 18px rgba(179,38,30,0.18); }
+  .btn-danger:hover { box-shadow: 0 10px 22px rgba(179,38,30,0.24); }
+  .btn-success { background: linear-gradient(120deg, #1e7e34 0%, #2fa84f 100%); box-shadow: 0 8px 18px rgba(30,126,52,0.18); }
+  .btn-success:hover { box-shadow: 0 10px 22px rgba(30,126,52,0.24); }
+  form.inline { display: inline; }
+  input, select, textarea {
+    padding: 11px 12px;
+    border: 1px solid #d8dde6;
+    border-radius: 10px;
+    width: 100%;
+    font-size: 14px;
+    margin-top: 4px;
+    background: #fcfdff;
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
+  input:focus, select:focus, textarea:focus {
+    outline: none;
+    border-color: #3a5a9c;
+    box-shadow: 0 0 0 3px rgba(58,90,156,0.12);
+  }
+  label { font-size: 13px; font-weight: 700; color: #3a4a6b; }
+  .field { margin-bottom: 16px; }
+  .alert { padding: 12px 16px; border-radius: 12px; margin-bottom: 16px; font-size: 14px; font-weight: 600; }
+  .alert-error { background: linear-gradient(120deg, #ffe2e0, #ffd6d3); color: #b3261e; }
+  .alert-success { background: linear-gradient(120deg, #d4f4dd, #c2efce); color: #1e7e34; }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+  .auth-shell { max-width: 980px; margin: 44px auto; padding: 0 16px; }
+  .auth-card {
+    display: grid;
+    grid-template-columns: 1.1fr 0.9fr;
+    gap: 0;
+    background: var(--card-bg);
+    border-radius: 22px;
+    overflow: hidden;
+    box-shadow: var(--shadow-md);
+    border: 1px solid var(--card-border);
+  }
+  .auth-illustration {
+    background: linear-gradient(135deg, #0f172a 0%, #1d3557 50%, #355ca8 100%);
+    padding: 34px 28px;
+    color: #fff;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+  .auth-illustration h2 { color: #fff; font-size: 22px; margin-bottom: 8px; }
+  .auth-illustration p { opacity: 0.9; margin: 0; }
+  .auth-form { padding: 30px 28px; background: var(--bg-primary); color: var(--text-primary); }
+  .toolbar { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; }
+  .toolbar .search-box { flex: 1; min-width: 220px; }
+  .toolbar .filter-box { width: 220px; }
+  .footer { max-width: 1180px; margin: 0 auto 28px; padding: 0 16px 10px; color: #64748b; font-size: 13px; text-align: center; }
+  @media (max-width: 900px) {
+    nav { padding: 14px 16px; align-items: flex-start; }
+    .nav-brand { width: 100%; justify-content: space-between; }
+    .menu-toggle { display: inline-flex; align-items: center; justify-content: center; }
+    .nav-links {
+      display: none;
+      width: 100%;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 8px;
+      padding-top: 10px;
+    }
+    .nav-links.open { display: flex; }
+    .auth-card { grid-template-columns: 1fr; }
+    .auth-illustration { min-height: 220px; }
+  }
+  @media (max-width: 600px) {
+    .grid-2 { grid-template-columns: 1fr; }
+    .container { margin-top: 20px; }
+    .card { padding: 18px; }
+    .auth-form, .auth-illustration { padding: 20px; }
+    .toolbar { flex-direction: column; }
+    .toolbar .search-box, .toolbar .filter-box { width: 100%; }
+    .page-hero { align-items: flex-start; }
+    .hero-badge { width: 100%; text-align: center; }
+    .stat-grid { grid-template-columns: 1fr; }
+    .btn, .btn-sm { width: 100%; text-align: center; }
+    form.inline { display: block; }
+    form.inline .btn { margin-top: 6px; }
+    table { min-width: 560px; }
+  }
+  .muted { color: #6b7280; font-size: 13px; }
+
+  /* Theme Variable Overrides */
+  body {
+    background: var(--gradient-bg);
+    color: var(--text-primary);
+  }
+  a { color: var(--accent-primary); }
+  nav { background: var(--nav-bg); color: var(--text-primary); }
+  nav a { color: #fff; }
+  .theme-toggle { background: rgba(255,255,255,0.16); border: none; color: #fff; width: 40px; height: 40px; border-radius: 8px; font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
+  .theme-toggle:hover { background: rgba(255,255,255,0.24); }
+  .card { background: var(--card-bg); border: 1px solid var(--card-border); color: var(--text-primary); box-shadow: var(--shadow-lg); }
+  h1, h2, h3, h4, h5, h6 { color: var(--text-primary); }
+  .eyebrow { color: var(--text-secondary); }
+  .page-subtitle { color: var(--text-secondary); }
+  .muted { color: var(--text-secondary); }
+  .hero-badge { background: var(--bg-secondary); color: var(--accent-primary); border: 1px solid var(--border-color); }
+  .stat-card { background: var(--bg-secondary); border: 1px solid var(--border-color); color: var(--text-primary); }
+  .stat-card strong { color: var(--text-primary); }
+  table { color: var(--text-primary); }
+  th { background: var(--th-bg); color: var(--th-text); }
+  td { border-color: var(--border-color); color: var(--text-primary); }
+  tr:hover td { background: var(--hover-row-bg); }
+  .badge-unpaid { background: var(--badge-unpaid-bg); color: var(--badge-unpaid-text); }
+  .badge-pending { background: var(--badge-pending-bg); color: var(--badge-pending-text); }
+  .badge-paid { background: var(--badge-paid-bg); color: var(--badge-paid-text); }
+  .btn { background: var(--button-bg); color: #000; box-shadow: var(--button-shadow); }
+  .btn:hover { box-shadow: var(--button-hover-shadow); }
+  input, select, textarea { background: var(--input-bg); border-color: var(--input-border); color: var(--text-primary); }
+  input:focus, select:focus, textarea:focus { border-color: var(--accent-primary); box-shadow: 0 0 0 3px rgba(229, 169, 30, 0.12); }
+  label { color: var(--text-primary); }
+  .alert { color: var(--text-primary); }
+  .footer { color: var(--text-secondary); }
+  .auth-illustration { background: var(--nav-bg); color: #fff; }
+  .auth-illustration h2 { color: #fff; }
+</style>
+</head>
+<body>
+<nav>
+  <div class="nav-brand">
+          <img src="/dues-system/uploads/logo_1782975621.png" alt="UAP MC Logo">
+        <div class="nav-title">
+      <span>UAP Mindoro Chapter Payment System</span>
+      <span class="nav-subtitle">Professional dues and payment management</span>
+    </div>
+  </div>
+  <button class="menu-toggle" type="button" aria-label="Toggle navigation" onclick="toggleMobileMenu()">☰</button>
+  <div class="nav-links" id="mobileNavLinks">
+                  <a href="/dues-system/admin/dashboard.php">Payments</a>
+        <a href="/dues-system/admin/approvals.php">Approvals</a>
+        <a href="/dues-system/admin/members.php">Members</a>
+        <a href="/dues-system/admin/account_manager.php">Edit Accounts</a>
+        <a href="/dues-system/admin/dues.php">Dues</a>
+        <a href="/dues-system/admin/qr_codes.php">QR Codes</a>
+        <a href="/dues-system/admin/reports.php">Reports</a>
+        <a href="/dues-system/admin/settings.php">Settings</a>
+            <a href="/dues-system/logout.php">Logout (Admin)</a>
+      <button class="theme-toggle" id="themeToggle" title="Toggle dark/light mode" onclick="toggleTheme()">🌙</button>
+      </div>
+</nav>
+<div class="container">
+<div class="card">
+  <h1>Members Overview</h1>
+      
+  <div class="toolbar">
+    <div class="search-box">
+      <input type="text" id="memberSearch" placeholder="Search by name or PRC ID No..." oninput="filterTable()">
+    </div>
+    <div class="filter-box">
+      <select id="statusFilter" onchange="filterTable()">
+        <option value="all">All Members</option>
+        <option value="fully-paid">Fully Paid</option>
+        <option value="partially-paid">Partially Paid</option>
+        <option value="pending-verification">Pending Verification</option>
+        <option value="has-dues">Has Dues (Unpaid)</option>
+        <option value="awaiting-approval">Awaiting Approval</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="table-shell">
+  <table id="membersTable">
+    <thead>
+    <tr><th>Name</th><th>PRC ID No.</th><th>Dues</th><th>Total Amount</th><th>Total Paid</th><th>Remaining Balance</th><th>Overall Status</th><th>Actions</th></tr>
+    </thead>
+    <tbody>
+        <tr data-status="has-dues" data-search="abigail padilla 32647">
+      <td>
+        ABIGAIL PADILLA                      </td>
+      <td>32647</td>
+      <td>0 paid / 2 total</td>
+      <td>₱3,000.00</td>
+      <td style="color:#1e7e34;font-weight:600;">₱0.00</td>
+      <td style="color:#b3261e;font-weight:600;">
+        ₱3,000.00      </td>
+      <td>
+                  <span class="badge badge-unpaid">Has Dues</span>
+              </td>
+      <td>
+        <a class="btn btn-sm" href="members.php?member_id=29#member-dues-panel">Manage Dues</a>
+        <a class="btn btn-sm" href="account_manager.php?search=32647">Edit</a>
+        <form method="post" class="inline" onsubmit="return confirm('Delete ABIGAIL PADILLA? This cannot be undone.');">
+          <input type="hidden" name="user_id" value="29">
+          <input type="hidden" name="action" value="delete_member">
+          <button class="btn btn-sm btn-danger" type="submit">Delete</button>
+        </form>
+      </td>
+    </tr>
+        <tr data-status="has-dues" data-search="adelfa u. espallardo 42345">
+      <td>
+        ADELFA U. ESPALLARDO                      </td>
+      <td>42345</td>
+      <td>0 paid / 3 total</td>
+      <td>₱4,000.00</td>
+      <td style="color:#1e7e34;font-weight:600;">₱0.00</td>
+      <td style="color:#b3261e;font-weight:600;">
+        ₱4,000.00      </td>
+      <td>
+                  <span class="badge badge-unpaid">Has Dues</span>
+              </td>
+      <td>
+        <a class="btn btn-sm" href="members.php?member_id=37#member-dues-panel">Manage Dues</a>
+        <a class="btn btn-sm" href="account_manager.php?search=42345">Edit</a>
+        <form method="post" class="inline" onsubmit="return confirm('Delete ADELFA U. ESPALLARDO? This cannot be undone.');">
+          <input type="hidden" name="user_id" value="37">
+          <input type="hidden" name="action" value="delete_member">
+          <button class="btn btn-sm btn-danger" type="submit">Delete</button>
+        </form>
+      </td>
+    </tr>
+        <tr data-status="has-dues" data-search="amabelle de martin gutierrez 14733">
+      <td>
+        AMABELLE DE MARTIN GUTIERREZ                      </td>
+      <td>14733</td>
+      <td>0 paid / 2 total</td>
+      <td>₱3,000.00</td>
+      <td style="color:#1e7e34;font-weight:600;">₱0.00</td>
+      <td style="color:#b3261e;font-weight:600;">
+        ₱3,000.00      </td>
+      <td>
+                  <span class="badge badge-unpaid">Has Dues</span>
+              </td>
+      <td>
+        <a class="btn btn-sm" href="members.php?member_id=56#member-dues-panel">Manage Dues</a>
+        <a class="btn btn-sm" href="account_manager.php?search=14733">Edit</a>
+        <form method="post" class="inline" onsubmit="return confirm('Delete AMABELLE DE MARTIN GUTIERREZ? This cannot be undone.');">
+          <input type="hidden" name="user_id" value="56">
+          <input type="hidden" name="action" value="delete_member">
+          <button class="btn btn-sm btn-danger" type="submit">Delete</button>
+        </form>
+      </td>
+    </tr>
+        <tr data-status="has-dues" data-search="andy l. andres 43793">
+      <td>
+        ANDY L. ANDRES                      </td>
+      <td>43793</td>
+      <td>0 paid / 2 total</td>
+      <td>₱3,000.00</td>
+      <td style="color:#1e7e34;font-weight:600;">₱0.00</td>
+      <td style="color:#b3261e;font-weight:600;">
+        ₱3,000.00      </td>
+      <td>
+                  <span class="badge badge-unpaid">Has Dues</span>
+              </td>
+      <td>
+        <a class="btn btn-sm" href="members.php?member_id=34#member-dues-panel">Manage Dues</a>
+        <a class="btn btn-sm" href="account_manager.php?search=43793">Edit</a>
+        <form method="post" class="inline" onsubmit="return confirm('Delete ANDY L. ANDRES? This cannot be undone.');">
+          <input type="hidden" name="user_id" value="34">
+          <input type="hidden" name="action" value="delete_member">
+          <button class="btn btn-sm btn-danger" type="submit">Delete</button>
+        </form>
+      </td>
+    </tr>
+        <tr data-status="has-dues" data-search="angel clyde g. manuel 47703">
+      <td>
+        ANGEL CLYDE G. MANUEL                      </td>
+      <td>47703</td>
+      <td>0 paid / 2 total</td>
+      <td>₱3,000.00</td>
+      <td style="color:#1e7e34;font-weight:600;">₱0.00</td>
+      <td style="color:#b3261e;font-weight:600;">
+        ₱3,000.00      </td>
+      <td>
+                  <span class="badge badge-unpaid">Has Dues</span>
+              </td>
+      <td>
+        <a class="btn btn-sm" href="members.php?member_id=48#member-dues-panel">Manage Dues</a>
+        <a class="btn btn-sm" href="account_manager.php?search=47703">Edit</a>
+        <form method="post" class="inline" onsubmit="return confirm('Delete ANGEL CLYDE G. MANUEL? This cannot be undone.');">
+          <input type="hidden" name="user_id" value="48">
+          <input type="hidden" name="action" value="delete_member">
+          <button class="btn btn-sm btn-danger" type="submit">Delete</button>
+        </form>
+      </td>
+    </tr>
+        <tr data-status="has-dues" data-search="arcel c. villena 53883">
+      <td>
+        ARCEL C. VILLENA                      </td>
+      <td>53883</td>
+      <td>0 paid / 2 total</td>
+      <td>₱3,000.00</td>
+      <td style="color:#1e7e34;font-weight:600;">₱0.00</td>
+      <td style="color:#b3261e;font-weight:600;">
+        ₱3,000.00      </td>
+      <td>
+                  <span class="badge badge-unpaid">Has Dues</span>
+              </td>
+      <td>
+        <a class="btn btn-sm" href="members.php?member_id=61#member-dues-panel">Manage Dues</a>
+        <a class="btn btn-sm" href="account_manager.php?search=53883">Edit</a>
+        <form method="post" class="inline" onsubmit="return confirm('Delete ARCEL C. VILLENA? This cannot be undone.');">
+          <input type="hidden" name="user_id" value="61">
+          <input type="hidden" name="action" value="delete_member">
+          <button class="btn btn-sm btn-danger" type="submit">Delete</button>
+        </form>
+      </td>
+    </tr>
+        <tr data-status="has-dues" data-search="archievald mendoza 53400">
+      <td>
+        ARCHIEVALD MENDOZA                      </td>
+      <td>53400</td>
+      <td>0 paid / 2 total</td>
+      <td>₱3,000.00</td>
+      <td style="color:#1e7e34;font-weight:600;">₱0.00</td>
+      <td style="color:#b3261e;font-weight:600;">
+        ₱3,000.00      </td>
+      <td>
+                  <span class="badge badge-unpaid">Has Dues</span>
+              </td>
+      <td>
+        <a class="btn btn-sm" href="members.php?member_id=46#member-dues-panel">Manage Dues</a>
+        <a class="btn btn-sm" href="account_manager.php?search=53400">Edit</a>
+        <form method="post" class="inline" onsubmit="return confirm('Delete ARCHIEVALD MENDOZA? This cannot be undone.');">
+          <input type="hidden" name="user_id" value="46">
+          <input type="hidden" name="action" value="delete_member">
+          <button class="btn btn-sm btn-danger" type="submit">Delete</button>
+        </form>
+      </td>
+    </tr>
+        <tr data-status="has-dues" data-search="armando i. acha jr. 40983">
+      <td>
+        ARMANDO I. ACHA JR.                      </td>
+      <td>40983</td>
+      <td>0 paid / 2 total</td>
+      <td>₱3,000.00</td>
+      <td style="color:#1e7e34;font-weight:600;">₱0.00</td>
+      <td style="color:#b3261e;font-weight:600;">
+        ₱3,000.00      </td>
+      <td>
+                  <span class="badge badge-unpaid">Has Dues</span>
+              </td>
+      <td>
+        <a class="btn btn-sm" href="members.php?member_id=65#member-dues-panel">Manage Dues</a>
+        <a class="btn btn-sm" href="account_manager.php?search=40983">Edit</a>
+        <form method="post" class="inline" onsubmit="return confirm('Delete ARMANDO I. ACHA JR.? This cannot be undone.');">
+          <input type="hidden" name="user_id" value="65">
+          <input type="hidden" name="action" value="delete_member">
+          <button class="btn btn-sm btn-danger" type="submit">Delete</button>
+        </form>
+      </td>
+    </tr>
+        <tr data-status="fully-paid" data-search="beatriz p. magboo 55053">
+      <td>
+        BEATRIZ P. MAGBOO                      </td>
+      <td>55053</td>
+      <td>2 paid / 2 total</td>
+      <td>₱3,000.00</td>
+      <td style="color:#1e7e34;font-weight:600;">₱3,000.00</td>
+      <td style="color:#1e7e34;font-weight:600;">
+        ₱0.00      </td>
+      <td>
+                  <span class="badge badge-paid">Fully Paid</span>
+              </td>
+      <td>
+        <a class="btn btn-sm" href="members.php?member_id=41#member-dues-panel">Manage Dues</a>
+        <a class="btn btn-sm" href="account_manager.php?search=55053">Edit</a>
+        <form method="post" class="inline" onsubmit="return confirm('Delete BEATRIZ P. MAGBOO? This cannot be undone.');">
+          <input type="hidden" name="user_id" value="41">
+          <input type="hidden" name="action" value="delete_member">
+          <button class="btn btn-sm btn-danger" type="submit">Delete</button>
+        </form>
+      </td>
+    </tr>
+        <tr data-status="has-dues" data-search="carl dennis patalen 37766">
+      <td>
+        CARL DENNIS PATALEN                      </td>
+      <td>37766</td>
+      <td>0 paid / 2 total</td>
+      <td>₱3,000.00</td>
+      <td style="color:#1e7e34;font-weight:600;">₱0.00</td>
+      <td style="color:#b3261e;font-weight:600;">
+        ₱3,000.00      </td>
+      <td>
+                  <span class="badge badge-unpaid">Has Dues</span>
+              </td>
+      <td>
+        <a class="btn btn-sm" href="members.php?member_id=40#member-dues-panel">Manage Dues</a>
+        <a class="btn btn-sm" href="account_manager.php?search=37766">Edit</a>
+        <form method="post" class="inline" onsubmit="return confirm('Delete CARL DENNIS PATALEN? This cannot be undone.');">
+          <input type="hidden" name="user_id" value="40">
+          <input type="hidden" name="action" value="delete_member">
+          <button class="btn btn-sm btn-danger" type="submit">Delete</button>
+        </form>
+      </td>
+    </tr>
+        <tr data-status="has-dues" data-search="carl japeth m. briones 61604">
+      <td>
+        CARL JAPETH M. BRIONES                      </td>
+      <td>61604</td>
+      <td>1 paid / 2 total</td>
+      <td>₱3,000.00</td>
+      <td style="color:#1e7e34;font-weight:600;">₱2,000.00</td>
+      <td style="color:#b3261e;font-weight:600;">
+        ₱1,000.00      </td>
+      <td>
+                  <span class="badge badge-unpaid">Has Dues</span>
+              </td>
+      <td>
+        <a class="btn btn-sm" href="members.php?member_id=70#member-dues-panel">Manage Dues</a>
+        <a class="btn btn-sm" href="account_manager.php?search=61604">Edit</a>
+        <form method="post" class="inline" onsubmit="return confirm('Delete CARL JAPETH M. BRIONES? This cannot be undone.');">
+          <input type="hidden" name="user_id" value="70">
+          <input type="hidden" name="action" value="delete_member">
+          <button class="btn btn-sm btn-danger" type="submit">Delete</button>
+        </form>
+      </td>
+    </tr>
+        <tr data-status="has-dues" data-search="cecille fortu 47810">
+      <td>
+        CECILLE FORTU                      </td>
+      <td>47810</td>
+      <td>0 paid / 4 total</td>
+      <td>₱7,000.00</td>
+      <td style="color:#1e7e34;font-weight:600;">₱0.00</td>
+      <td style="color:#b3261e;font-weight:600;">
+        ₱7,000.00      </td>
+      <td>
+                  <span class="badge badge-unpaid">Has Dues</span>
+              </td>
+      <td>
+        <a class="btn btn-sm" href="members.php?member_id=75#member-dues-panel">Manage Dues</a>
+        <a class="btn btn-sm" href="account_manager.php?search=47810">Edit</a>
+        <form method="post" class="inline" onsubmit="return confirm('Delete CECILLE FORTU? This cannot be undone.');">
+          <input type="hidden" name="user_id" value="75">
+          <input type="hidden" name="action" value="delete_member">
+          <button class="btn btn-sm btn-danger" type="submit">Delete</button>
+        </form>
+      </td>
+    </tr>
+        <tr data-status="has-dues" data-search="daniel john p. fortunato 59685">
+      <td>
+        DANIEL JOHN P. FORTUNATO                      </td>
+      <td>59685</td>
+      <td>0 paid / 2 total</td>
+      <td>₱3,000.00</td>
+      <td style="color:#1e7e34;font-weight:600;">₱0.00</td>
+      <td style="color:#b3261e;font-weight:600;">
+        ₱3,000.00      </td>
+      <td>
+                  <span class="badge badge-unpaid">Has Dues</span>
+              </td>
+      <td>
+        <a class="btn btn-sm" href="members.php?member_id=16#member-dues-panel">Manage Dues</a>
+        <a class="btn btn-sm" href="account_manager.php?search=59685">Edit</a>
+        <form method="post" class="inline" onsubmit="return confirm('Delete DANIEL JOHN P. FORTUNATO? This cannot be undone.');">
+          <input type="hidden" name="user_id" value="16">
+          <input type="hidden" name="action" value="delete_member">
+          <button class="btn btn-sm btn-danger" type="submit">Delete</button>
+        </form>
+      </td>
+    </tr>
+        <tr data-status="has-dues" data-search="darwin lingco 44065">
+      <td>
+        DARWIN LINGCO                      </td>
+      <td>44065</td>
+      <td>0 paid / 3 total</td>
+      <td>₱5,000.00</td>
+      <td style="color:#1e7e34;font-weight:600;">₱0.00</td>
+      <td style="color:#b3261e;font-weight:600;">
+        ₱5,000.00      </td>
+      <td>
+                  <span class="badge badge-unpaid">Has Dues</span>
+              </td>
+      <td>
+        <a class="btn btn-sm" href="members.php?member_id=51#member-dues-panel">Manage Dues</a>
+        <a class="btn btn-sm" href="account_manager.php?search=44065">Edit</a>
+        <form method="post" class="inline" onsubmit="return confirm('Delete DARWIN LINGCO? This cannot be undone.');">
+          <input type="hidden" name="user_id" value="51">
+          <input type="hidden" name="action" value="delete_member">
+          <button class="btn btn-sm btn-danger" type="submit">Delete</button>
+        </form>
+      </td>
+    </tr>
+        <tr data-status="fully-paid" data-search="edeson o. roxas 34431">
+      <td>
+        EDESON O. ROXAS                      </td>
+      <td>34431</td>
+      <td>2 paid / 2 total</td>
+      <td>₱3,000.00</td>
+      <td style="color:#1e7e34;font-weight:600;">₱3,000.00</td>
+      <td style="color:#1e7e34;font-weight:600;">
+        ₱0.00      </td>
+      <td>
+                  <span class="badge badge-paid">Fully Paid</span>
+              </td>
+      <td>
+        <a class="btn btn-sm" href="members.php?member_id=18#member-dues-panel">Manage Dues</a>
+        <a class="btn btn-sm" href="account_manager.php?search=34431">Edit</a>
+        <form method="post" class="inline" onsubmit="return confirm('Delete EDESON O. ROXAS? This cannot be undone.');">
+          <input type="hidden" name="user_id" value="18">
+          <input type="hidden" name="action" value="delete_member">
+          <button class="btn btn-sm btn-danger" type="submit">Delete</button>
+        </form>
+      </td>
+    </tr>
+        <tr data-status="has-dues" data-search="edhsie vrian g. evora 54785">
+      <td>
+        EDHSIE VRIAN G. EVORA                      </td>
+      <td>54785</td>
+      <td>0 paid / 3 total</td>
+      <td>₱5,000.00</td>
+      <td style="color:#1e7e34;font-weight:600;">₱0.00</td>
+      <td style="color:#b3261e;font-weight:600;">
+        ₱5,000.00      </td>
+      <td>
+                  <span class="badge badge-unpaid">Has Dues</span>
+              </td>
+      <td>
+        <a class="btn btn-sm" href="members.php?member_id=43#member-dues-panel">Manage Dues</a>
+        <a class="btn btn-sm" href="account_manager.php?search=54785">Edit</a>
+        <form method="post" class="inline" onsubmit="return confirm('Delete EDHSIE VRIAN G. EVORA? This cannot be undone.');">
+          <input type="hidden" name="user_id" value="43">
+          <input type="hidden" name="action" value="delete_member">
+          <button class="btn btn-sm btn-danger" type="submit">Delete</button>
+        </form>
+      </td>
+    </tr>
+        <tr data-status="has-dues" data-search="evanie nikka f. casidsid 58288">
+      <td>
+        EVANIE NIKKA F. CASIDSID                      </td>
+      <td>58288</td>
+      <td>0 paid / 2 total</td>
+      <td>₱3,000.00</td>
+      <td style="color:#1e7e34;font-weight:600;">₱0.00</td>
+      <td style="color:#b3261e;font-weight:600;">
+        ₱3,000.00      </td>
+      <td>
+                  <span class="badge badge-unpaid">Has Dues</span>
+              </td>
+      <td>
+        <a class="btn btn-sm" href="members.php?member_id=49#member-dues-panel">Manage Dues</a>
+        <a class="btn btn-sm" href="account_manager.php?search=58288">Edit</a>
+        <form method="post" class="inline" onsubmit="return confirm('Delete EVANIE NIKKA F. CASIDSID? This cannot be undone.');">
+          <input type="hidden" name="user_id" value="49">
+          <input type="hidden" name="action" value="delete_member">
+          <button class="btn btn-sm btn-danger" type="submit">Delete</button>
+        </form>
+      </td>
+    </tr>
+        <tr data-status="has-dues" data-search="genia kimberly l.  adeva 62374">
+      <td>
+        GENIA KIMBERLY L.  ADEVA                      </td>
+      <td>62374</td>
+      <td>0 paid / 2 total</td>
+      <td>₱3,000.00</td>
+      <td style="color:#1e7e34;font-weight:600;">₱0.00</td>
+      <td style="color:#b3261e;font-weight:600;">
+        ₱3,000.00      </td>
+      <td>
+                  <span class="badge badge-unpaid">Has Dues</span>
+              </td>
+      <td>
+        <a class="btn btn-sm" href="members.php?member_id=17#member-dues-panel">Manage Dues</a>
+        <a class="btn btn-sm" href="account_manager.php?search=62374">Edit</a>
+        <form method="post" class="inline" onsubmit="return confirm('Delete GENIA KIMBERLY L.  ADEVA? This cannot be undone.');">
+          <input type="hidden" name="user_id" value="17">
+          <input type="hidden" name="action" value="delete_member">
+          <button class="btn btn-sm btn-danger" type="submit">Delete</button>
+        </form>
+      </td>
+    </tr>
+        <tr data-status="has-dues" data-search="jelie camille b. recayo 58286">
+      <td>
+        JELIE CAMILLE B. RECAYO                      </td>
+      <td>58286</td>
+      <td>0 paid / 2 total</td>
+      <td>₱3,000.00</td>
+      <td style="color:#1e7e34;font-weight:600;">₱0.00</td>
+      <td style="color:#b3261e;font-weight:600;">
+        ₱3,000.00      </td>
+      <td>
+                  <span class="badge badge-unpaid">Has Dues</span>
+              </td>
+      <td>
+        <a class="btn btn-sm" href="members.php?member_id=66#member-dues-panel">Manage Dues</a>
+        <a class="btn btn-sm" href="account_manager.php?search=58286">Edit</a>
+        <form method="post" class="inline" onsubmit="return confirm('Delete JELIE CAMILLE B. RECAYO? This cannot be undone.');">
+          <input type="hidden" name="user_id" value="66">
+          <input type="hidden" name="action" value="delete_member">
+          <button class="btn btn-sm btn-danger" type="submit">Delete</button>
+        </form>
+      </td>
+    </tr>
+        <tr data-status="fully-paid" data-search="jenny cepillo-roxas 37771">
+      <td>
+        JENNY CEPILLO-ROXAS                      </td>
+      <td>37771</td>
+      <td>2 paid / 2 total</td>
+      <td>₱3,000.00</td>
+      <td style="color:#1e7e34;font-weight:600;">₱3,000.00</td>
+      <td style="color:#1e7e34;font-weight:600;">
+        ₱0.00      </td>
+      <td>
+                  <span class="badge badge-paid">Fully Paid</span>
+              </td>
+      <td>
+        <a class="btn btn-sm" href="members.php?member_id=21#member-dues-panel">Manage Dues</a>
+        <a class="btn btn-sm" href="account_manager.php?search=37771">Edit</a>
+        <form method="post" class="inline" onsubmit="return confirm('Delete JENNY CEPILLO-ROXAS? This cannot be undone.');">
+          <input type="hidden" name="user_id" value="21">
+          <input type="hidden" name="action" value="delete_member">
+          <button class="btn btn-sm btn-danger" type="submit">Delete</button>
+        </form>
+      </td>
+    </tr>
+        <tr data-status="has-dues" data-search="jeric l. hernandez 64623">
+      <td>
+        JERIC L. HERNANDEZ                      </td>
+      <td>64623</td>
+      <td>0 paid / 2 total</td>
+      <td>₱3,000.00</td>
+      <td style="color:#1e7e34;font-weight:600;">₱0.00</td>
+      <td style="color:#b3261e;font-weight:600;">
+        ₱3,000.00      </td>
+      <td>
+                  <span class="badge badge-unpaid">Has Dues</span>
+              </td>
+      <td>
+        <a class="btn btn-sm" href="members.php?member_id=67#member-dues-panel">Manage Dues</a>
+        <a class="btn btn-sm" href="account_manager.php?search=64623">Edit</a>
+        <form method="post" class="inline" onsubmit="return confirm('Delete JERIC L. HERNANDEZ? This cannot be undone.');">
+          <input type="hidden" name="user_id" value="67">
+          <input type="hidden" name="action" value="delete_member">
+          <button class="btn btn-sm btn-danger" type="submit">Delete</button>
+        </form>
+      </td>
+    </tr>
+        <tr data-status="has-dues" data-search="jhon deo parcon 58384">
+      <td>
+        JHON DEO PARCON                      </td>
+      <td>58384</td>
+      <td>0 paid / 7 total</td>
+      <td>₱11,500.00</td>
+      <td style="color:#1e7e34;font-weight:600;">₱0.00</td>
+      <td style="color:#b3261e;font-weight:600;">
+        ₱11,500.00      </td>
+      <td>
+                  <span class="badge badge-unpaid">Has Dues</span>
+              </td>
+      <td>
+        <a class="btn btn-sm" href="members.php?member_id=76#member-dues-panel">Manage Dues</a>
+        <a class="btn btn-sm" href="account_manager.php?search=58384">Edit</a>
+        <form method="post" class="inline" onsubmit="return confirm('Delete JHON DEO PARCON? This cannot be undone.');">
+          <input type="hidden" name="user_id" value="76">
+          <input type="hidden" name="action" value="delete_member">
+          <button class="btn btn-sm btn-danger" type="submit">Delete</button>
+        </form>
+      </td>
+    </tr>
+        <tr data-status="has-dues" data-search="john lawrence s. ting 43119">
+      <td>
+        JOHN LAWRENCE S. TING                      </td>
+      <td>43119</td>
+      <td>0 paid / 2 total</td>
+      <td>₱3,000.00</td>
+      <td style="color:#1e7e34;font-weight:600;">₱0.00</td>
+      <td style="color:#b3261e;font-weight:600;">
+        ₱3,000.00      </td>
+      <td>
+                  <span class="badge badge-unpaid">Has Dues</span>
+              </td>
+      <td>
+        <a class="btn btn-sm" href="members.php?member_id=39#member-dues-panel">Manage Dues</a>
+        <a class="btn btn-sm" href="account_manager.php?search=43119">Edit</a>
+        <form method="post" class="inline" onsubmit="return confirm('Delete JOHN LAWRENCE S. TING? This cannot be undone.');">
+          <input type="hidden" name="user_id" value="39">
+          <input type="hidden" name="action" value="delete_member">
+          <button class="btn btn-sm btn-danger" type="submit">Delete</button>
+        </form>
+      </td>
+    </tr>
+        <tr data-status="has-dues" data-search="john paul quimoyog 53860">
+      <td>
+        JOHN PAUL QUIMOYOG                      </td>
+      <td>53860</td>
+      <td>0 paid / 2 total</td>
+      <td>₱3,000.00</td>
+      <td style="color:#1e7e34;font-weight:600;">₱0.00</td>
+      <td style="color:#b3261e;font-weight:600;">
+        ₱3,000.00      </td>
+      <td>
+                  <span class="badge badge-unpaid">Has Dues</span>
+              </td>
+      <td>
+        <a class="btn btn-sm" href="members.php?member_id=52#member-dues-panel">Manage Dues</a>
+        <a class="btn btn-sm" href="account_manager.php?search=53860">Edit</a>
+        <form method="post" class="inline" onsubmit="return confirm('Delete JOHN PAUL QUIMOYOG? This cannot be undone.');">
+          <input type="hidden" name="user_id" value="52">
+          <input type="hidden" name="action" value="delete_member">
+          <button class="btn btn-sm btn-danger" type="submit">Delete</button>
+        </form>
+      </td>
+    </tr>
+        <tr data-status="has-dues" data-search="john paulo r. ante 54787">
+      <td>
+        JOHN PAULO R. ANTE                      </td>
+      <td>54787</td>
+      <td>0 paid / 2 total</td>
+      <td>₱3,000.00</td>
+      <td style="color:#1e7e34;font-weight:600;">₱0.00</td>
+      <td style="color:#b3261e;font-weight:600;">
+        ₱3,000.00      </td>
+      <td>
+                  <span class="badge badge-unpaid">Has Dues</span>
+              </td>
+      <td>
+        <a class="btn btn-sm" href="members.php?member_id=27#member-dues-panel">Manage Dues</a>
+        <a class="btn btn-sm" href="account_manager.php?search=54787">Edit</a>
+        <form method="post" class="inline" onsubmit="return confirm('Delete JOHN PAULO R. ANTE? This cannot be undone.');">
+          <input type="hidden" name="user_id" value="27">
+          <input type="hidden" name="action" value="delete_member">
+          <button class="btn btn-sm btn-danger" type="submit">Delete</button>
+        </form>
+      </td>
+    </tr>
+        <tr data-status="fully-paid" data-search="john vincent lagman 51381">
+      <td>
+        JOHN VINCENT LAGMAN                      </td>
+      <td>51381</td>
+      <td>2 paid / 2 total</td>
+      <td>₱3,000.00</td>
+      <td style="color:#1e7e34;font-weight:600;">₱3,000.00</td>
+      <td style="color:#1e7e34;font-weight:600;">
+        ₱0.00      </td>
+      <td>
+                  <span class="badge badge-paid">Fully Paid</span>
+              </td>
+      <td>
+        <a class="btn btn-sm" href="members.php?member_id=47#member-dues-panel">Manage Dues</a>
+        <a class="btn btn-sm" href="account_manager.php?search=51381">Edit</a>
+        <form method="post" class="inline" onsubmit="return confirm('Delete JOHN VINCENT LAGMAN? This cannot be undone.');">
+          <input type="hidden" name="user_id" value="47">
+          <input type="hidden" name="action" value="delete_member">
+          <button class="btn btn-sm btn-danger" type="submit">Delete</button>
+        </form>
+      </td>
+    </tr>
+        <tr data-status="has-dues" data-search="karra camille mallorca guancia 62277">
+      <td>
+        KARRA CAMILLE MALLORCA GUANCIA                      </td>
+      <td>62277</td>
+      <td>0 paid / 5 total</td>
+      <td>₱9,000.00</td>
+      <td style="color:#1e7e34;font-weight:600;">₱0.00</td>
+      <td style="color:#b3261e;font-weight:600;">
+        ₱9,000.00      </td>
+      <td>
+                  <span class="badge badge-unpaid">Has Dues</span>
+              </td>
+      <td>
+        <a class="btn btn-sm" href="members.php?member_id=72#member-dues-panel">Manage Dues</a>
+        <a class="btn btn-sm" href="account_manager.php?search=62277">Edit</a>
+        <form method="post" class="inline" onsubmit="return confirm('Delete KARRA CAMILLE MALLORCA GUANCIA? This cannot be undone.');">
+          <input type="hidden" name="user_id" value="72">
+          <input type="hidden" name="action" value="delete_member">
+          <button class="btn btn-sm btn-danger" type="submit">Delete</button>
+        </form>
+      </td>
+    </tr>
+        <tr data-status="has-dues" data-search="katrina d. atienza 47809">
+      <td>
+        KATRINA D. ATIENZA                      </td>
+      <td>47809</td>
+      <td>0 paid / 3 total</td>
+      <td>₱5,000.00</td>
+      <td style="color:#1e7e34;font-weight:600;">₱0.00</td>
+      <td style="color:#b3261e;font-weight:600;">
+        ₱5,000.00      </td>
+      <td>
+                  <span class="badge badge-unpaid">Has Dues</span>
+              </td>
+      <td>
+        <a class="btn btn-sm" href="members.php?member_id=38#member-dues-panel">Manage Dues</a>
+        <a class="btn btn-sm" href="account_manager.php?search=47809">Edit</a>
+        <form method="post" class="inline" onsubmit="return confirm('Delete KATRINA D. ATIENZA? This cannot be undone.');">
+          <input type="hidden" name="user_id" value="38">
+          <input type="hidden" name="action" value="delete_member">
+          <button class="btn btn-sm btn-danger" type="submit">Delete</button>
+        </form>
+      </td>
+    </tr>
+        <tr data-status="has-dues" data-search="loran m. cortez 58391">
+      <td>
+        LORAN M. CORTEZ                      </td>
+      <td>58391</td>
+      <td>0 paid / 2 total</td>
+      <td>₱3,000.00</td>
+      <td style="color:#1e7e34;font-weight:600;">₱0.00</td>
+      <td style="color:#b3261e;font-weight:600;">
+        ₱3,000.00      </td>
+      <td>
+                  <span class="badge badge-unpaid">Has Dues</span>
+              </td>
+      <td>
+        <a class="btn btn-sm" href="members.php?member_id=44#member-dues-panel">Manage Dues</a>
+        <a class="btn btn-sm" href="account_manager.php?search=58391">Edit</a>
+        <form method="post" class="inline" onsubmit="return confirm('Delete LORAN M. CORTEZ? This cannot be undone.');">
+          <input type="hidden" name="user_id" value="44">
+          <input type="hidden" name="action" value="delete_member">
+          <button class="btn btn-sm btn-danger" type="submit">Delete</button>
+        </form>
+      </td>
+    </tr>
+        <tr data-status="has-dues" data-search="louis lane a. calilap 56859">
+      <td>
+        LOUIS LANE A. CALILAP                      </td>
+      <td>56859</td>
+      <td>0 paid / 2 total</td>
+      <td>₱3,000.00</td>
+      <td style="color:#1e7e34;font-weight:600;">₱0.00</td>
+      <td style="color:#b3261e;font-weight:600;">
+        ₱3,000.00      </td>
+      <td>
+                  <span class="badge badge-unpaid">Has Dues</span>
+              </td>
+      <td>
+        <a class="btn btn-sm" href="members.php?member_id=62#member-dues-panel">Manage Dues</a>
+        <a class="btn btn-sm" href="account_manager.php?search=56859">Edit</a>
+        <form method="post" class="inline" onsubmit="return confirm('Delete LOUIS LANE A. CALILAP? This cannot be undone.');">
+          <input type="hidden" name="user_id" value="62">
+          <input type="hidden" name="action" value="delete_member">
+          <button class="btn btn-sm btn-danger" type="submit">Delete</button>
+        </form>
+      </td>
+    </tr>
+        <tr data-status="has-dues" data-search="mariama tolentino 53863">
+      <td>
+        MARIAMA TOLENTINO                      </td>
+      <td>53863</td>
+      <td>0 paid / 4 total</td>
+      <td>₱6,500.00</td>
+      <td style="color:#1e7e34;font-weight:600;">₱0.00</td>
+      <td style="color:#b3261e;font-weight:600;">
+        ₱6,500.00      </td>
+      <td>
+                  <span class="badge badge-unpaid">Has Dues</span>
+              </td>
+      <td>
+        <a class="btn btn-sm" href="members.php?member_id=45#member-dues-panel">Manage Dues</a>
+        <a class="btn btn-sm" href="account_manager.php?search=53863">Edit</a>
+        <form method="post" class="inline" onsubmit="return confirm('Delete MARIAMA TOLENTINO? This cannot be undone.');">
+          <input type="hidden" name="user_id" value="45">
+          <input type="hidden" name="action" value="delete_member">
+          <button class="btn btn-sm btn-danger" type="submit">Delete</button>
+        </form>
+      </td>
+    </tr>
+        <tr data-status="has-dues" data-search="mariel b. martinez 47975">
+      <td>
+        MARIEL B. MARTINEZ                      </td>
+      <td>47975</td>
+      <td>0 paid / 5 total</td>
+      <td>₱8,500.00</td>
+      <td style="color:#1e7e34;font-weight:600;">₱0.00</td>
+      <td style="color:#b3261e;font-weight:600;">
+        ₱8,500.00      </td>
+      <td>
+                  <span class="badge badge-unpaid">Has Dues</span>
+              </td>
+      <td>
+        <a class="btn btn-sm" href="members.php?member_id=73#member-dues-panel">Manage Dues</a>
+        <a class="btn btn-sm" href="account_manager.php?search=47975">Edit</a>
+        <form method="post" class="inline" onsubmit="return confirm('Delete MARIEL B. MARTINEZ? This cannot be undone.');">
+          <input type="hidden" name="user_id" value="73">
+          <input type="hidden" name="action" value="delete_member">
+          <button class="btn btn-sm btn-danger" type="submit">Delete</button>
+        </form>
+      </td>
+    </tr>
+        <tr data-status="has-dues" data-search="marjorie a. mendoza-punay 39168">
+      <td>
+        MARJORIE A. MENDOZA-PUNAY                      </td>
+      <td>39168</td>
+      <td>0 paid / 3 total</td>
+      <td>₱5,000.00</td>
+      <td style="color:#1e7e34;font-weight:600;">₱0.00</td>
+      <td style="color:#b3261e;font-weight:600;">
+        ₱5,000.00      </td>
+      <td>
+                  <span class="badge badge-unpaid">Has Dues</span>
+              </td>
+      <td>
+        <a class="btn btn-sm" href="members.php?member_id=30#member-dues-panel">Manage Dues</a>
+        <a class="btn btn-sm" href="account_manager.php?search=39168">Edit</a>
+        <form method="post" class="inline" onsubmit="return confirm('Delete MARJORIE A. MENDOZA-PUNAY? This cannot be undone.');">
+          <input type="hidden" name="user_id" value="30">
+          <input type="hidden" name="action" value="delete_member">
+          <button class="btn btn-sm btn-danger" type="submit">Delete</button>
+        </form>
+      </td>
+    </tr>
+        <tr data-status="has-dues" data-search="mark brillo k. torregoza 59716">
+      <td>
+        MARK BRILLO K. TORREGOZA                      </td>
+      <td>59716</td>
+      <td>0 paid / 2 total</td>
+      <td>₱3,000.00</td>
+      <td style="color:#1e7e34;font-weight:600;">₱0.00</td>
+      <td style="color:#b3261e;font-weight:600;">
+        ₱3,000.00      </td>
+      <td>
+                  <span class="badge badge-unpaid">Has Dues</span>
+              </td>
+      <td>
+        <a class="btn btn-sm" href="members.php?member_id=69#member-dues-panel">Manage Dues</a>
+        <a class="btn btn-sm" href="account_manager.php?search=59716">Edit</a>
+        <form method="post" class="inline" onsubmit="return confirm('Delete MARK BRILLO K. TORREGOZA? This cannot be undone.');">
+          <input type="hidden" name="user_id" value="69">
+          <input type="hidden" name="action" value="delete_member">
+          <button class="btn btn-sm btn-danger" type="submit">Delete</button>
+        </form>
+      </td>
+    </tr>
+        <tr data-status="has-dues" data-search="mark ian m. fanoga 42631">
+      <td>
+        MARK IAN M. FANOGA                      </td>
+      <td>42631</td>
+      <td>0 paid / 2 total</td>
+      <td>₱3,000.00</td>
+      <td style="color:#1e7e34;font-weight:600;">₱0.00</td>
+      <td style="color:#b3261e;font-weight:600;">
+        ₱3,000.00      </td>
+      <td>
+                  <span class="badge badge-unpaid">Has Dues</span>
+              </td>
+      <td>
+        <a class="btn btn-sm" href="members.php?member_id=23#member-dues-panel">Manage Dues</a>
+        <a class="btn btn-sm" href="account_manager.php?search=42631">Edit</a>
+        <form method="post" class="inline" onsubmit="return confirm('Delete MARK IAN M. FANOGA? This cannot be undone.');">
+          <input type="hidden" name="user_id" value="23">
+          <input type="hidden" name="action" value="delete_member">
+          <button class="btn btn-sm btn-danger" type="submit">Delete</button>
+        </form>
+      </td>
+    </tr>
+        <tr data-status="has-dues" data-search="marlo c. artificio 14174">
+      <td>
+        MARLO C. ARTIFICIO                      </td>
+      <td>14174</td>
+      <td>0 paid / 2 total</td>
+      <td>₱3,000.00</td>
+      <td style="color:#1e7e34;font-weight:600;">₱0.00</td>
+      <td style="color:#b3261e;font-weight:600;">
+        ₱3,000.00      </td>
+      <td>
+                  <span class="badge badge-unpaid">Has Dues</span>
+              </td>
+      <td>
+        <a class="btn btn-sm" href="members.php?member_id=35#member-dues-panel">Manage Dues</a>
+        <a class="btn btn-sm" href="account_manager.php?search=14174">Edit</a>
+        <form method="post" class="inline" onsubmit="return confirm('Delete MARLO C. ARTIFICIO? This cannot be undone.');">
+          <input type="hidden" name="user_id" value="35">
+          <input type="hidden" name="action" value="delete_member">
+          <button class="btn btn-sm btn-danger" type="submit">Delete</button>
+        </form>
+      </td>
+    </tr>
+        <tr data-status="fully-paid" data-search="mary claire r. anyayahan-uy 26525">
+      <td>
+        MARY CLAIRE R. ANYAYAHAN-UY                      </td>
+      <td>26525</td>
+      <td>2 paid / 2 total</td>
+      <td>₱3,000.00</td>
+      <td style="color:#1e7e34;font-weight:600;">₱3,000.00</td>
+      <td style="color:#1e7e34;font-weight:600;">
+        ₱0.00      </td>
+      <td>
+                  <span class="badge badge-paid">Fully Paid</span>
+              </td>
+      <td>
+        <a class="btn btn-sm" href="members.php?member_id=28#member-dues-panel">Manage Dues</a>
+        <a class="btn btn-sm" href="account_manager.php?search=26525">Edit</a>
+        <form method="post" class="inline" onsubmit="return confirm('Delete MARY CLAIRE R. ANYAYAHAN-UY? This cannot be undone.');">
+          <input type="hidden" name="user_id" value="28">
+          <input type="hidden" name="action" value="delete_member">
+          <button class="btn btn-sm btn-danger" type="submit">Delete</button>
+        </form>
+      </td>
+    </tr>
+        <tr data-status="has-dues" data-search="mary clarence batas 61392">
+      <td>
+        MARY CLARENCE BATAS                      </td>
+      <td>61392</td>
+      <td>0 paid / 2 total</td>
+      <td>₱3,000.00</td>
+      <td style="color:#1e7e34;font-weight:600;">₱0.00</td>
+      <td style="color:#b3261e;font-weight:600;">
+        ₱3,000.00      </td>
+      <td>
+                  <span class="badge badge-unpaid">Has Dues</span>
+              </td>
+      <td>
+        <a class="btn btn-sm" href="members.php?member_id=60#member-dues-panel">Manage Dues</a>
+        <a class="btn btn-sm" href="account_manager.php?search=61392">Edit</a>
+        <form method="post" class="inline" onsubmit="return confirm('Delete MARY CLARENCE BATAS? This cannot be undone.');">
+          <input type="hidden" name="user_id" value="60">
+          <input type="hidden" name="action" value="delete_member">
+          <button class="btn btn-sm btn-danger" type="submit">Delete</button>
+        </form>
+      </td>
+    </tr>
+        <tr data-status="has-dues" data-search="may javier-ilagan 23179">
+      <td>
+        MAY JAVIER-ILAGAN                      </td>
+      <td>23179</td>
+      <td>0 paid / 3 total</td>
+      <td>₱4,000.00</td>
+      <td style="color:#1e7e34;font-weight:600;">₱0.00</td>
+      <td style="color:#b3261e;font-weight:600;">
+        ₱4,000.00      </td>
+      <td>
+                  <span class="badge badge-unpaid">Has Dues</span>
+              </td>
+      <td>
+        <a class="btn btn-sm" href="members.php?member_id=31#member-dues-panel">Manage Dues</a>
+        <a class="btn btn-sm" href="account_manager.php?search=23179">Edit</a>
+        <form method="post" class="inline" onsubmit="return confirm('Delete MAY JAVIER-ILAGAN? This cannot be undone.');">
+          <input type="hidden" name="user_id" value="31">
+          <input type="hidden" name="action" value="delete_member">
+          <button class="btn btn-sm btn-danger" type="submit">Delete</button>
+        </form>
+      </td>
+    </tr>
+        <tr data-status="has-dues" data-search="mc arem c. paghunasan 58533">
+      <td>
+        MC AREM C. PAGHUNASAN                      </td>
+      <td>58533</td>
+      <td>0 paid / 2 total</td>
+      <td>₱3,000.00</td>
+      <td style="color:#1e7e34;font-weight:600;">₱0.00</td>
+      <td style="color:#b3261e;font-weight:600;">
+        ₱3,000.00      </td>
+      <td>
+                  <span class="badge badge-unpaid">Has Dues</span>
+              </td>
+      <td>
+        <a class="btn btn-sm" href="members.php?member_id=68#member-dues-panel">Manage Dues</a>
+        <a class="btn btn-sm" href="account_manager.php?search=58533">Edit</a>
+        <form method="post" class="inline" onsubmit="return confirm('Delete MC AREM C. PAGHUNASAN? This cannot be undone.');">
+          <input type="hidden" name="user_id" value="68">
+          <input type="hidden" name="action" value="delete_member">
+          <button class="btn btn-sm btn-danger" type="submit">Delete</button>
+        </form>
+      </td>
+    </tr>
+        <tr data-status="has-dues" data-search="mc niel a. ceniza 22240">
+      <td>
+        MC NIEL A. CENIZA                      </td>
+      <td>22240</td>
+      <td>0 paid / 2 total</td>
+      <td>₱3,000.00</td>
+      <td style="color:#1e7e34;font-weight:600;">₱0.00</td>
+      <td style="color:#b3261e;font-weight:600;">
+        ₱3,000.00      </td>
+      <td>
+                  <span class="badge badge-unpaid">Has Dues</span>
+              </td>
+      <td>
+        <a class="btn btn-sm" href="members.php?member_id=64#member-dues-panel">Manage Dues</a>
+        <a class="btn btn-sm" href="account_manager.php?search=22240">Edit</a>
+        <form method="post" class="inline" onsubmit="return confirm('Delete MC NIEL A. CENIZA? This cannot be undone.');">
+          <input type="hidden" name="user_id" value="64">
+          <input type="hidden" name="action" value="delete_member">
+          <button class="btn btn-sm btn-danger" type="submit">Delete</button>
+        </form>
+      </td>
+    </tr>
+        <tr data-status="has-dues" data-search="michelle jamilla 62470">
+      <td>
+        MICHELLE JAMILLA                      </td>
+      <td>62470</td>
+      <td>0 paid / 2 total</td>
+      <td>₱3,000.00</td>
+      <td style="color:#1e7e34;font-weight:600;">₱0.00</td>
+      <td style="color:#b3261e;font-weight:600;">
+        ₱3,000.00      </td>
+      <td>
+                  <span class="badge badge-unpaid">Has Dues</span>
+              </td>
+      <td>
+        <a class="btn btn-sm" href="members.php?member_id=63#member-dues-panel">Manage Dues</a>
+        <a class="btn btn-sm" href="account_manager.php?search=62470">Edit</a>
+        <form method="post" class="inline" onsubmit="return confirm('Delete MICHELLE JAMILLA? This cannot be undone.');">
+          <input type="hidden" name="user_id" value="63">
+          <input type="hidden" name="action" value="delete_member">
+          <button class="btn btn-sm btn-danger" type="submit">Delete</button>
+        </form>
+      </td>
+    </tr>
+        <tr data-status="has-dues" data-search="nathaniel l. evangelista 35412">
+      <td>
+        NATHANIEL L. EVANGELISTA                      </td>
+      <td>35412</td>
+      <td>0 paid / 2 total</td>
+      <td>₱3,000.00</td>
+      <td style="color:#1e7e34;font-weight:600;">₱0.00</td>
+      <td style="color:#b3261e;font-weight:600;">
+        ₱3,000.00      </td>
+      <td>
+                  <span class="badge badge-unpaid">Has Dues</span>
+              </td>
+      <td>
+        <a class="btn btn-sm" href="members.php?member_id=33#member-dues-panel">Manage Dues</a>
+        <a class="btn btn-sm" href="account_manager.php?search=35412">Edit</a>
+        <form method="post" class="inline" onsubmit="return confirm('Delete NATHANIEL L. EVANGELISTA? This cannot be undone.');">
+          <input type="hidden" name="user_id" value="33">
+          <input type="hidden" name="action" value="delete_member">
+          <button class="btn btn-sm btn-danger" type="submit">Delete</button>
+        </form>
+      </td>
+    </tr>
+        <tr data-status="has-dues" data-search="neil a. abao 29663">
+      <td>
+        NEIL A. ABAO                      </td>
+      <td>29663</td>
+      <td>0 paid / 2 total</td>
+      <td>₱3,000.00</td>
+      <td style="color:#1e7e34;font-weight:600;">₱0.00</td>
+      <td style="color:#b3261e;font-weight:600;">
+        ₱3,000.00      </td>
+      <td>
+                  <span class="badge badge-unpaid">Has Dues</span>
+              </td>
+      <td>
+        <a class="btn btn-sm" href="members.php?member_id=50#member-dues-panel">Manage Dues</a>
+        <a class="btn btn-sm" href="account_manager.php?search=29663">Edit</a>
+        <form method="post" class="inline" onsubmit="return confirm('Delete NEIL A. ABAO? This cannot be undone.');">
+          <input type="hidden" name="user_id" value="50">
+          <input type="hidden" name="action" value="delete_member">
+          <button class="btn btn-sm btn-danger" type="submit">Delete</button>
+        </form>
+      </td>
+    </tr>
+        <tr data-status="has-dues" data-search="niÑo mike angelo m. sanchez 45173">
+      <td>
+        NIÑO MIKE ANGELO M. SANCHEZ                      </td>
+      <td>45173</td>
+      <td>0 paid / 2 total</td>
+      <td>₱3,000.00</td>
+      <td style="color:#1e7e34;font-weight:600;">₱0.00</td>
+      <td style="color:#b3261e;font-weight:600;">
+        ₱3,000.00      </td>
+      <td>
+                  <span class="badge badge-unpaid">Has Dues</span>
+              </td>
+      <td>
+        <a class="btn btn-sm" href="members.php?member_id=53#member-dues-panel">Manage Dues</a>
+        <a class="btn btn-sm" href="account_manager.php?search=45173">Edit</a>
+        <form method="post" class="inline" onsubmit="return confirm('Delete NIÑO MIKE ANGELO M. SANCHEZ? This cannot be undone.');">
+          <input type="hidden" name="user_id" value="53">
+          <input type="hidden" name="action" value="delete_member">
+          <button class="btn btn-sm btn-danger" type="submit">Delete</button>
+        </form>
+      </td>
+    </tr>
+        <tr data-status="has-dues" data-search="nole hular 32005">
+      <td>
+        NOLE HULAR                      </td>
+      <td>32005</td>
+      <td>0 paid / 3 total</td>
+      <td>₱5,000.00</td>
+      <td style="color:#1e7e34;font-weight:600;">₱0.00</td>
+      <td style="color:#b3261e;font-weight:600;">
+        ₱5,000.00      </td>
+      <td>
+                  <span class="badge badge-unpaid">Has Dues</span>
+              </td>
+      <td>
+        <a class="btn btn-sm" href="members.php?member_id=74#member-dues-panel">Manage Dues</a>
+        <a class="btn btn-sm" href="account_manager.php?search=32005">Edit</a>
+        <form method="post" class="inline" onsubmit="return confirm('Delete NOLE HULAR? This cannot be undone.');">
+          <input type="hidden" name="user_id" value="74">
+          <input type="hidden" name="action" value="delete_member">
+          <button class="btn btn-sm btn-danger" type="submit">Delete</button>
+        </form>
+      </td>
+    </tr>
+        <tr data-status="has-dues" data-search="paola queenie marie a. garcia 56324">
+      <td>
+        PAOLA QUEENIE MARIE A. GARCIA                      </td>
+      <td>56324</td>
+      <td>0 paid / 2 total</td>
+      <td>₱3,000.00</td>
+      <td style="color:#1e7e34;font-weight:600;">₱0.00</td>
+      <td style="color:#b3261e;font-weight:600;">
+        ₱3,000.00      </td>
+      <td>
+                  <span class="badge badge-unpaid">Has Dues</span>
+              </td>
+      <td>
+        <a class="btn btn-sm" href="members.php?member_id=25#member-dues-panel">Manage Dues</a>
+        <a class="btn btn-sm" href="account_manager.php?search=56324">Edit</a>
+        <form method="post" class="inline" onsubmit="return confirm('Delete PAOLA QUEENIE MARIE A. GARCIA? This cannot be undone.');">
+          <input type="hidden" name="user_id" value="25">
+          <input type="hidden" name="action" value="delete_member">
+          <button class="btn btn-sm btn-danger" type="submit">Delete</button>
+        </form>
+      </td>
+    </tr>
+        <tr data-status="has-dues" data-search="princess angelica m. alcayde 58389">
+      <td>
+        PRINCESS ANGELICA M. ALCAYDE                      </td>
+      <td>58389</td>
+      <td>0 paid / 3 total</td>
+      <td>₱4,000.00</td>
+      <td style="color:#1e7e34;font-weight:600;">₱0.00</td>
+      <td style="color:#b3261e;font-weight:600;">
+        ₱4,000.00      </td>
+      <td>
+                  <span class="badge badge-unpaid">Has Dues</span>
+              </td>
+      <td>
+        <a class="btn btn-sm" href="members.php?member_id=15#member-dues-panel">Manage Dues</a>
+        <a class="btn btn-sm" href="account_manager.php?search=58389">Edit</a>
+        <form method="post" class="inline" onsubmit="return confirm('Delete PRINCESS ANGELICA M. ALCAYDE? This cannot be undone.');">
+          <input type="hidden" name="user_id" value="15">
+          <input type="hidden" name="action" value="delete_member">
+          <button class="btn btn-sm btn-danger" type="submit">Delete</button>
+        </form>
+      </td>
+    </tr>
+        <tr data-status="has-dues" data-search="relaine reyes layesa 54786">
+      <td>
+        RELAINE REYES LAYESA                      </td>
+      <td>54786</td>
+      <td>0 paid / 2 total</td>
+      <td>₱3,000.00</td>
+      <td style="color:#1e7e34;font-weight:600;">₱0.00</td>
+      <td style="color:#b3261e;font-weight:600;">
+        ₱3,000.00      </td>
+      <td>
+                  <span class="badge badge-unpaid">Has Dues</span>
+              </td>
+      <td>
+        <a class="btn btn-sm" href="members.php?member_id=55#member-dues-panel">Manage Dues</a>
+        <a class="btn btn-sm" href="account_manager.php?search=54786">Edit</a>
+        <form method="post" class="inline" onsubmit="return confirm('Delete RELAINE REYES LAYESA? This cannot be undone.');">
+          <input type="hidden" name="user_id" value="55">
+          <input type="hidden" name="action" value="delete_member">
+          <button class="btn btn-sm btn-danger" type="submit">Delete</button>
+        </form>
+      </td>
+    </tr>
+        <tr data-status="has-dues" data-search="rhancel kynn s. abella 59720">
+      <td>
+        RHANCEL KYNN S. ABELLA                      </td>
+      <td>59720</td>
+      <td>0 paid / 4 total</td>
+      <td>₱7,100.00</td>
+      <td style="color:#1e7e34;font-weight:600;">₱0.00</td>
+      <td style="color:#b3261e;font-weight:600;">
+        ₱7,100.00      </td>
+      <td>
+                  <span class="badge badge-unpaid">Has Dues</span>
+              </td>
+      <td>
+        <a class="btn btn-sm" href="members.php?member_id=32#member-dues-panel">Manage Dues</a>
+        <a class="btn btn-sm" href="account_manager.php?search=59720">Edit</a>
+        <form method="post" class="inline" onsubmit="return confirm('Delete RHANCEL KYNN S. ABELLA? This cannot be undone.');">
+          <input type="hidden" name="user_id" value="32">
+          <input type="hidden" name="action" value="delete_member">
+          <button class="btn btn-sm btn-danger" type="submit">Delete</button>
+        </form>
+      </td>
+    </tr>
+        <tr data-status="has-dues" data-search="romeo a. villanueva 8244">
+      <td>
+        ROMEO A. VILLANUEVA                      </td>
+      <td>8244</td>
+      <td>0 paid / 2 total</td>
+      <td>₱3,000.00</td>
+      <td style="color:#1e7e34;font-weight:600;">₱0.00</td>
+      <td style="color:#b3261e;font-weight:600;">
+        ₱3,000.00      </td>
+      <td>
+                  <span class="badge badge-unpaid">Has Dues</span>
+              </td>
+      <td>
+        <a class="btn btn-sm" href="members.php?member_id=57#member-dues-panel">Manage Dues</a>
+        <a class="btn btn-sm" href="account_manager.php?search=8244">Edit</a>
+        <form method="post" class="inline" onsubmit="return confirm('Delete ROMEO A. VILLANUEVA? This cannot be undone.');">
+          <input type="hidden" name="user_id" value="57">
+          <input type="hidden" name="action" value="delete_member">
+          <button class="btn btn-sm btn-danger" type="submit">Delete</button>
+        </form>
+      </td>
+    </tr>
+        <tr data-status="has-dues" data-search="ryan c. macalinao 48074">
+      <td>
+        RYAN C. MACALINAO                      </td>
+      <td>48074</td>
+      <td>0 paid / 2 total</td>
+      <td>₱3,000.00</td>
+      <td style="color:#1e7e34;font-weight:600;">₱0.00</td>
+      <td style="color:#b3261e;font-weight:600;">
+        ₱3,000.00      </td>
+      <td>
+                  <span class="badge badge-unpaid">Has Dues</span>
+              </td>
+      <td>
+        <a class="btn btn-sm" href="members.php?member_id=36#member-dues-panel">Manage Dues</a>
+        <a class="btn btn-sm" href="account_manager.php?search=48074">Edit</a>
+        <form method="post" class="inline" onsubmit="return confirm('Delete RYAN C. MACALINAO? This cannot be undone.');">
+          <input type="hidden" name="user_id" value="36">
+          <input type="hidden" name="action" value="delete_member">
+          <button class="btn btn-sm btn-danger" type="submit">Delete</button>
+        </form>
+      </td>
+    </tr>
+        <tr data-status="has-dues" data-search="vincent rennoel a. villaruel 19141">
+      <td>
+        VINCENT RENNOEL A. VILLARUEL                      </td>
+      <td>19141</td>
+      <td>0 paid / 6 total</td>
+      <td>₱11,000.00</td>
+      <td style="color:#1e7e34;font-weight:600;">₱0.00</td>
+      <td style="color:#b3261e;font-weight:600;">
+        ₱11,000.00      </td>
+      <td>
+                  <span class="badge badge-unpaid">Has Dues</span>
+              </td>
+      <td>
+        <a class="btn btn-sm" href="members.php?member_id=22#member-dues-panel">Manage Dues</a>
+        <a class="btn btn-sm" href="account_manager.php?search=19141">Edit</a>
+        <form method="post" class="inline" onsubmit="return confirm('Delete VINCENT RENNOEL A. VILLARUEL? This cannot be undone.');">
+          <input type="hidden" name="user_id" value="22">
+          <input type="hidden" name="action" value="delete_member">
+          <button class="btn btn-sm btn-danger" type="submit">Delete</button>
+        </form>
+      </td>
+    </tr>
+        <tr data-status="has-dues" data-search="vivian a. yongkol 39953">
+      <td>
+        VIVIAN A. YONGKOL                      </td>
+      <td>39953</td>
+      <td>0 paid / 2 total</td>
+      <td>₱3,000.00</td>
+      <td style="color:#1e7e34;font-weight:600;">₱0.00</td>
+      <td style="color:#b3261e;font-weight:600;">
+        ₱3,000.00      </td>
+      <td>
+                  <span class="badge badge-unpaid">Has Dues</span>
+              </td>
+      <td>
+        <a class="btn btn-sm" href="members.php?member_id=59#member-dues-panel">Manage Dues</a>
+        <a class="btn btn-sm" href="account_manager.php?search=39953">Edit</a>
+        <form method="post" class="inline" onsubmit="return confirm('Delete VIVIAN A. YONGKOL? This cannot be undone.');">
+          <input type="hidden" name="user_id" value="59">
+          <input type="hidden" name="action" value="delete_member">
+          <button class="btn btn-sm btn-danger" type="submit">Delete</button>
+        </form>
+      </td>
+    </tr>
+        <tr data-status="has-dues" data-search="wilfredo o. apacible 13622">
+      <td>
+        WILFREDO O. APACIBLE                      </td>
+      <td>13622</td>
+      <td>0 paid / 2 total</td>
+      <td>₱3,000.00</td>
+      <td style="color:#1e7e34;font-weight:600;">₱0.00</td>
+      <td style="color:#b3261e;font-weight:600;">
+        ₱3,000.00      </td>
+      <td>
+                  <span class="badge badge-unpaid">Has Dues</span>
+              </td>
+      <td>
+        <a class="btn btn-sm" href="members.php?member_id=54#member-dues-panel">Manage Dues</a>
+        <a class="btn btn-sm" href="account_manager.php?search=13622">Edit</a>
+        <form method="post" class="inline" onsubmit="return confirm('Delete WILFREDO O. APACIBLE? This cannot be undone.');">
+          <input type="hidden" name="user_id" value="54">
+          <input type="hidden" name="action" value="delete_member">
+          <button class="btn btn-sm btn-danger" type="submit">Delete</button>
+        </form>
+      </td>
+    </tr>
+        </tbody>
+  </table>
+  </div>
+</div>
+
+<div class="card" id="member-dues-panel" style="margin-top:20px;">
+  <h2>Assigned Dues for PRINCESS ANGELICA M. ALCAYDE</h2>
+  <p class="muted">These are the dues assigned specifically to this member. Editing or deleting here affects only this member's assignment.</p>
+
+  
+    <table>
+    <tr><th>Due</th><th>Description</th><th>Amount</th><th>Due Date</th><th>Term</th><th>Status</th><th>Actions</th></tr>
+        <tr>
+      <td>F.Y 25-26 : INDUCTION DUES</td>
+      <td>Induction of Officers and New Members Contribution</td>
+      <td>₱1,000.00</td>
+      <td>2026-07-31</td>
+      <td>F.Y 2025-2026</td>
+      <td>
+                <span class="badge badge-unpaid">Unpaid</span>
+      </td>
+      <td>
+        <a class="btn btn-sm" href="members.php?member_id=15&edit_member_due=216">Edit</a>
+        <form method="post" class="inline" onsubmit="return confirm('Remove this due from PRINCESS ANGELICA M. ALCAYDE?');">
+          <input type="hidden" name="action" value="delete_member_due">
+          <input type="hidden" name="member_due_id" value="216">
+          <input type="hidden" name="member_id" value="15">
+          <button class="btn btn-sm btn-danger" type="submit">Delete</button>
+        </form>
+      </td>
+    </tr>
+        <tr>
+      <td>F.Y 26-27 : INDUCTION DUES</td>
+      <td>Induction of Officers and New Members Contribution</td>
+      <td>₱1,000.00</td>
+      <td>2026-08-31</td>
+      <td>F.Y 2026-2027</td>
+      <td>
+                <span class="badge badge-unpaid">Unpaid</span>
+      </td>
+      <td>
+        <a class="btn btn-sm" href="members.php?member_id=15&edit_member_due=64">Edit</a>
+        <form method="post" class="inline" onsubmit="return confirm('Remove this due from PRINCESS ANGELICA M. ALCAYDE?');">
+          <input type="hidden" name="action" value="delete_member_due">
+          <input type="hidden" name="member_due_id" value="64">
+          <input type="hidden" name="member_id" value="15">
+          <button class="btn btn-sm btn-danger" type="submit">Delete</button>
+        </form>
+      </td>
+    </tr>
+        <tr>
+      <td>F.Y 26-27 : CHAPTER DUES</td>
+      <td>Annual Chapter Member Dues</td>
+      <td>₱2,000.00</td>
+      <td>2026-09-30</td>
+      <td>F.Y 2026-2027</td>
+      <td>
+                <span class="badge badge-unpaid">Unpaid</span>
+      </td>
+      <td>
+        <a class="btn btn-sm" href="members.php?member_id=15&edit_member_due=63">Edit</a>
+        <form method="post" class="inline" onsubmit="return confirm('Remove this due from PRINCESS ANGELICA M. ALCAYDE?');">
+          <input type="hidden" name="action" value="delete_member_due">
+          <input type="hidden" name="member_due_id" value="63">
+          <input type="hidden" name="member_id" value="15">
+          <button class="btn btn-sm btn-danger" type="submit">Delete</button>
+        </form>
+      </td>
+    </tr>
+      </table>
+  </div>
+<script>
+function filterTable() {
+  const search = document.getElementById('memberSearch').value.toLowerCase();
+  const status = document.getElementById('statusFilter').value;
+  const rows = document.querySelectorAll('#membersTable tbody tr');
+  let visible = 0;
+
+  rows.forEach(row => {
+    const matchSearch = !search || row.dataset.search.includes(search);
+    const matchStatus = status === 'all' || row.dataset.status === status;
+    row.style.display = (matchSearch && matchStatus) ? '' : 'none';
+    if (matchSearch && matchStatus) visible++;
+  });
+
+  // Show no-results message
+  let noResults = document.getElementById('noResults');
+  if (!noResults) {
+    noResults = document.createElement('p');
+    noResults.id = 'noResults';
+    noResults.className = 'muted';
+    noResults.textContent = 'No members match your search/filter.';
+    document.getElementById('membersTable').after(noResults);
+  }
+  noResults.style.display = visible === 0 ? 'block' : 'none';
+}
+</script>
+</div>
+<footer class="footer">
+    <div class="footer-content">
+        <div>
+            © 2026 United Architects of the Philippines – Mindoro Chapter
+        </div>
+
+        <div class="developer-credit">
+            UAP Mindoro Portal | Developed by <strong>Drew Macaraig</strong>
+        </div>
+    </div>
+</footer>
+<script>
+// Theme Management
+function initTheme() {
+  const savedTheme = localStorage.getItem('theme') || 'light';
+  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  const theme = savedTheme || (prefersDark ? 'dark' : 'light');
+  applyTheme(theme);
+}
+
+function applyTheme(theme) {
+  const html = document.getElementById('htmlElement');
+  const toggle = document.getElementById('themeToggle');
+  
+  if (theme === 'dark') {
+    html.setAttribute('data-theme', 'dark');
+    if (toggle) toggle.textContent = '☀️';
+    localStorage.setItem('theme', 'dark');
+  } else {
+    html.removeAttribute('data-theme');
+    if (toggle) toggle.textContent = '🌙';
+    localStorage.setItem('theme', 'light');
+  }
+}
+
+function toggleTheme() {
+  const html = document.getElementById('htmlElement');
+  const currentTheme = html.getAttribute('data-theme');
+  const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+  applyTheme(newTheme);
+}
+
+// Initialize theme on page load
+initTheme();
+
+// Toggle mobile menu
+function toggleMobileMenu() {
+  const menu = document.getElementById('mobileNavLinks');
+  if (menu) {
+    menu.classList.toggle('open');
+  }
+}
+
+document.addEventListener('click', function (event) {
+  const menu = document.getElementById('mobileNavLinks');
+  const toggle = document.querySelector('.menu-toggle');
+  if (!menu || !toggle) return;
+  const clickedInside = menu.contains(event.target) || toggle.contains(event.target);
+  if (window.innerWidth <= 900 && !clickedInside) {
+    menu.classList.remove('open');
+  }
+});
+
+window.addEventListener('resize', function () {
+  const menu = document.getElementById('mobileNavLinks');
+  if (menu && window.innerWidth > 900) {
+    menu.classList.remove('open');
+  }
+});
+</script>
+</body>
+</html>
