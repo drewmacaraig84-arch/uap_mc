@@ -1,5 +1,7 @@
 # Local environment files - never commit real credentials
 includes/config.php
+.env
+!.env.example
 
 # Uploaded files - these are real user data, not code
 uploads/*

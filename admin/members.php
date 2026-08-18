@@ -191,8 +191,18 @@ include __DIR__ . '/../includes/header.php';
     <tr data-status="<?php echo $row_status; ?>" data-search="<?php echo htmlspecialchars($search_text); ?>">
       <td>
         <?php echo htmlspecialchars($m['name']); ?>
+        <?php
+        $isGoodMember = (
+            $m['total_dues'] == 0 || (
+                $m['paid_count'] == $m['total_dues'] &&
+                $m['remaining_balance'] <= 0 &&
+                $pdo->query("SELECT COUNT(*) FROM member_dues md LEFT JOIN dues d ON md.due_id = d.id WHERE md.user_id = " . (int)$m['id'] . " AND COALESCE(md.custom_due_date, d.due_date) < CURDATE() AND md.total_paid < COALESCE(md.custom_amount, d.amount)")->fetchColumn() == 0
+            )
+        );
+        ?>
         <?php if ($m['status'] === 'pending'): ?> <span class="badge badge-pending">Awaiting Approval</span><?php endif; ?>
         <?php if ($m['status'] === 'rejected'): ?> <span class="badge badge-rejected">Rejected</span><?php endif; ?>
+        <?php if ($isGoodMember): ?> <span class="badge badge-paid">Good Member</span><?php endif; ?>
       </td>
       <td><?php echo htmlspecialchars($m['id_number']); ?></td>
       <td><?php echo $m['paid_count']; ?> paid / <?php echo $m['total_dues']; ?> total</td>

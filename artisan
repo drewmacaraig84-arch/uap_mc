@@ -1,0 +1,43 @@
+#!/usr/bin/env php
+<?php
+
+$root = __DIR__;
+$args = array_slice($argv, 1);
+$command = implode(' ', $args);
+
+switch (true) {
+    case in_array('migrate', $args, true) && in_array('--seed', $args, true):
+    case in_array('migrate:seed', $args, true):
+    case in_array('migrate', $args, true) && in_array('--seed', $args, true) && in_array('--force', $args, true):
+        require_once $root . '/database/migrate.php';
+        require_once $root . '/database/seed.php';
+        break;
+
+    case $command === 'migrate' || $command === 'migrate ':
+    case in_array('migrate', $args, true):
+        require_once $root . '/database/migrate.php';
+        break;
+
+    case $command === 'seed' || $command === 'seed ':
+    case in_array('seed', $args, true):
+        require_once $root . '/database/seed.php';
+        break;
+
+    case $command === 'setup' || $command === 'setup ':
+    case in_array('setup', $args, true):
+        require_once $root . '/database/setup.php';
+        break;
+
+    case $command === 'help' || $command === '' || $command === null:
+        echo "Available commands:\n";
+        echo "  php artisan migrate\n";
+        echo "  php artisan seed\n";
+        echo "  php artisan migrate --seed\n";
+        echo "  php artisan setup\n";
+        break;
+
+    default:
+        echo "Command not found: {$command}\n";
+        echo "Use: php artisan help\n";
+        exit(1);
+}

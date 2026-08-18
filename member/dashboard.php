@@ -27,8 +27,25 @@ include __DIR__ . '/../includes/header.php';
     <h1>My Dues</h1>
     <p class="page-subtitle">Track your obligations, monitor balances, and submit payments in a cleaner, more organized experience.</p>
   </div>
-  <div class="hero-badge">Secure • Transparent • Easy</div>
+  <div class="hero-badge">
+    <?php
+      $isGoodMember = true;
+      foreach ($dues as $d) {
+          if ((float)$d['total_paid'] < (float)$d['amount'] || !empty($d['due_date']) && $d['due_date'] < date('Y-m-d') && (float)$d['total_paid'] < (float)$d['amount']) {
+              $isGoodMember = false;
+              break;
+          }
+      }
+      echo $isGoodMember ? 'Good Member • On Time' : 'Secure • Transparent • Easy';
+    ?>
+  </div>
 </div>
+<?php if ($isGoodMember): ?>
+  <div class="alert alert-success" style="margin-top: 12px;">
+    <strong>✅ Good Member</strong><br>
+    Your dues are up to date and you are consistently paying on time.
+  </div>
+<?php endif; ?>
 <?php
   $total_amount = 0;
   $total_paid = 0;

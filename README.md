@@ -77,28 +77,63 @@ Make sure the `uploads/` folder is writable (chmod 755 or 777 depending on host)
 ## File structure
 
 ```
-dues-system/
-├── index.php              (redirects based on login state)
-├── login.php
-├── register.php
-├── logout.php
-├── receipt.php             (printable receipt, shared by member/admin)
-├── schema.sql               (run this first)
-├── includes/
-│   ├── config.php          (DB credentials — edit this)
-│   ├── auth.php            (login guards)
-│   ├── header.php
-│   └── footer.php
-├── member/
+UAP-MC/
+├── index.php              (central router — redirects based on login state)
+│
+├── auth/                  (Authentication pages — login, register, logout)
+│   ├── login.php
+│   ├── register.php
+│   └── logout.php
+│
+├── public/                (Public website pages)
+│   └── homepage.php       (public homepage for non-logged-in users)
+│
+├── member/                (Member dashboard and pages)
 │   ├── dashboard.php
 │   ├── pay.php
 │   └── history.php
-├── admin/
-│   ├── dashboard.php       (pending payments queue)
-│   ├── verify.php          (approve/reject handler)
+│
+├── admin/                 (Admin dashboard and management)
+│   ├── dashboard.php
+│   ├── verify.php
+│   ├── approvals.php
 │   ├── members.php
-│   ├── dues.php            (create new dues)
+│   ├── dues.php
 │   ├── reports.php
-│   └── export_csv.php
-└── uploads/                 (payment proof images — must be writable)
+│   ├── export_csv.php
+│   ├── settings.php
+│   ├── qr_codes.php
+│   ├── account_manager.php
+│   └── change_password.php
+│
+├── includes/              (Shared resources)
+│   ├── config.php         (DB credentials — edit this)
+│   ├── auth.php           (login guards & auth functions)
+│   ├── header.php         (header template)
+│   ├── footer.php         (footer template)
+│   └── theme.css
+│
+├── database/              (Database setup & migrations)
+│   ├── migrate.php
+│   ├── seed.php
+│   ├── setup.php
+│   ├── migrations/
+│   │   └── 001_create_initial_schema.sql
+│   └── seeds/
+│       └── 001_admin_seed.sql
+│
+├── receipt.php            (printable receipt — used by member/admin)
+├── schema.sql             (main database schema)
+├── stress-test.php        (testing utility)
+├── cookies.txt            (configuration/cache)
+│
+├── uploads/               (payment proof images — must be writable)
+├── images/                (static images)
+├── query/                 (helper scripts)
+│
+└── README.md              (this file)
 ```
+
+### Backward Compatibility
+
+The old root-level files (`login.php`, `register.php`, `logout.php`, `public_homepage.php`) are preserved as redirects to the new locations. This ensures any external links or bookmarks continue to work.
