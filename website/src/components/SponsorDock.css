@@ -1,94 +1,12 @@
 /* ============================================================
-   PERSISTENT SPONSORS & PARTNERS DOCK
-   Desktop: Sleek Right Rail (1/8 Width)
-   Mobile: Auto-Sliding Marquee Ticker with Expand/Collapse
+   SPONSORS & PARTNERS DOCK
+   Desktop (> 900px): Permanent, Non-Collapsible Right Rail (1/8 Width)
+   Mobile (<= 900px): Auto-Sliding Marquee Ticker with Expand/Collapse
    ============================================================ */
 
-/* --- COLLAPSED FLOATING PILL BUTTON --- */
-.sponsor-collapsed-pill {
-  position: fixed;
-  right: 16px;
-  bottom: 16px;
-  z-index: 860;
-  background: rgba(6, 10, 20, 0.94);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid var(--c-border-gold);
-  border-radius: var(--r-full);
-  padding: 8px 14px;
-  box-shadow: 0 6px 25px rgba(0, 0, 0, 0.6), 0 0 16px rgba(245, 158, 11, 0.25);
-  cursor: pointer;
-  transition: all var(--t-med) var(--ease);
-  color: var(--c-text);
-  animation: sponsor-pill-float 3s ease-in-out infinite;
-}
-
-.sponsor-collapsed-pill:hover {
-  transform: translateY(-2px) scale(1.03);
-  border-color: var(--c-gold);
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.7), 0 0 22px rgba(245, 158, 11, 0.4);
-}
-
-.sponsor-pill-inner {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.sponsor-pill-icon-wrap {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--c-gold);
-}
-
-.sponsor-pill-star {
-  color: var(--c-gold);
-  animation: spin-slow 12s linear infinite;
-}
-
-.sponsor-pill-text {
-  font-size: 0.75rem;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  color: var(--c-gold);
-  text-transform: uppercase;
-  white-space: nowrap;
-}
-
-.sponsor-pill-badge {
-  background: var(--c-gold);
-  color: #000;
-  font-size: 0.65rem;
-  font-weight: 800;
-  padding: 1px 6px;
-  border-radius: 999px;
-  line-height: 1.2;
-}
-
-.sponsor-pill-arrow {
-  color: var(--c-text-2);
-  display: flex;
-  align-items: center;
-  transition: transform var(--t-fast);
-}
-
-.sponsor-collapsed-pill:hover .sponsor-pill-arrow {
-  transform: translateY(-2px);
-  color: var(--c-gold);
-}
-
-@keyframes sponsor-pill-float {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-4px); }
-}
-
-@keyframes spin-slow {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
-}
-
-/* --- EXPANDED SPONSOR RAIL (DESKTOP DEFAULT) --- */
+/* ============================================================
+   1. DESKTOP PERMANENT RIGHT RAIL (DEFAULT)
+   ============================================================ */
 .sponsor-rail {
   position: fixed;
   right: 0;
@@ -107,13 +25,7 @@
   border-radius: 14px 0 0 14px;
   box-shadow: -6px 0 25px rgba(0, 0, 0, 0.55), 0 0 18px rgba(245, 158, 11, 0.12);
   overflow: hidden;
-  transition: bottom 0.15s ease-out, transform var(--t-med) var(--ease), opacity var(--t-med);
-}
-
-.sponsor-rail.collapsed {
-  transform: translateX(105%);
-  opacity: 0;
-  pointer-events: none;
+  transition: bottom 0.15s ease-out;
 }
 
 /* Header */
@@ -169,46 +81,18 @@
   gap: 4px;
 }
 
+/* On desktop: toggle button & view-all link are hidden, rail is permanent */
+.sponsor-toggle-btn {
+  display: none;
+}
+
 .sponsor-view-all-link {
   display: none;
-  font-size: 0.68rem;
-  font-weight: 700;
-  color: var(--c-text-2);
-  padding: 2px 8px;
-  border-radius: var(--r-sm);
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid var(--c-border);
-  transition: all var(--t-fast);
 }
 
-.sponsor-view-all-link:hover {
-  color: var(--c-gold);
-  border-color: var(--c-border-gold);
+.sponsor-collapsed-pill {
+  display: none;
 }
-
-.sponsor-toggle-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 20px;
-  height: 20px;
-  border-radius: 4px;
-  color: var(--c-text-2);
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid transparent;
-  transition: all var(--t-fast);
-  cursor: pointer;
-  padding: 0;
-}
-
-.sponsor-toggle-btn:hover {
-  color: var(--c-gold);
-  background: rgba(245, 158, 11, 0.15);
-  border-color: var(--c-border-gold);
-}
-
-.desktop-toggle-icon { display: flex; }
-.mobile-toggle-icon  { display: none; }
 
 /* Empty Link in Rail */
 .sponsor-rail-empty-link {
@@ -342,17 +226,16 @@
   color: var(--c-gold);
 }
 
-.desktop-only { display: flex; }
-.mobile-only  { display: none; }
+.desktop-only { display: flex !important; }
+.mobile-only  { display: none !important; }
+
 
 /* ============================================================
-   MOBILE RESPONSIVE: AUTO-SLIDING MARQUEE TICKER & COLLAPSIBLE
+   2. MOBILE VIEW (<= 900px): AUTO-SLIDING TICKER & COLLAPSIBLE
    ============================================================ */
 @media (max-width: 900px) {
   .desktop-only { display: none !important; }
   .mobile-only  { display: flex !important; }
-  .desktop-toggle-icon { display: none; }
-  .mobile-toggle-icon  { display: flex; }
 
   /* Expanded Floating Bottom Dock */
   .sponsor-rail {
@@ -369,12 +252,14 @@
     box-shadow: 0 10px 35px rgba(0, 0, 0, 0.75), 0 0 20px rgba(245, 158, 11, 0.15);
     background: rgba(6, 10, 20, 0.95);
     z-index: 850;
+    transition: transform var(--t-med) var(--ease), opacity var(--t-med);
   }
 
-  .sponsor-rail.collapsed {
-    transform: translateX(-50%) translateY(120%);
-    opacity: 0;
-    pointer-events: none;
+  /* When collapsed on mobile */
+  .sponsor-rail.mobile-collapsed {
+    transform: translateX(-50%) translateY(130%) !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
   }
 
   .sponsor-rail-header {
@@ -388,12 +273,41 @@
   }
 
   .sponsor-view-all-link {
-    display: inline-block;
+    display: inline-block !important;
+    font-size: 0.68rem;
+    font-weight: 700;
+    color: var(--c-text-2);
+    padding: 2px 8px;
+    border-radius: var(--r-sm);
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--c-border);
+    transition: all var(--t-fast);
+  }
+
+  .sponsor-view-all-link:hover {
+    color: var(--c-gold);
+    border-color: var(--c-border-gold);
   }
 
   .sponsor-toggle-btn {
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
     width: 24px;
     height: 24px;
+    border-radius: 4px;
+    color: var(--c-text-2);
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid transparent;
+    transition: all var(--t-fast);
+    cursor: pointer;
+    padding: 0;
+  }
+
+  .sponsor-toggle-btn:hover {
+    color: var(--c-gold);
+    background: rgba(245, 158, 11, 0.15);
+    border-color: var(--c-border-gold);
   }
 
   /* Auto-slide Ticker Container */
@@ -513,8 +427,71 @@
 
   /* Collapsed Floating Pill on Mobile */
   .sponsor-collapsed-pill {
+    display: flex !important;
+    position: fixed;
     right: 14px;
     bottom: 14px;
+    z-index: 860;
+    background: rgba(6, 10, 20, 0.94);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid var(--c-border-gold);
+    border-radius: var(--r-full);
     padding: 8px 14px;
+    box-shadow: 0 6px 25px rgba(0, 0, 0, 0.6), 0 0 16px rgba(245, 158, 11, 0.25);
+    cursor: pointer;
+    transition: all var(--t-med) var(--ease);
+    color: var(--c-text);
+    animation: sponsor-pill-float 3s ease-in-out infinite;
+  }
+
+  .sponsor-collapsed-pill:hover {
+    transform: translateY(-2px) scale(1.03);
+    border-color: var(--c-gold);
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.7), 0 0 22px rgba(245, 158, 11, 0.4);
+  }
+
+  .sponsor-pill-inner {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .sponsor-pill-icon-wrap {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--c-gold);
+  }
+
+  .sponsor-pill-star {
+    color: var(--c-gold);
+    animation: spin-slow 12s linear infinite;
+  }
+
+  .sponsor-pill-text {
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    color: var(--c-gold);
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+
+  .sponsor-pill-badge {
+    background: var(--c-gold);
+    color: #000;
+    font-size: 0.65rem;
+    font-weight: 800;
+    padding: 1px 6px;
+    border-radius: 999px;
+    line-height: 1.2;
+  }
+
+  .sponsor-pill-arrow {
+    color: var(--c-text-2);
+    display: flex;
+    align-items: center;
+    transition: transform var(--t-fast);
   }
 }

@@ -49,15 +49,14 @@ export default function SponsorDock() {
 
   return (
     <>
-      {/* COLLAPSED FLOATING TRIGGER PILL (Mobile & Desktop) */}
+      {/* COLLAPSED FLOATING TRIGGER PILL (Mobile Only) */}
       {isCollapsed && (
         <button
           type="button"
-          className="sponsor-collapsed-pill reveal-pop"
+          className="sponsor-collapsed-pill mobile-only reveal-pop"
           onClick={() => setIsCollapsed(false)}
           aria-label="Expand Sponsors & Partners"
           title="Show Sponsors & Partners"
-          style={{ bottom: `${bottomOffset}px` }}
         >
           <div className="sponsor-pill-inner">
             <span className="sponsor-pill-icon-wrap">
@@ -76,7 +75,7 @@ export default function SponsorDock() {
 
       {/* EXPANDED SPONSOR DOCK / RAIL */}
       <aside
-        className={`sponsor-rail${isCollapsed ? ' collapsed' : ''}`}
+        className={`sponsor-rail${isCollapsed ? ' mobile-collapsed' : ''}`}
         aria-label="Chapter Sponsors & Partners"
         style={{ bottom: `${bottomOffset}px` }}
       >
@@ -91,18 +90,18 @@ export default function SponsorDock() {
           </Link>
 
           <div className="sponsor-rail-actions">
-            <Link to="/sponsors" className="sponsor-view-all-link">
+            <Link to="/sponsors" className="sponsor-view-all-link mobile-only">
               View All
             </Link>
+            {/* Collapse toggle button strictly for mobile view */}
             <button
               type="button"
-              className="sponsor-toggle-btn"
+              className="sponsor-toggle-btn mobile-only"
               onClick={() => setIsCollapsed(true)}
               aria-label="Minimize Sponsors"
               title="Minimize"
             >
-              <span className="desktop-toggle-icon"><IconChevronRight size={14} /></span>
-              <span className="mobile-toggle-icon"><IconChevronDown size={14} /></span>
+              <IconChevronDown size={14} />
             </button>
           </div>
         </div>
