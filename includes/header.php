@@ -662,8 +662,9 @@ $page_title = $page_title ?? 'Dues System';
       padding: 14px 16px;
       align-items: flex-start;
       border-right: none;
-      border-bottom: 1px solid rgba(255,255,255,0.08);
-      background: #fff;
+      border-bottom: 1px solid var(--border-color, rgba(255,255,255,0.08));
+      background: var(--nav-bg);
+      color: var(--text-primary);
     }
     .topbar {
       position: static;
@@ -673,24 +674,53 @@ $page_title = $page_title ?? 'Dues System';
       padding: 12px 16px;
       height: auto;
       justify-content: space-between;
-      background: #fff;
-      border-bottom: 1px solid #e5e7eb;
+      gap: 12px;
+      background: var(--header-bg);
+      border-bottom: 1px solid var(--header-border);
+      color: var(--header-text);
+      backdrop-filter: blur(12px);
     }
-    .nav-brand { width: 100%; justify-content: space-between; }
-    .menu-toggle { display: inline-flex; align-items: center; justify-content: center; }
+    .topbar-search {
+      flex: 1;
+      min-width: 0;
+      max-width: 100%;
+      background: var(--field-bg);
+      border-color: var(--field-border);
+      color: var(--muted-text);
+    }
+    .topbar-search input {
+      color: var(--header-text);
+    }
+    .nav-brand { width: 100%; justify-content: space-between; border-bottom: 0; padding: 0; }
+    .menu-toggle {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--field-bg, rgba(255,255,255,0.1));
+      border: 1px solid var(--field-border, rgba(255,255,255,0.15));
+      color: #fff;
+      border-radius: 8px;
+      width: 38px;
+      height: 38px;
+      font-size: 18px;
+      cursor: pointer;
+    }
     .nav-links {
       display: none;
       width: 100%;
       flex-direction: column;
       align-items: flex-start;
       gap: 8px;
-      padding-top: 10px;
+      padding-top: 14px;
+      border-top: 1px solid rgba(255,255,255,0.08);
+      margin-top: 10px;
     }
     .nav-links.open { display: flex; }
     nav a { width: 100%; }
     .auth-card { grid-template-columns: 1fr; }
     .auth-illustration { min-height: 220px; }
   }
+
   @media (max-width: 600px) {
     .grid-2 { grid-template-columns: 1fr; }
     .container { margin-top: 20px; }
