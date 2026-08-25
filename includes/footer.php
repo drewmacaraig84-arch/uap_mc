@@ -5,7 +5,7 @@
             &copy; <?php echo date('Y'); ?> <strong>United Architects of the Philippines &bull; Mindoro Chapter</strong>
         </div>
         <div style="font-size: 12px; color: var(--text-secondary);">
-            UAP-MC Portal &bull; Designed &amp; Developed by <strong>Drew Macaraig</strong>
+            UAP-MC Portal &bull; Designed &amp; Developed by <strong>Aries King Nieto</strong> and <strong>Drew Macaraig</strong>
         </div>
     </div>
 </footer>

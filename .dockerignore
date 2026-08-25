@@ -1,0 +1,10 @@
+node_modules
+website/node_modules
+website/dist
+.git
+.gitignore
+.env
+scratch
+*.log
+.DS_Store
+Thumbs.db

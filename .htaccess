@@ -1,0 +1,26 @@
+# Apache Rewrite Rules for UAP Mindoro Chapter (PHP Portal + React SPA)
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteBase /
+
+    # Route /api/* to website/api/*
+    RewriteRule ^api/(.*)$ website/api/$1 [QSA,L]
+
+    # Serve existing files and directories directly
+    RewriteCond %{REQUEST_FILENAME} -f [OR]
+    RewriteCond %{REQUEST_FILENAME} -d
+    RewriteRule ^ - [L]
+
+    # Pass through PHP backend routes
+    RewriteCond %{REQUEST_URI} ^/(admin|member|auth|includes|uploads|public|database)/ [NC]
+    RewriteRule ^ - [L]
+
+    # Single Page Application (SPA) fallback for React routes
+    RewriteRule ^.*$ index.html [L]
+</IfModule>
+
+# Security & MIME settings
+<IfModule mod_headers.c>
+    Header set X-Content-Type-Options "nosniff"
+    Header set X-Frame-Options "SAMEORIGIN"
+</IfModule>

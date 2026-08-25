@@ -1,0 +1,211 @@
+import { lazy, Suspense } from 'react';
+import { Link } from 'react-router-dom';
+import { useApi } from '../hooks/useApi';
+import ArchitectCard from '../components/ArchitectCard';
+import NewsCard from '../components/NewsCard';
+import { IconBuilding, IconLeaf, IconHandshake } from '../components/Icons';
+import './Home.css';
+
+
+const HeroCanvas = lazy(() => import('../components/HeroCanvas'));
+
+const STATS = [
+  { value: '2016', label: 'Chapter Founded' },
+  { value: '121', label: 'IAPOA Chapter' },
+  { value: '50+', label: 'Active Architects' },
+  { value: 'UAP', label: 'National Organization' },
+];
+
+export default function Home() {
+  const { data: settings } = useApi('/api/settings.php');
+  const { data: members, loading: mLoad } = useApi('/api/members.php');
+  const { data: news, loading: nLoad } = useApi('/api/news.php');
+
+  const featured = members?.slice(0, 3) || [];
+  const latestNews = news?.slice(0, 3) || [];
+
+  return (
+    <main>
+      {/* ========== HERO ========== */}
+      <section className="hero-section">
+        <Suspense fallback={null}>
+          <HeroCanvas />
+        </Suspense>
+
+        <div className="container-wide hero-container">
+          <div className="hero-content">
+            <p className="eyebrow hero-eyebrow animate-fade-in-up">
+              United Architects of the Philippines — Mindoro Chapter 121
+            </p>
+            <h1 className="display-1 hero-title animate-fade-in-up">
+              Building the Future<br />
+              <span className="text-gold">of Mindoro</span>
+            </h1>
+            <p className="hero-sub body-lg muted animate-fade-in-up">
+              {settings?.about_us
+                ? settings.about_us.slice(0, 180) + (settings.about_us.length > 180 ? '...' : '')
+                : 'Promoting architectural excellence, professional integrity, and sustainable development across Oriental and Occidental Mindoro.'}
+            </p>
+            <div className="hero-actions animate-fade-in-up">
+              <Link to="/directory" className="btn btn-gold">
+                View Architect Directory
+              </Link>
+              <Link to="/about" className="btn btn-outline">
+                About the Chapter
+              </Link>
+            </div>
+          </div>
+        </div>
+
+        <div className="hero-scroll-hint">
+          <span />
+        </div>
+      </section>
+
+      {/* ========== STATS ========== */}
+      <section className="stats-strip">
+        <div className="container">
+          <div className="stats-grid reveal-stagger">
+            {STATS.map((s) => (
+              <div key={s.label} className="stat-item">
+                <span className="stat-value text-gold">{s.value}</span>
+                <span className="stat-label">{s.label}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ========== ABOUT MISSION ========== */}
+      <section className="section about-section">
+        <div className="container about-grid">
+          <div className="about-visual reveal-left">
+            <div className="about-logo-wrap">
+              <img 
+                src={settings?.logo || '/logo.jpg'} 
+                alt={settings?.org_name || 'UAP Mindoro Chapter'} 
+                onError={(e) => {
+                  if (!e.currentTarget.src.endsWith('/logo.jpg')) {
+                    e.currentTarget.src = '/logo.jpg';
+                  }
+                }}
+              />
+            </div>
+            <div className="about-accent-ring" />
+          </div>
+          <div className="about-content reveal-right">
+            <p className="eyebrow">Our Mission</p>
+            <h2 className="display-2">Advocates of<br /><span className="text-gold">Architectural Excellence</span></h2>
+            <div className="section-divider" />
+            <p className="body-lg muted" style={{ marginTop: '20px' }}>
+              {settings?.about_us || 'The UAP Mindoro Chapter brings together registered architects dedicated to advancing the profession, upholding ethical standards, and serving the communities of Mindoro through design excellence and innovation.'}
+            </p>
+            <div className="about-features reveal-stagger">
+              {[{
+                icon: <IconBuilding size={22} />,
+                label: 'Professional Standards',
+                desc: 'Upholding UAP ethics and PRC regulations',
+              }, {
+                icon: <IconLeaf size={22} />,
+                label: 'Sustainable Design',
+                desc: 'Advocating green and resilient architecture',
+              }, {
+                icon: <IconHandshake size={22} />,
+                label: 'Community Service',
+                desc: 'Serving Mindoro through pro-bono initiatives',
+              }].map((f) => (
+                <div key={f.label} className="about-feature">
+                  <span className="about-feature-icon">{f.icon}</span>
+                  <div>
+                    <strong>{f.label}</strong>
+                    <p>{f.desc}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <Link to="/about" className="btn btn-outline" style={{ marginTop: '24px', alignSelf: 'flex-start' }}>
+              Learn More About Us
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* ========== FEATURED ARCHITECTS ========== */}
+      <section className="section featured-section">
+        <div className="container">
+          <div className="section-header text-center reveal-pop">
+            <p className="eyebrow">Chapter Architects</p>
+            <h2 className="display-2">Featured <span className="text-gold">Directory</span></h2>
+            <div className="section-divider" style={{ margin: '16px auto 0' }} />
+          </div>
+
+          {mLoad ? (
+            <div className="grid-3 skeleton-grid">
+              {[1,2,3].map(i => <div key={i} className="skeleton" style={{ height: 340, borderRadius: 'var(--r-lg)' }} />)}
+            </div>
+          ) : featured.length > 0 ? (
+            <div className="grid-3 featured-grid reveal-stagger">
+              {featured.map(m => <ArchitectCard key={m.id} member={m} />)}
+            </div>
+          ) : (
+            <div className="empty-state reveal-pop">
+              <p className="muted">No architects in the directory yet. Check back soon.</p>
+            </div>
+          )}
+
+          <div className="text-center reveal-pop" style={{ marginTop: '40px' }}>
+            <Link to="/directory" className="btn btn-ghost">
+              View All Architects →
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* ========== NEWS ========== */}
+      <section className="section news-section">
+        <div className="container">
+          <div className="section-header flex-between reveal-left">
+            <div>
+              <p className="eyebrow">Latest Updates</p>
+              <h2 className="heading-1">News &amp; <span className="text-gold">Announcements</span></h2>
+            </div>
+            <Link to="/news" className="btn btn-outline">All News →</Link>
+          </div>
+
+          {nLoad ? (
+            <div className="grid-3">
+              {[1,2,3].map(i => <div key={i} className="skeleton" style={{ height: 200, borderRadius: 'var(--r-lg)' }} />)}
+            </div>
+          ) : latestNews.length > 0 ? (
+            <div className="grid-3 reveal-stagger">
+              {latestNews.map(n => <NewsCard key={n.id} item={n} />)}
+            </div>
+          ) : (
+            <div className="empty-state reveal-pop">
+              <p className="muted">No announcements at this time.</p>
+            </div>
+          )}
+        </div>
+      </section>
+
+      {/* ========== CTA BANNER ========== */}
+      <section className="cta-section">
+        <div className="container text-center reveal-pop">
+          <p className="eyebrow">Are you a UAP Mindoro Member?</p>
+          <h2 className="display-2">Access Your <span className="text-gold">Member Portal</span></h2>
+          <p className="body-lg muted" style={{ maxWidth: 520, margin: '16px auto 32px' }}>
+            Track your dues, upload payment proofs, generate official receipts, and apply to join the architect directory.
+          </p>
+          <div className="flex-center" style={{ gap: '16px', flexWrap: 'wrap' }}>
+            <a href="/auth/login.php" className="btn btn-gold">
+              Sign In to Portal
+            </a>
+            <a href="/auth/register.php" className="btn btn-ghost">
+              Register as Member
+            </a>
+          </div>
+        </div>
+      </section>
+    </main>
+  );
+}

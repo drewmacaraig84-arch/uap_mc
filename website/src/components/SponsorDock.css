@@ -1,0 +1,250 @@
+/* ============================================================
+   PERSISTENT SPONSORS & PARTNERS RIGHT RAIL (1/8 Screen Width)
+   ============================================================ */
+
+.sponsor-rail {
+  position: fixed;
+  right: 0;
+  top: calc(var(--nav-h) + 12px);
+  width: 135px;
+  max-width: 140px;
+  z-index: 850;
+  display: flex;
+  flex-direction: column;
+  background: rgba(6, 10, 20, 0.92);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border-left: 1px solid var(--c-border-gold);
+  border-top: 1px solid var(--c-border-gold);
+  border-bottom: 1px solid var(--c-border-gold);
+  border-radius: 14px 0 0 14px;
+  box-shadow: -6px 0 25px rgba(0, 0, 0, 0.55), 0 0 18px rgba(245, 158, 11, 0.12);
+  overflow: hidden;
+  transition: bottom 0.15s ease-out, transform var(--t-med) var(--ease);
+}
+
+/* Header */
+.sponsor-rail-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 8px 6px 6px;
+  border-bottom: 1px solid var(--c-border);
+  background: rgba(245, 158, 11, 0.08);
+  flex-shrink: 0;
+  text-decoration: none;
+  transition: background var(--t-fast);
+  cursor: pointer;
+}
+
+.sponsor-rail-header:hover {
+  background: rgba(245, 158, 11, 0.16);
+}
+
+.sponsor-rail-star {
+  color: var(--c-gold);
+  flex-shrink: 0;
+}
+
+.sponsor-rail-title {
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--c-gold);
+  line-height: 1.15;
+  white-space: normal;
+  text-align: center;
+}
+
+/* Empty Link in Rail */
+.sponsor-rail-empty-link {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 12px 6px;
+  border-radius: var(--r-md);
+  background: rgba(245, 158, 11, 0.04);
+  border: 1px dashed rgba(245, 158, 11, 0.3);
+  text-decoration: none;
+  color: var(--c-text-2);
+  text-align: center;
+  transition: all var(--t-fast);
+  cursor: pointer;
+}
+
+.sponsor-rail-empty-link:hover {
+  background: rgba(245, 158, 11, 0.1);
+  border-color: var(--c-gold);
+  color: var(--c-gold);
+  transform: translateY(-2px);
+}
+
+.sponsor-rail-empty-icon {
+  color: var(--c-gold);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sponsor-rail-empty-text {
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  line-height: 1.2;
+}
+
+/* Scrollable Sponsor List */
+.sponsor-rail-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px 6px 10px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  flex: 1;
+  max-height: 100%;
+}
+
+/* Custom Slim Scrollbar for Sponsors */
+.sponsor-rail-list::-webkit-scrollbar {
+  width: 3px;
+}
+.sponsor-rail-list::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 2px;
+}
+.sponsor-rail-list::-webkit-scrollbar-thumb {
+  background: rgba(245, 158, 11, 0.4);
+  border-radius: 2px;
+}
+.sponsor-rail-list::-webkit-scrollbar-thumb:hover {
+  background: var(--c-gold);
+}
+
+/* Individual Sponsor Card */
+.sponsor-rail-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 4px;
+  border-radius: var(--r-md);
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--c-border);
+  text-decoration: none;
+  color: inherit;
+  transition: transform var(--t-fast) var(--ease), border-color var(--t-fast), box-shadow var(--t-fast), background var(--t-fast);
+  cursor: pointer;
+}
+
+.sponsor-rail-card:hover {
+  transform: translateY(-2px) scale(1.02);
+  border-color: var(--c-border-gold);
+  background: rgba(245, 158, 11, 0.08);
+  box-shadow: 0 4px 14px rgba(245, 158, 11, 0.2);
+}
+
+.sponsor-rail-img-wrap {
+  width: 38px;
+  height: 38px;
+  border-radius: 7px;
+  background: #ffffff;
+  padding: 2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.sponsor-rail-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.sponsor-rail-placeholder {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, #0f1629, #1a2744);
+  color: var(--c-gold);
+  font-weight: 800;
+  font-size: 0.8rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+}
+
+.sponsor-rail-name {
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--c-text-2);
+  text-align: center;
+  line-height: 1.2;
+  max-width: 100%;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  transition: color var(--t-fast);
+}
+
+.sponsor-rail-card:hover .sponsor-rail-name {
+  color: var(--c-gold);
+}
+
+/* ======================== RESPONSIVE ======================== */
+@media (max-width: 900px) {
+  .sponsor-rail {
+    right: auto;
+    left: 50%;
+    top: auto !important;
+    bottom: 16px !important;
+    transform: translateX(-50%);
+    width: auto;
+    max-width: 90vw;
+    border-radius: var(--r-lg);
+    border: 1px solid var(--c-border-gold);
+    flex-direction: row;
+    align-items: center;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.6);
+  }
+
+  .sponsor-rail-header {
+    border-bottom: none;
+    border-right: 1px solid var(--c-border);
+    padding: 8px 12px;
+  }
+
+  .sponsor-rail-list {
+    flex-direction: row;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding: 6px 10px;
+    max-height: none;
+    max-width: 65vw;
+  }
+
+  .sponsor-rail-card {
+    flex-direction: row;
+    padding: 4px 8px;
+    gap: 6px;
+  }
+
+  .sponsor-rail-img-wrap {
+    width: 32px;
+    height: 32px;
+  }
+
+  .sponsor-rail-name {
+    display: none;
+  }
+}

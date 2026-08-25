@@ -1,0 +1,110 @@
+.about-page-hero {
+  background: linear-gradient(135deg, var(--c-bg) 0%, var(--c-bg-3) 100%);
+  border-bottom: 1px solid var(--c-border);
+  padding: var(--space-8) 0 var(--space-6);
+}
+
+.about-hero-sub { max-width: 600px; margin-top: 16px; }
+
+/* Mission */
+.mission-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--space-5);
+  margin-top: var(--space-7);
+}
+
+.mission-card { padding: var(--space-6); display: flex; flex-direction: column; gap: var(--space-3); }
+
+.mission-icon {
+  font-size: 2.2rem;
+  width: 56px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--c-gold-dim);
+  border: 1px solid var(--c-border-gold);
+  border-radius: var(--r-md);
+}
+
+.mission-title {
+  font-family: var(--f-display);
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--c-white);
+}
+
+/* Timeline */
+.timeline-section { background: var(--c-bg-2); }
+
+.timeline {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  margin-top: var(--space-7);
+}
+
+.timeline-line {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 1px;
+  background: linear-gradient(to bottom, var(--c-gold), transparent);
+}
+
+.timeline-item {
+  position: relative;
+  width: 45%;
+  margin-bottom: var(--space-6);
+  z-index: 1;
+}
+
+.timeline-item.right { align-self: flex-end; }
+
+.timeline-dot {
+  position: absolute;
+  top: 20px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--c-gold);
+  box-shadow: 0 0 0 4px rgba(245,158,11,0.2);
+  animation: pulse-gold 2s infinite;
+  z-index: 2;
+}
+
+.timeline-item.left .timeline-dot  { right: -6%; }
+.timeline-item.right .timeline-dot { left: -6%; }
+
+.timeline-content { padding: var(--space-5); }
+
+.timeline-year {
+  margin-bottom: 8px;
+  display: block;
+}
+
+.timeline-title {
+  font-family: var(--f-display);
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--c-white);
+  margin-bottom: 8px;
+}
+
+/* CTA */
+.about-cta-section {
+  background: linear-gradient(135deg, #07091a 0%, #0f1629 50%, #07091a 100%);
+  border-top: 1px solid var(--c-border-gold);
+}
+
+@media (max-width: 768px) {
+  .mission-grid { grid-template-columns: 1fr; }
+  .timeline-line { left: 20px; }
+  .timeline-item { width: 90%; margin-left: 40px; }
+  .timeline-item.right { align-self: auto; margin-left: 40px; }
+  .timeline-item.left .timeline-dot, .timeline-item.right .timeline-dot { left: -30px; right: auto; }
+}

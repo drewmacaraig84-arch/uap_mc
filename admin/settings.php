@@ -54,44 +54,64 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
         }
     }
 
-    // ============ ABOUT US UPDATE ============
-    if ($action === 'update_about' && !empty($_POST['about_us'] ?? '')) {
-        $stmt = $pdo->prepare("INSERT INTO site_settings (setting_key, setting_value) VALUES ('about_us', ?) ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)");
-        $stmt->execute([$_POST['about_us']]);
-        if (function_exists('cache_delete')) {
-            cache_delete('site_setting:about_us');
+    // ============ ABOUT US & CONTACT UPDATE ============
+    if ($action === 'update_about') {
+        $keys = [
+            'about_us'               => trim($_POST['about_us'] ?? ''),
+            'contact_address'        => trim($_POST['contact_address'] ?? ''),
+            'contact_email'          => trim($_POST['contact_email'] ?? ''),
+            'contact_phone'          => trim($_POST['contact_phone'] ?? ''),
+            'office_hours_weekdays'  => trim($_POST['office_hours_weekdays'] ?? ''),
+            'office_hours_saturday'  => trim($_POST['office_hours_saturday'] ?? ''),
+            'office_hours_sunday'    => trim($_POST['office_hours_sunday'] ?? ''),
+        ];
+
+        $stmt = $pdo->prepare("INSERT INTO site_settings (setting_key, setting_value) VALUES (?, ?) ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)");
+        foreach ($keys as $k => $v) {
+            $stmt->execute([$k, $v]);
+            if (function_exists('cache_delete')) {
+                cache_delete('site_setting:' . $k);
+            }
         }
-        $success = 'Website About Us section updated successfully.';
+        $success = 'Website About Us and Secretariat Contact information updated successfully.';
     }
 
     // ============ SPONSOR MANAGEMENT ============
-    if ($action === 'add_sponsor' && isset($_FILES['sponsor_logo'])) {
-        if ($_FILES['sponsor_logo']['error'] !== UPLOAD_ERR_OK) {
-            $error = 'Please choose a sponsor logo to upload.';
+    if ($action === 'add_sponsor') {
+        $sponsor_name = trim($_POST['sponsor_name'] ?? '');
+        if (empty($sponsor_name)) {
+            $error = 'Sponsor name is required.';
         } else {
-            $ext = strtolower(pathinfo($_FILES['sponsor_logo']['name'], PATHINFO_EXTENSION));
-            $allowedExtensions = ['jpg', 'jpeg', 'png', 'webp'];
+            $logo_path = trim($_POST['sponsor_logo_url'] ?? ''); // external URL fallback
 
-            $finfo = finfo_open(FILEINFO_MIME_TYPE);
-            $mime = finfo_file($finfo, $_FILES['sponsor_logo']['tmp_name']);
-            finfo_close($finfo);
+            // If a file was uploaded, prefer that
+            if (!empty($_FILES['sponsor_logo']['name']) && $_FILES['sponsor_logo']['error'] === UPLOAD_ERR_OK) {
+                $ext = strtolower(pathinfo($_FILES['sponsor_logo']['name'], PATHINFO_EXTENSION));
+                $allowedExtensions = ['jpg', 'jpeg', 'png', 'webp'];
 
-            $allowedMimes = ['image/jpeg', 'image/png', 'image/webp'];
+                $finfo = finfo_open(FILEINFO_MIME_TYPE);
+                $mime = finfo_file($finfo, $_FILES['sponsor_logo']['tmp_name']);
+                finfo_close($finfo);
 
-            if (!in_array($ext, $allowedExtensions) || !in_array($mime, $allowedMimes)) {
-                $error = 'Only valid JPG, PNG, or WebP images are allowed for sponsors.';
-            } else {
-                $filename = 'sponsor_' . time() . '_' . bin2hex(random_bytes(3)) . '.' . $ext;
-                $dest = __DIR__ . '/../uploads/' . $filename;
-                if (move_uploaded_file($_FILES['sponsor_logo']['tmp_name'], $dest)) {
-                    $logo_path = 'uploads/' . $filename;
+                $allowedMimes = ['image/jpeg', 'image/png', 'image/webp'];
 
-                    $stmt = $pdo->prepare("INSERT INTO sponsors (name, logo_path, description, url, display_order) VALUES (?, ?, ?, ?, (SELECT COALESCE(MAX(display_order), 0) + 1 FROM sponsors s2))");
-                    $stmt->execute([$_POST['sponsor_name'] ?? '', $logo_path, $_POST['sponsor_desc'] ?? '', $_POST['sponsor_url'] ?? '']);
-                    $success = 'Sponsor partner added successfully.';
+                if (!in_array($ext, $allowedExtensions) || !in_array($mime, $allowedMimes)) {
+                    $error = 'Only valid JPG, PNG, or WebP images are allowed for sponsors.';
                 } else {
-                    $error = 'Failed to upload sponsor logo.';
+                    $filename = 'sponsor_' . time() . '_' . bin2hex(random_bytes(3)) . '.' . $ext;
+                    $dest = __DIR__ . '/../uploads/' . $filename;
+                    if (move_uploaded_file($_FILES['sponsor_logo']['tmp_name'], $dest)) {
+                        $logo_path = 'uploads/' . $filename;
+                    } else {
+                        $error = 'Failed to upload sponsor logo.';
+                    }
                 }
+            }
+
+            if (empty($error)) {
+                $stmt = $pdo->prepare("INSERT INTO sponsors (name, logo_path, description, url, display_order) VALUES (?, ?, ?, ?, (SELECT COALESCE(MAX(display_order), 0) + 1 FROM sponsors s2))");
+                $stmt->execute([$sponsor_name, $logo_path ?: null, $_POST['sponsor_desc'] ?? '', $_POST['sponsor_url'] ?? '']);
+                $success = 'Sponsor partner added successfully.';
             }
         }
     }
@@ -117,10 +137,16 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
 }
 
 // Fetch current data
-$logo = $pdo->query("SELECT setting_value FROM site_settings WHERE setting_key = 'logo'")->fetch();
-$about_us = $pdo->query("SELECT setting_value FROM site_settings WHERE setting_key = 'about_us'")->fetch();
-$org_name = $pdo->query("SELECT setting_value FROM site_settings WHERE setting_key = 'org_name'")->fetch();
-$org_name_val = $org_name ? $org_name['setting_value'] : 'United Architects of the Philippines - Mindoro Chapter';
+$settings_rows = $pdo->query("SELECT setting_key, setting_value FROM site_settings")->fetchAll(PDO::FETCH_KEY_PAIR);
+$logo_val = $settings_rows['logo'] ?? null;
+$about_us_val = $settings_rows['about_us'] ?? '';
+$org_name_val = $settings_rows['org_name'] ?? 'United Architects of the Philippines - Mindoro Chapter';
+$contact_address_val = $settings_rows['contact_address'] ?? 'Calapan City, Oriental Mindoro, Philippines 5200';
+$contact_email_val = $settings_rows['contact_email'] ?? 'uapmindoro@gmail.com';
+$contact_phone_val = $settings_rows['contact_phone'] ?? '+63 (0) XXXX XXXX';
+$office_hours_weekdays_val = $settings_rows['office_hours_weekdays'] ?? '9:00 AM – 5:00 PM';
+$office_hours_saturday_val = $settings_rows['office_hours_saturday'] ?? '9:00 AM – 12:00 PM';
+$office_hours_sunday_val = $settings_rows['office_hours_sunday'] ?? 'Closed';
 
 $sponsors = $pdo->query("SELECT * FROM sponsors WHERE is_active = 1 ORDER BY display_order ASC")->fetchAll();
 $news = $pdo->query("SELECT * FROM news_announcements WHERE is_active = 1 ORDER BY display_order ASC")->fetchAll();
@@ -235,7 +261,7 @@ function switchSettingsTab(tabId, btn) {
       <div style="display: flex; align-items: center; gap: 18px; margin-bottom: 20px; padding: 14px; background: var(--bg-secondary); border-radius: 12px; border: 1px solid var(--border-color);">
         <div style="width: 80px; height: 80px; border-radius: 12px; background: #fff; padding: 4px; border: 1px solid rgba(0,0,0,0.08); display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(0,0,0,0.06); flex-shrink: 0;">
           <?php
-            $logo_src = $logo ? (BASE_URL . '/' . htmlspecialchars($logo['setting_value'])) : (BASE_URL . '/public/logo.jpg');
+            $logo_src = $logo_val ? (BASE_URL . '/' . htmlspecialchars($logo_val)) : (BASE_URL . '/public/logo.jpg');
           ?>
           <img src="<?php echo $logo_src; ?>" alt="Current Logo" onerror="if(this.src.indexOf('public/logo.jpg')===-1)this.src='<?php echo BASE_URL; ?>/public/logo.jpg';" style="max-width: 100%; max-height: 100%; object-fit: contain;">
         </div>
@@ -254,7 +280,7 @@ function switchSettingsTab(tabId, btn) {
           <input type="file" name="logo" accept=".jpg,.jpeg,.png,.webp" required style="width: 100%;">
         </div>
         <button class="btn btn-sm" type="submit" style="display: inline-flex; align-items: center; gap: 6px;">
-          <?php echo icon('upload', '', 14); ?> <span><?php echo $logo ? 'Replace Chapter Logo' : 'Upload Logo'; ?></span>
+          <?php echo icon('upload', '', 14); ?> <span><?php echo $logo_val ? 'Replace Chapter Logo' : 'Upload Logo'; ?></span>
         </button>
       </form>
     </div>
@@ -299,26 +325,78 @@ function switchSettingsTab(tabId, btn) {
   </div>
 </div>
 
-<!-- TAB 2: WEBSITE ABOUT US -->
+<!-- TAB 2: WEBSITE ABOUT US & CONTACT INFO -->
 <div id="websiteTab" class="settings-panel">
-  <div class="card" style="max-width: 860px; margin: 0;">
+  <div class="card" style="max-width: 900px; margin: 0;">
     <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px;">
       <div style="width: 36px; height: 36px; border-radius: 8px; background: rgba(16,185,129,0.12); color: #10b981; display: flex; align-items: center; justify-content: center;">
         <?php echo icon('info', '', 18); ?>
       </div>
-      <h2 style="font-size: 16px; margin: 0;">Website About Us Content</h2>
+      <div>
+        <h2 style="font-size: 16px; margin: 0;">Website About Us &amp; Secretariat Information</h2>
+        <p class="muted" style="margin: 0; font-size: 13px;">Manage the mission statement, secretariat contact details, and office hours for the public website.</p>
+      </div>
     </div>
-    <p class="muted" style="margin-bottom: 16px; font-size: 13px;">Manage the overview and mission text for the UAP Mindoro public landing page.</p>
 
-    <form method="post">
+    <form method="post" style="margin-top: 20px;">
       <?php echo csrf_field(); ?>
       <input type="hidden" name="action" value="update_about">
-      <div class="field" style="margin-bottom: 16px;">
-        <label>About Us Paragraph / Mission Statement</label>
-        <textarea name="about_us" rows="6" required style="width: 100%; padding: 12px; font-family: inherit; font-size: 14px; line-height: 1.6;"><?php echo htmlspecialchars($about_us['setting_value'] ?? ''); ?></textarea>
+
+      <!-- SECTION 1: ABOUT US & MISSION -->
+      <div style="padding: 16px; background: var(--bg-secondary); border-radius: 10px; border: 1px solid var(--border-color); margin-bottom: 20px;">
+        <h3 style="font-size: 14px; margin: 0 0 12px; display: flex; align-items: center; gap: 8px; color: var(--accent-primary);">
+          <?php echo icon('document', '', 16); ?> <span>Chapter Overview &amp; Mission Statement</span>
+        </h3>
+        <div class="field" style="margin-bottom: 0;">
+          <label style="font-size: 12px;">About Us Paragraph (Displayed on Home &amp; About Pages)</label>
+          <textarea name="about_us" rows="5" required style="width: 100%; padding: 12px; font-family: inherit; font-size: 13px; line-height: 1.6;"><?php echo htmlspecialchars($about_us_val); ?></textarea>
+        </div>
       </div>
+
+      <!-- SECTION 2: SECRETARIAT CONTACT -->
+      <div style="padding: 16px; background: var(--bg-secondary); border-radius: 10px; border: 1px solid var(--border-color); margin-bottom: 20px;">
+        <h3 style="font-size: 14px; margin: 0 0 12px; display: flex; align-items: center; gap: 8px; color: var(--accent-primary);">
+          <?php echo icon('mail', '', 16); ?> <span>Secretariat Contact Information</span>
+        </h3>
+        <div class="field" style="margin-bottom: 14px;">
+          <label style="font-size: 12px;">Secretariat Physical Address / Location</label>
+          <input type="text" name="contact_address" value="<?php echo htmlspecialchars($contact_address_val); ?>" placeholder="e.g. Calapan City, Oriental Mindoro, Philippines 5200" required>
+        </div>
+        <div class="grid-2" style="gap: 14px;">
+          <div class="field" style="margin: 0;">
+            <label style="font-size: 12px;">Official Secretariat Email Address</label>
+            <input type="email" name="contact_email" value="<?php echo htmlspecialchars($contact_email_val); ?>" placeholder="e.g. uapmindoro@gmail.com" required>
+          </div>
+          <div class="field" style="margin: 0;">
+            <label style="font-size: 12px;">Contact Number / Hotline</label>
+            <input type="text" name="contact_phone" value="<?php echo htmlspecialchars($contact_phone_val); ?>" placeholder="e.g. +63 (0) XXXX XXXX" required>
+          </div>
+        </div>
+      </div>
+
+      <!-- SECTION 3: OFFICE HOURS -->
+      <div style="padding: 16px; background: var(--bg-secondary); border-radius: 10px; border: 1px solid var(--border-color); margin-bottom: 20px;">
+        <h3 style="font-size: 14px; margin: 0 0 12px; display: flex; align-items: center; gap: 8px; color: var(--accent-primary);">
+          <?php echo icon('calendar', '', 16); ?> <span>Office Hours &amp; Secretariat Availability</span>
+        </h3>
+        <div class="grid-3" style="gap: 14px;">
+          <div class="field" style="margin: 0;">
+            <label style="font-size: 12px;">Monday – Friday</label>
+            <input type="text" name="office_hours_weekdays" value="<?php echo htmlspecialchars($office_hours_weekdays_val); ?>" placeholder="e.g. 9:00 AM – 5:00 PM" required>
+          </div>
+          <div class="field" style="margin: 0;">
+            <label style="font-size: 12px;">Saturday</label>
+            <input type="text" name="office_hours_saturday" value="<?php echo htmlspecialchars($office_hours_saturday_val); ?>" placeholder="e.g. 9:00 AM – 12:00 PM" required>
+          </div>
+          <div class="field" style="margin: 0;">
+            <label style="font-size: 12px;">Sunday &amp; Holidays</label>
+            <input type="text" name="office_hours_sunday" value="<?php echo htmlspecialchars($office_hours_sunday_val); ?>" placeholder="e.g. Closed" required>
+          </div>
+        </div>
+      </div>
+
       <button class="btn btn-sm" type="submit" style="display: inline-flex; align-items: center; gap: 6px;">
-        <?php echo icon('check', '', 14); ?> <span>Save About Us Content</span>
+        <?php echo icon('check', '', 14); ?> <span>Save About Us &amp; Contact Settings</span>
       </button>
     </form>
   </div>
@@ -340,13 +418,17 @@ function switchSettingsTab(tabId, btn) {
       <input type="hidden" name="action" value="add_sponsor">
       <div class="grid-2" style="gap: 14px; margin-bottom: 14px;">
         <div class="field" style="margin: 0;">
-          <label>Sponsor / Partner Name</label>
+          <label>Sponsor / Partner Name <span style="color:var(--c-gold)">*</span></label>
           <input type="text" name="sponsor_name" placeholder="e.g. Boysen Paints Philippines" required>
         </div>
         <div class="field" style="margin: 0;">
-          <label>Logo Image</label>
-          <input type="file" name="sponsor_logo" accept=".jpg,.jpeg,.png,.webp" required>
+          <label>Logo Image <span class="muted" style="font-weight:400;">(upload or paste URL below)</span></label>
+          <input type="file" name="sponsor_logo" accept=".jpg,.jpeg,.png,.webp">
         </div>
+      </div>
+      <div class="field" style="margin-bottom: 14px;">
+        <label>Logo URL <span class="muted" style="font-weight:400;">(used if no file uploaded, e.g. https://example.com/logo.png)</span></label>
+        <input type="url" name="sponsor_logo_url" placeholder="https://example.com/logo.png">
       </div>
       <div class="grid-2" style="gap: 14px; margin-bottom: 16px;">
         <div class="field" style="margin: 0;">
