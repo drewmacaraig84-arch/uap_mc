@@ -2,7 +2,7 @@
 require_once __DIR__ . '/../includes/auth.php';
 require_admin();
 
-$goodMembers = $pdo->query("SELECT u.id, u.name, u.id_number, u.status,
+$allMembers = $pdo->query("SELECT u.id, u.name, u.id_number, u.status,
     COUNT(md.id) AS total_dues,
     SUM(CASE WHEN md.status = 'paid' THEN 1 ELSE 0 END) AS paid_count,
     SUM(COALESCE(md.custom_amount, d.amount)) AS total_amount,
@@ -11,28 +11,21 @@ $goodMembers = $pdo->query("SELECT u.id, u.name, u.id_number, u.status,
     FROM users u
     LEFT JOIN member_dues md ON md.user_id = u.id
     LEFT JOIN dues d ON md.due_id = d.id
-    WHERE u.role = 'member'
+    WHERE u.role = 'member' AND u.status = 'approved'
     GROUP BY u.id, u.name, u.id_number, u.status
-    HAVING (
-        COUNT(md.id) = 0
-        OR (
-            SUM(CASE WHEN md.status = 'paid' THEN 1 ELSE 0 END) = COUNT(md.id)
-            AND (SUM(COALESCE(md.custom_amount, d.amount)) - SUM(md.total_paid)) <= 0
-            AND NOT EXISTS (
-                SELECT 1
-                FROM member_dues md2
-                LEFT JOIN dues d2 ON md2.due_id = d2.id
-                WHERE md2.user_id = u.id
-                  AND COALESCE(md2.custom_due_date, d2.due_date) < CURDATE()
-                  AND md2.total_paid < COALESCE(md2.custom_amount, d2.amount)
-            )
-        )
-    )
     ORDER BY u.name ASC")->fetchAll();
+
+$goodMembers = [];
+foreach ($allMembers as $m) {
+    if (is_good_member($pdo, $m['id'])) {
+        $goodMembers[] = $m;
+    }
+}
 
 $page_title = 'Good Members';
 include __DIR__ . '/../includes/header.php';
 ?>
+
 <div class="card">
   <h1>Good Members</h1>
   <p class="muted">Members who have consistently paid their dues on time and are not behind schedule.</p>

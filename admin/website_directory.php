@@ -65,32 +65,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-$goodMembers = $pdo->query("SELECT u.id, u.name, u.id_number
+$allApprovedMembers = $pdo->query("SELECT u.id, u.name, u.id_number
     FROM users u
-    WHERE u.role = 'member'
-      AND u.status = 'approved'
-      AND EXISTS (
-          SELECT 1
-          FROM member_dues md
-          LEFT JOIN dues d ON md.due_id = d.id
-          WHERE md.user_id = u.id
-          GROUP BY md.user_id
-          HAVING COUNT(md.id) = 0
-              OR (
-                  SUM(CASE WHEN md.total_paid < COALESCE(md.custom_amount, d.amount) THEN 1 ELSE 0 END) = 0
-                  AND NOT EXISTS (
-                      SELECT 1
-                      FROM member_dues md2
-                      LEFT JOIN dues d2 ON md2.due_id = d2.id
-                      WHERE md2.user_id = u.id
-                        AND COALESCE(md2.custom_due_date, d2.due_date) < CURDATE()
-                        AND md2.total_paid < COALESCE(md2.custom_amount, d2.amount)
-                  )
-              )
-      )
+    WHERE u.role = 'member' AND u.status = 'approved'
     ORDER BY u.name ASC")->fetchAll();
 
+$goodMembers = [];
+foreach ($allApprovedMembers as $m) {
+    if (is_good_member($pdo, $m['id'])) {
+        $goodMembers[] = $m;
+    }
+}
+
 $publishedMembers = $pdo->query("SELECT * FROM website_members WHERE is_published = 1 ORDER BY name ASC")->fetchAll();
+
 
 $page_title = 'Website Directory';
 include __DIR__ . '/../includes/header.php';

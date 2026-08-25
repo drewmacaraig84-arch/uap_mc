@@ -42,9 +42,15 @@ $members = [
 try {
     $publishedWebsiteMembers = $pdo->query("SELECT * FROM website_members WHERE is_published = 1 ORDER BY name ASC")->fetchAll();
     if (!empty($publishedWebsiteMembers)) {
-        $members = [];
+        $validMembers = [];
         foreach ($publishedWebsiteMembers as $wm) {
-            $members[] = [
+            // If linked to a registered member, check if still in good standing (7-day grace period)
+            if (!empty($wm['user_id']) && function_exists('is_good_member')) {
+                if (!is_good_member($pdo, (int)$wm['user_id'])) {
+                    continue; // Exclude if grace period expired without payment
+                }
+            }
+            $validMembers[] = [
                 'name' => $wm['name'],
                 'role' => $wm['role_title'] ?: 'Architect',
                 'specialty' => $wm['specialty'] ?: 'Professional Architect',
@@ -56,10 +62,14 @@ try {
                 'qr_image_path' => $wm['qr_image_path'] ?? ''
             ];
         }
+        if (!empty($validMembers)) {
+            $members = $validMembers;
+        }
     }
 } catch (Exception $e) {
     // Ignore until website_members table exists
 }
+
 
 // Fetch sponsors from database
 $sponsors = [];
