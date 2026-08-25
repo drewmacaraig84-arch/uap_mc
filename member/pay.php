@@ -70,22 +70,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } elseif ($verifiedPayments > 0 && $payment_type === "first_half") {
         $error = "The first tranche has already been submitted.";
     } elseif (!isset($_FILES['proof']) || $_FILES['proof']['error'] !== UPLOAD_ERR_OK) {
-        $error = 'Please upload proof of payment.';
-    } elseif ($_FILES['proof']['size'] > 5 * 1024 * 1024) {
-        $error = 'Proof file is too large. Maximum allowed size is 5MB.';
+        $uploadErr = $_FILES['proof']['error'] ?? UPLOAD_ERR_NO_FILE;
+        if ($uploadErr === UPLOAD_ERR_INI_SIZE || $uploadErr === UPLOAD_ERR_FORM_SIZE) {
+            $error = 'The uploaded file exceeds the allowed server limit.';
+        } else {
+            $error = 'Please upload proof of payment.';
+        }
+    } elseif ($_FILES['proof']['size'] > 25 * 1024 * 1024) {
+        $error = 'Proof file is too large. Maximum allowed size is 25MB.';
     } else {
         $ext = strtolower(pathinfo($_FILES['proof']['name'], PATHINFO_EXTENSION));
-        $allowedExtensions = ['jpg', 'jpeg', 'png', 'pdf'];
+        $allowedExtensions = ['jpg', 'jpeg', 'png', 'webp', 'pdf'];
         
         $finfo = finfo_open(FILEINFO_MIME_TYPE);
         $mime = finfo_file($finfo, $_FILES['proof']['tmp_name']);
         finfo_close($finfo);
 
-        $allowedMimes = ['image/jpeg', 'image/png', 'application/pdf'];
+        $allowedMimes = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
 
         if (!in_array($ext, $allowedExtensions) || !in_array($mime, $allowedMimes)) {
-            $error = 'Invalid file type. Only JPG, JPEG, PNG and PDF documents are allowed.';
+            $error = 'Invalid file type. Only JPG, JPEG, PNG, WEBP and PDF documents are allowed.';
         } else {
+
             $filename = 'proof_' . $member_due_id . '_' . time() . '_' . bin2hex(random_bytes(4)) . '.' . $ext;
             $destination = __DIR__ . '/../uploads/' . $filename;
 
