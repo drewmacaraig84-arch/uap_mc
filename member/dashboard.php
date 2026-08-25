@@ -29,15 +29,10 @@ include __DIR__ . '/../includes/header.php';
   </div>
   <div class="hero-badge">
     <?php
-      $isGoodMember = true;
-      foreach ($dues as $d) {
-          if ((float)$d['total_paid'] < (float)$d['amount'] || !empty($d['due_date']) && $d['due_date'] < date('Y-m-d') && (float)$d['total_paid'] < (float)$d['amount']) {
-              $isGoodMember = false;
-              break;
-          }
-      }
-      echo $isGoodMember ? 'Good Member • On Time' : 'Secure • Transparent • Easy';
+      $isGoodMember = function_exists('is_good_member') ? is_good_member($pdo, current_user_id()) : true;
+      echo $isGoodMember ? 'Good Member • In Good Standing' : 'Pending Dues Settlement';
     ?>
+
   </div>
 </div>
 <?php if ($isGoodMember): ?>
