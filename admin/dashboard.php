@@ -204,17 +204,27 @@ include __DIR__ . '/../includes/header.php';
                   <?php endif; ?>
                 </td>
                 <td style="white-space: nowrap;">
-                  <form method="post" action="verify.php" class="inline" style="display:inline-block;margin-right:2px;">
+                  <form method="post" action="verify.php" class="inline" style="display:inline-block;margin-right:2px;"
+                        data-confirm="Approve payment of ₱<?php echo number_format($p['amount_paid'], 2); ?> for <?php echo htmlspecialchars($p['member_name']); ?>?"
+                        data-confirm-title="Approve Payment"
+                        data-confirm-btn="Approve"
+                        data-confirm-class="btn-success"
+                        data-confirm-icon="💳">
                     <?php echo csrf_field(); ?>
                     <input type="hidden" name="payment_id" value="<?php echo $p['id']; ?>">
                     <input type="hidden" name="action" value="approve">
-                    <button class="btn btn-sm btn-success" type="submit" style="padding: 4px 8px; font-size: 11px;" onclick="return confirm('Approve payment of ₱<?php echo number_format($p['amount_paid'], 2); ?> for <?php echo htmlspecialchars(addslashes($p['member_name'])); ?>?');">✓</button>
+                    <button class="btn btn-sm btn-success" type="submit" style="padding: 4px 8px; font-size: 11px;">✓</button>
                   </form>
-                  <form method="post" action="verify.php" class="inline" style="display:inline-block;">
+                  <form method="post" action="verify.php" class="inline" style="display:inline-block;"
+                        data-confirm="Reject this payment submission from <?php echo htmlspecialchars($p['member_name']); ?>?"
+                        data-confirm-title="Reject Payment"
+                        data-confirm-btn="Reject"
+                        data-confirm-class="btn-danger"
+                        data-confirm-icon="❌">
                     <?php echo csrf_field(); ?>
                     <input type="hidden" name="payment_id" value="<?php echo $p['id']; ?>">
                     <input type="hidden" name="action" value="reject">
-                    <button class="btn btn-sm btn-danger" type="submit" style="padding: 4px 8px; font-size: 11px;" onclick="return confirm('Reject this payment?');">✕</button>
+                    <button class="btn btn-sm btn-danger" type="submit" style="padding: 4px 8px; font-size: 11px;">✕</button>
                   </form>
                 </td>
               </tr>
@@ -256,23 +266,34 @@ include __DIR__ . '/../includes/header.php';
                 <td><code><?php echo htmlspecialchars($m['id_number']); ?></code></td>
                 <td><span class="muted" style="font-size: 11px;"><?php echo htmlspecialchars(date('M d, Y', strtotime($m['created_at']))); ?></span></td>
                 <td style="white-space: nowrap;">
-                  <form method="post" action="approvals.php" class="inline" style="display:inline-block;margin-right:2px;">
+                  <form method="post" action="approvals.php" class="inline" style="display:inline-block;margin-right:2px;"
+                        data-confirm="Approve registration for <?php echo htmlspecialchars($m['name']); ?>?"
+                        data-confirm-title="Approve Member"
+                        data-confirm-btn="Approve"
+                        data-confirm-class="btn-success"
+                        data-confirm-icon="👤">
                     <?php echo csrf_field(); ?>
                     <input type="hidden" name="user_id" value="<?php echo $m['id']; ?>">
                     <input type="hidden" name="action" value="approve">
-                    <button class="btn btn-sm btn-success" type="submit" style="padding: 4px 8px; font-size: 11px;" onclick="return confirm('Approve member registration for <?php echo htmlspecialchars(addslashes($m['name'])); ?>?');">Approve</button>
+                    <button class="btn btn-sm btn-success" type="submit" style="padding: 4px 8px; font-size: 11px;">Approve</button>
                   </form>
-                  <form method="post" action="approvals.php" class="inline" style="display:inline-block;">
+                  <form method="post" action="approvals.php" class="inline" style="display:inline-block;"
+                        data-confirm="Reject registration for <?php echo htmlspecialchars($m['name']); ?>?"
+                        data-confirm-title="Reject Member"
+                        data-confirm-btn="Reject"
+                        data-confirm-class="btn-danger"
+                        data-confirm-icon="❌">
                     <?php echo csrf_field(); ?>
                     <input type="hidden" name="user_id" value="<?php echo $m['id']; ?>">
                     <input type="hidden" name="action" value="reject">
-                    <button class="btn btn-sm btn-danger" type="submit" style="padding: 4px 8px; font-size: 11px;" onclick="return confirm('Reject registration for <?php echo htmlspecialchars(addslashes($m['name'])); ?>?');">Reject</button>
+                    <button class="btn btn-sm btn-danger" type="submit" style="padding: 4px 8px; font-size: 11px;">Reject</button>
                   </form>
                 </td>
               </tr>
             <?php endforeach; ?>
           </tbody>
         </table>
+
       </div>
     <?php endif; ?>
   </div>

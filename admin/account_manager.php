@@ -112,7 +112,12 @@ include __DIR__ . '/../includes/header.php';
     </form>
 
     <!-- Reset password -->
-    <form method="post">
+    <form method="post"
+          data-confirm="Reset password for <?php echo htmlspecialchars($m['name']); ?>?"
+          data-confirm-title="Reset Password"
+          data-confirm-btn="Reset Password"
+          data-confirm-class="btn-danger"
+          data-confirm-icon="🔐">
       <?php echo csrf_field(); ?>
       <input type="hidden" name="user_id" value="<?php echo $m['id']; ?>">
       <input type="hidden" name="action" value="reset_password">
@@ -121,7 +126,7 @@ include __DIR__ . '/../includes/header.php';
         <input type="text" name="new_password" placeholder="New password for this member" required>
         <p class="muted" style="margin-top:4px;">Sets their password directly — give it to them so they can log in.</p>
       </div>
-      <button class="btn btn-sm btn-danger" type="submit" onclick="return confirm('Reset password for <?php echo htmlspecialchars(addslashes($m['name'])); ?>?');">Reset Password</button>
+      <button class="btn btn-sm btn-danger" type="submit">Reset Password</button>
     </form>
   </div>
 </div>

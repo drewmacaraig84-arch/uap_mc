@@ -38,18 +38,29 @@ include __DIR__ . '/../includes/header.php';
       <td><?php echo htmlspecialchars($p['id_number']); ?></td>
       <td><?php echo htmlspecialchars($p['created_at']); ?></td>
       <td>
-        <form method="post" class="inline" style="display:inline-block;margin-right:4px;">
+        <form method="post" class="inline" style="display:inline-block;margin-right:4px;"
+              data-confirm="Approve registration for <?php echo htmlspecialchars($p['name']); ?>?"
+              data-confirm-title="Approve Member"
+              data-confirm-btn="Approve"
+              data-confirm-class="btn-success"
+              data-confirm-icon="👤">
           <?php echo csrf_field(); ?>
           <input type="hidden" name="user_id" value="<?php echo $p['id']; ?>">
           <input type="hidden" name="action" value="approve">
           <button class="btn btn-sm btn-success" type="submit">Approve</button>
         </form>
-        <form method="post" class="inline" style="display:inline-block;">
+        <form method="post" class="inline" style="display:inline-block;"
+              data-confirm="Reject registration for <?php echo htmlspecialchars($p['name']); ?>?"
+              data-confirm-title="Reject Member"
+              data-confirm-btn="Reject"
+              data-confirm-class="btn-danger"
+              data-confirm-icon="❌">
           <?php echo csrf_field(); ?>
           <input type="hidden" name="user_id" value="<?php echo $p['id']; ?>">
           <input type="hidden" name="action" value="reject">
-          <button class="btn btn-sm btn-danger" type="submit" onclick="return confirm('Reject this registration?');">Reject</button>
+          <button class="btn btn-sm btn-danger" type="submit">Reject</button>
         </form>
+
       </td>
     </tr>
     <?php endforeach; ?>

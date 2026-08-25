@@ -341,14 +341,19 @@ include __DIR__ . '/../includes/header.php';
       <td><?php echo htmlspecialchars($d['term'] ?? '—'); ?></td>
       <td>
         <a class="btn btn-sm" href="dues.php?edit=<?php echo $d['id']; ?>">Edit</a>
-        <form method="post" class="inline" onsubmit="return confirm('Delete this due? It will be removed from ALL members who have it assigned.');">
+        <form method="post" class="inline"
+              data-confirm="Delete '<?php echo htmlspecialchars($d['title']); ?>'? This will permanently remove it from ALL members who have it assigned."
+              data-confirm-title="Delete Due"
+              data-confirm-btn="Delete Due"
+              data-confirm-class="btn-danger"
+              data-confirm-icon="🗑️">
           <?php echo csrf_field(); ?>
           <input type="hidden" name="action" value="delete">
           <input type="hidden" name="due_id" value="<?php echo $d['id']; ?>">
           <button class="btn btn-sm btn-danger" type="submit">Delete</button>
         </form>
-
       </td>
+
     </tr>
     <?php endforeach; ?>
   </table>

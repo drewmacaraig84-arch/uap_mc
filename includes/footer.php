@@ -177,6 +177,104 @@ window.addEventListener('resize', function () {
     menu.classList.remove('open');
   }
 });
+
+// ================= GLOBAL CONFIRMATION MODAL =================
+let pendingConfirmAction = null;
+
+function showConfirmModal(event, targetAction, options = {}) {
+  if (event && event.preventDefault) event.preventDefault();
+  
+  const title = options.title || 'Confirm Action';
+  const message = options.message || 'Are you sure you want to proceed?';
+  const confirmText = options.confirmText || 'Confirm';
+  const btnClass = options.btnClass || 'btn-success';
+  const icon = options.icon || '⚠️';
+
+  document.getElementById('uapConfirmTitle').textContent = title;
+  document.getElementById('uapConfirmMessage').textContent = message;
+  document.getElementById('uapConfirmIcon').textContent = icon;
+
+  const okBtn = document.getElementById('uapConfirmOkBtn');
+  okBtn.textContent = confirmText;
+  okBtn.className = 'btn btn-sm ' + btnClass;
+  
+  if (typeof targetAction === 'function') {
+    pendingConfirmAction = targetAction;
+  } else if (targetAction && targetAction.tagName === 'FORM') {
+    pendingConfirmAction = () => targetAction.submit();
+  } else {
+    pendingConfirmAction = null;
+  }
+
+  document.getElementById('uapConfirmModal').style.display = 'flex';
+  return false;
+}
+
+function closeUapConfirmModal() {
+  const modal = document.getElementById('uapConfirmModal');
+  if (modal) modal.style.display = 'none';
+  pendingConfirmAction = null;
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  const okBtn = document.getElementById('uapConfirmOkBtn');
+  if (okBtn) {
+    okBtn.addEventListener('click', function() {
+      if (pendingConfirmAction) {
+        const action = pendingConfirmAction;
+        closeUapConfirmModal();
+        action();
+      }
+    });
+  }
+
+  const modal = document.getElementById('uapConfirmModal');
+  if (modal) {
+    modal.addEventListener('click', function(e) {
+      if (e.target === this) closeUapConfirmModal();
+    });
+  }
+
+  // Intercept any form with data-confirm
+  document.addEventListener('submit', function(e) {
+    const form = e.target;
+    if (form && form.getAttribute && form.getAttribute('data-confirm')) {
+      if (form.dataset.confirmed === 'true') {
+        form.dataset.confirmed = 'false';
+        return true;
+      }
+      e.preventDefault();
+      const message = form.getAttribute('data-confirm');
+      const title = form.getAttribute('data-confirm-title') || 'Confirm Action';
+      const btnText = form.getAttribute('data-confirm-btn') || 'Confirm';
+      const btnClass = form.getAttribute('data-confirm-class') || 'btn-success';
+      const icon = form.getAttribute('data-confirm-icon') || '⚠️';
+
+      showConfirmModal(e, () => {
+        form.dataset.confirmed = 'true';
+        form.submit();
+      }, { title, message, confirmText: btnText, btnClass, icon });
+    }
+  });
+});
 </script>
+
+<!-- Global Confirmation Modal Markup -->
+<div id="uapConfirmModal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.72);z-index:99999;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(6px);">
+  <div style="background:var(--card-bg, #18243a);border:1px solid var(--border-color, rgba(255,255,255,0.12));border-radius:14px;max-width:440px;width:100%;overflow:hidden;box-shadow:0 25px 50px -12px rgba(0,0,0,0.5);color:var(--text-primary);">
+    <div style="padding:22px 24px;">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
+        <div id="uapConfirmIcon" style="width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;background:rgba(245,158,11,0.15);flex-shrink:0;">⚠️</div>
+        <h3 id="uapConfirmTitle" style="margin:0;font-size:17px;font-weight:700;color:var(--text-primary);">Confirm Action</h3>
+      </div>
+      <p id="uapConfirmMessage" style="margin:0 0 20px 0;font-size:14px;line-height:1.5;color:var(--text-secondary);"></p>
+      <div style="display:flex;justify-content:flex-end;gap:10px;">
+        <button type="button" onclick="closeUapConfirmModal()" class="btn btn-sm" style="background:transparent;border:1px solid var(--border-color);color:var(--text-primary);padding:8px 16px;">Cancel</button>
+        <button type="button" id="uapConfirmOkBtn" class="btn btn-sm btn-success" style="padding:8px 18px;font-weight:700;">Confirm</button>
+      </div>
+    </div>
+  </div>
+</div>
 </body>
 </html>
+

@@ -150,19 +150,30 @@ include __DIR__ . '/../includes/header.php';
         <td><span class="muted" style="font-size:12px;"><?php echo htmlspecialchars(date('M d, Y H:i', strtotime($p['submitted_at']))); ?></span></td>
         <td style="white-space:nowrap;">
           <?php if ($p['status'] === 'pending'): ?>
-            <form method="post" action="verify.php" class="inline" style="display:inline-block;margin-right:4px;">
+            <form method="post" action="verify.php" class="inline" style="display:inline-block;margin-right:4px;"
+                  data-confirm="Approve payment of ₱<?php echo number_format($p['amount_paid'], 2); ?> for <?php echo htmlspecialchars($p['member_name']); ?>?"
+                  data-confirm-title="Approve Payment"
+                  data-confirm-btn="Approve"
+                  data-confirm-class="btn-success"
+                  data-confirm-icon="💳">
               <?php echo csrf_field(); ?>
               <input type="hidden" name="payment_id" value="<?php echo $p['id']; ?>">
               <input type="hidden" name="action" value="approve">
-              <button class="btn btn-sm btn-success" type="submit" onclick="return confirm('Approve payment of ₱<?php echo number_format($p['amount_paid'], 2); ?> for <?php echo htmlspecialchars(addslashes($p['member_name'])); ?>?');">Approve</button>
+              <button class="btn btn-sm btn-success" type="submit">Approve</button>
             </form>
-            <form method="post" action="verify.php" class="inline" style="display:inline-block;">
+            <form method="post" action="verify.php" class="inline" style="display:inline-block;"
+                  data-confirm="Reject this payment submission from <?php echo htmlspecialchars($p['member_name']); ?>?"
+                  data-confirm-title="Reject Payment"
+                  data-confirm-btn="Reject"
+                  data-confirm-class="btn-danger"
+                  data-confirm-icon="❌">
               <?php echo csrf_field(); ?>
               <input type="hidden" name="payment_id" value="<?php echo $p['id']; ?>">
               <input type="hidden" name="action" value="reject">
-              <button class="btn btn-sm btn-danger" type="submit" onclick="return confirm('Reject this payment submission?');">Reject</button>
+              <button class="btn btn-sm btn-danger" type="submit">Reject</button>
             </form>
           <?php elseif ($p['status'] === 'verified'): ?>
+
             <a href="../receipt.php?payment_id=<?php echo $p['id']; ?>" target="_blank" class="btn btn-sm">Receipt</a>
           <?php else: ?>
             <span class="muted" style="font-size:12px;">Rejected</span>

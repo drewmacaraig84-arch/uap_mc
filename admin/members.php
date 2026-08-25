@@ -260,12 +260,18 @@ include __DIR__ . '/../includes/header.php';
       <td>
         <a class="btn btn-sm" href="members.php?member_id=<?php echo $m['id']; ?>#member-dues-panel">Manage Dues</a>
         <a class="btn btn-sm" href="account_manager.php?search=<?php echo urlencode($m['id_number']); ?>">Edit</a>
-        <form method="post" class="inline" onsubmit="return confirm('Delete <?php echo htmlspecialchars(addslashes($m['name'])); ?>? This cannot be undone.');">
+        <form method="post" class="inline"
+              data-confirm="Delete member <?php echo htmlspecialchars($m['name']); ?>? This action cannot be undone."
+              data-confirm-title="Delete Member"
+              data-confirm-btn="Delete Member"
+              data-confirm-class="btn-danger"
+              data-confirm-icon="🗑️">
           <?php echo csrf_field(); ?>
           <input type="hidden" name="user_id" value="<?php echo $m['id']; ?>">
           <input type="hidden" name="action" value="delete_member">
           <button class="btn btn-sm btn-danger" type="submit">Delete</button>
         </form>
+
       </td>
     </tr>
     <?php endforeach; ?>
@@ -327,15 +333,20 @@ include __DIR__ . '/../includes/header.php';
       </td>
       <td>
         <a class="btn btn-sm" href="members.php?member_id=<?php echo $selected_member['id']; ?>&edit_member_due=<?php echo $due['id']; ?>">Edit</a>
-        <form method="post" class="inline" onsubmit="return confirm('Remove this due from <?php echo htmlspecialchars(addslashes($selected_member['name'])); ?>?');">
+        <form method="post" class="inline"
+              data-confirm="Remove this due from <?php echo htmlspecialchars($selected_member['name']); ?>?"
+              data-confirm-title="Remove Assigned Due"
+              data-confirm-btn="Remove Due"
+              data-confirm-class="btn-danger"
+              data-confirm-icon="📋">
           <?php echo csrf_field(); ?>
           <input type="hidden" name="action" value="delete_member_due">
           <input type="hidden" name="member_due_id" value="<?php echo $due['id']; ?>">
           <input type="hidden" name="member_id" value="<?php echo $selected_member['id']; ?>">
           <button class="btn btn-sm btn-danger" type="submit">Delete</button>
         </form>
-
       </td>
+
     </tr>
     <?php endforeach; ?>
   </table>
