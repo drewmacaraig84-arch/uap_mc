@@ -32,62 +32,6 @@ if ($member && !empty($member['user_id'])) {
     }
 }
 
-// 3. Fallback mock data if viewing default sample members
-if (!$member && ($prcNumber !== '' || $nameQuery !== '')) {
-    $mockMembers = [
-        '0084521' => [
-            'name' => 'Ar. Juan Dela Cruz',
-            'role_title' => 'Senior Architect',
-            'specialty' => 'Sustainable & Residential Design',
-            'id_number' => '0084521',
-            'location' => 'Calapan City',
-            'achievements' => 'Lead Architect for over 45 residential and commercial eco-sustainable projects in Oriental Mindoro. Advocate of vernacular architecture and climate-responsive construction.',
-            'awards' => 'UAP Regional Design Excellence Award 2024, Mindoro Green Building Award 2023.',
-            'qr_image_path' => null
-        ],
-        '0091234' => [
-            'name' => 'Ar. Maria Santos',
-            'role_title' => 'Principal Architect',
-            'specialty' => 'Urban Planning & Commercial',
-            'id_number' => '0091234',
-            'location' => 'Puerto Galera',
-            'achievements' => 'Principal consultant for coastal resort master planning and urban zoning initiatives across Northern Mindoro.',
-            'awards' => 'Outstanding Chapter Member 2025, Regional Urban Designer Award.',
-            'qr_image_path' => null
-        ],
-        '0076543' => [
-            'name' => 'Ar. Pedro Reyes',
-            'role_title' => 'Associate Architect',
-            'specialty' => 'Heritage Conservation',
-            'id_number' => '0076543',
-            'location' => 'San Jose',
-            'achievements' => 'Specialist in historical preservation and adaptive reuse of heritage municipal structures in Occidental Mindoro.',
-            'awards' => 'National Heritage Council Citation 2022.',
-            'qr_image_path' => null
-        ],
-        '0098712' => [
-            'name' => 'Ar. Elena Torralba',
-            'role_title' => 'Project Director',
-            'specialty' => 'Healthcare & Hospitality',
-            'id_number' => '0098712',
-            'location' => 'Roxas',
-            'achievements' => 'Over 15 years experience in hospital planning, medical centers, and boutique island resort development.',
-            'awards' => 'Hospitality Architecture Award 2024.',
-            'qr_image_path' => null
-        ]
-    ];
-
-    if ($prcNumber && isset($mockMembers[$prcNumber])) {
-        $member = $mockMembers[$prcNumber];
-    } elseif ($nameQuery) {
-        foreach ($mockMembers as $mock) {
-            if (strcasecmp($mock['name'], $nameQuery) === 0) {
-                $member = $mock;
-                break;
-            }
-        }
-    }
-}
 
 // Decode multiple project gallery photos
 $gallery = [];

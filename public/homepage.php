@@ -5,46 +5,11 @@ require_once __DIR__ . '/../includes/auth.php';
 $pageTitle = 'UAP - Mindoro Chapter | United Architects of the Philippines';
 
 
-// Fetch website directory members if published
-$members = [
-    [
-        'name' => 'Ar. Juan Dela Cruz',
-        'role' => 'Senior Architect',
-        'specialty' => 'Sustainable & Residential Design',
-        'prc' => '0084521',
-        'location' => 'Calapan City',
-        'status' => 'Active Member'
-    ],
-    [
-        'name' => 'Ar. Maria Santos',
-        'role' => 'Principal Architect',
-        'specialty' => 'Urban Planning & Commercial',
-        'prc' => '0091234',
-        'location' => 'Puerto Galera',
-        'status' => 'Active Member'
-    ],
-    [
-        'name' => 'Ar. Pedro Reyes',
-        'role' => 'Associate Architect',
-        'specialty' => 'Heritage Conservation',
-        'prc' => '0076543',
-        'location' => 'San Jose',
-        'status' => 'Active Member'
-    ],
-    [
-        'name' => 'Ar. Elena Torralba',
-        'role' => 'Project Director',
-        'specialty' => 'Healthcare & Hospitality',
-        'prc' => '0098712',
-        'location' => 'Roxas',
-        'status' => 'Active Member'
-    ]
-];
-
+// Fetch website directory members from database (only paid & verified)
+$members = [];
 try {
     $publishedWebsiteMembers = $pdo->query("SELECT * FROM website_members WHERE is_published = 1 ORDER BY name ASC")->fetchAll();
     if (!empty($publishedWebsiteMembers)) {
-        $validMembers = [];
         foreach ($publishedWebsiteMembers as $wm) {
             // If linked to a registered member, check if directory feature is unlocked & in good standing
             if (!empty($wm['user_id'])) {
@@ -56,25 +21,23 @@ try {
                 }
             }
 
-            $validMembers[] = [
+            $members[] = [
                 'name' => $wm['name'],
                 'role' => $wm['role_title'] ?: 'Architect',
                 'specialty' => $wm['specialty'] ?: 'Professional Architect',
                 'prc' => $wm['id_number'] ?: '—',
                 'location' => $wm['location'] ?: 'Mindoro',
                 'status' => 'Good Member',
-                'achievements' => $wm['achievements'] ?: 'No achievements listed.',
-                'awards' => $wm['awards'] ?: 'No awards listed.',
+                'achievements' => $wm['achievements'] ?: '',
+                'awards' => $wm['awards'] ?: '',
                 'qr_image_path' => $wm['qr_image_path'] ?? ''
             ];
-        }
-        if (!empty($validMembers)) {
-            $members = $validMembers;
         }
     }
 } catch (Exception $e) {
     // Ignore until website_members table exists
 }
+
 
 
 // Fetch sponsors from database
@@ -684,47 +647,56 @@ $newsItems = [
                     <div class="section-heading">
                         <h2>Chapter Members Directory</h2>
                     </div>
-                    <div class="table-responsive">
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>Architect Name</th>
-                                    <th>Role / Title</th>
-                                    <th>Architectural Specialty</th>
-                                    <th>PRC No.</th>
-                                    <th>Location</th>
-                                    <th>Action</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <?php foreach ($members as $member): 
-                                    $mRole = (!empty($member['role']) && strcasecmp(trim($member['role']), 'none') !== 0) ? $member['role'] : 'Architect';
-                                    $mSpec = (!empty($member['specialty']) && strcasecmp(trim($member['specialty']), 'none') !== 0) ? $member['specialty'] : 'General Practice';
-                                    $mLoc = (!empty($member['location']) && strcasecmp(trim($member['location']), 'none') !== 0) ? $member['location'] : 'Mindoro';
-                                ?>
+                    <?php if (empty($members)): ?>
+                        <div style="text-align:center; padding: 3rem 1.5rem; color:var(--text-muted);">
+                            <span style="font-size:2.4rem; display:block; margin-bottom:8px;">🏛️</span>
+                            <strong style="color:#ffffff; font-size:1.1rem; display:block; margin-bottom:6px;">No Chapter Directory Members Yet</strong>
+                            <p style="font-size:0.88rem; max-width:480px; margin:0 auto; line-height:1.6;">
+                                The chapter directory is updated as members apply, verify annual dues, and unlock their featured website profile.
+                            </p>
+                        </div>
+                    <?php else: ?>
+                        <div class="table-responsive">
+                            <table>
+                                <thead>
                                     <tr>
-                                        <td><strong><?php echo htmlspecialchars($member['name']); ?></strong></td>
-                                        <td><?php echo htmlspecialchars($mRole); ?></td>
-                                        <td><?php echo htmlspecialchars($mSpec); ?></td>
-                                        <td><code><?php echo htmlspecialchars($member['prc']); ?></code></td>
-                                        <td><?php echo htmlspecialchars($mLoc); ?></td>
-                                        <td>
-                                            <a 
-                                                href="<?php echo BASE_URL; ?>/public/member_profile.php?prc=<?php echo urlencode($member['prc'] ?? ''); ?>&name=<?php echo urlencode($member['name'] ?? ''); ?>" 
-                                                class="badge-status" 
-                                                style="text-decoration:none; display:inline-block; font-weight:600; cursor:pointer;"
-                                            >
-                                                View Profile &rarr;
-                                            </a>
-                                        </td>
+                                        <th>Architect Name</th>
+                                        <th>Role / Title</th>
+                                        <th>Architectural Specialty</th>
+                                        <th>PRC No.</th>
+                                        <th>Location</th>
+                                        <th>Action</th>
                                     </tr>
-                                <?php endforeach; ?>
-
-                            </tbody>
-                        </table>
-
-                    </div>
+                                </thead>
+                                <tbody>
+                                    <?php foreach ($members as $member): 
+                                        $mRole = (!empty($member['role']) && strcasecmp(trim($member['role']), 'none') !== 0) ? $member['role'] : 'Architect';
+                                        $mSpec = (!empty($member['specialty']) && strcasecmp(trim($member['specialty']), 'none') !== 0) ? $member['specialty'] : 'General Practice';
+                                        $mLoc = (!empty($member['location']) && strcasecmp(trim($member['location']), 'none') !== 0) ? $member['location'] : 'Mindoro';
+                                    ?>
+                                        <tr>
+                                            <td><strong><?php echo htmlspecialchars($member['name']); ?></strong></td>
+                                            <td><?php echo htmlspecialchars($mRole); ?></td>
+                                            <td><?php echo htmlspecialchars($mSpec); ?></td>
+                                            <td><code><?php echo htmlspecialchars($member['prc']); ?></code></td>
+                                            <td><?php echo htmlspecialchars($mLoc); ?></td>
+                                            <td>
+                                                <a 
+                                                    href="<?php echo BASE_URL; ?>/public/member_profile.php?prc=<?php echo urlencode($member['prc'] ?? ''); ?>&name=<?php echo urlencode($member['name'] ?? ''); ?>" 
+                                                    class="badge-status" 
+                                                    style="text-decoration:none; display:inline-block; font-weight:600; cursor:pointer;"
+                                                >
+                                                    View Profile &rarr;
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    <?php endforeach; ?>
+                                </tbody>
+                            </table>
+                        </div>
+                    <?php endif; ?>
                 </section>
+
 
                 <section class="dark-card" id="about">
                     <div class="section-heading">
