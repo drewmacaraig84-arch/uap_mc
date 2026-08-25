@@ -172,7 +172,7 @@ include __DIR__ . '/../includes/header.php';
 <div class="card" style="max-width:520px;margin:0 auto;">
   <h1>Pay: <?php echo htmlspecialchars($due['title']); ?></h1>
 
-  <div style="background:linear-gradient(120deg,#eef2f9,#f3f0fa);border-radius:10px;padding:14px 18px;margin-bottom:18px;">
+  <div style="background:var(--bg-secondary, rgba(0,0,0,0.15));border:1px solid var(--border-color, rgba(255,255,255,0.08));border-radius:10px;padding:14px 18px;margin-bottom:18px;">
     <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
       <span class="muted">Total Amount</span>
       <strong>₱<?php echo number_format($due['amount'], 2); ?></strong>
@@ -180,11 +180,11 @@ include __DIR__ . '/../includes/header.php';
     <?php if ($already_paid > 0): ?>
     <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
       <span class="muted">Already Paid</span>
-      <strong style="color:#1e7e34;">₱<?php echo number_format($already_paid, 2); ?></strong>
+      <strong style="color:#10b981;">₱<?php echo number_format($already_paid, 2); ?></strong>
     </div>
     <div style="display:flex;justify-content:space-between;">
       <span class="muted">Remaining Balance</span>
-      <strong style="color:#b3261e;">₱<?php echo number_format($remaining, 2); ?></strong>
+      <strong style="color:#ef4444;">₱<?php echo number_format($remaining, 2); ?></strong>
     </div>
     <?php endif; ?>
   </div>
@@ -197,78 +197,38 @@ include __DIR__ . '/../includes/header.php';
 
     <!-- Payment type -->
     <div class="field">
-
-<label>Payment Option</label>
-
-<select
-name="payment_type"
-id="paymentType"
-onchange="updatePaymentAmount()">
-
-<?php
-
-if($verifiedPayments==0){
-
-?>
-
-<option value="full">
-
-Full Payment
-
-</option>
-
-<option value="first_half">
-
-First Tranche (50%)
-
-</option>
-
-<?php
-
-}else{
-
-?>
-
-<option value="second_half">
-
-Second Tranche (Remaining Balance)
-
-</option>
-
-<?php
-
-}
-
-?>
-
-</select>
-
-</div>
+      <label>Payment Option</label>
+      <select name="payment_type" id="paymentType" onchange="updatePaymentAmount()">
+        <?php if ($verifiedPayments == 0): ?>
+          <option value="full">Full Payment</option>
+          <option value="first_half">First Tranche (50%)</option>
+        <?php else: ?>
+          <option value="second_half">Second Tranche (Remaining Balance)</option>
+        <?php endif; ?>
+      </select>
+    </div>
 
     <!-- Amount to pay -->
     <div class="field">
-
-<label>Payment Amount</label>
-
-<input
-type="text"
-id="paymentAmount"
-readonly
-class="form-control"
-style="
-background:#f8fafc;
-font-size:20px;
-font-weight:700;
-text-align:center;
-color:#0d6efd;
-cursor:not-allowed;
-">
-        
-       <input
-type="hidden"
-id="paymentAmountHidden"
-name="amount_paid">
-
+      <label>Payment Amount</label>
+      <input
+        type="text"
+        id="paymentAmount"
+        readonly
+        class="form-control"
+        style="
+          background:var(--field-bg, rgba(0,0,0,0.25));
+          border:1px solid var(--border-color, rgba(255,255,255,0.15));
+          font-size:22px;
+          font-weight:800;
+          text-align:center;
+          color:var(--accent-primary, #f5b800);
+          cursor:not-allowed;
+          width:100%;
+          padding:12px;
+          border-radius:8px;
+        ">
+      <input type="hidden" id="paymentAmountHidden" name="amount_paid">
     </div>
 
     <!-- Payment method -->
@@ -285,14 +245,15 @@ name="amount_paid">
     <!-- QR code display -->
     <div id="qrBox" style="text-align:center;margin-bottom:16px;display:none;">
       <p class="muted" style="margin-bottom:6px;">Scan to pay:</p>
-      <img id="qrImage" src="" alt="Payment QR Code" style="max-width:220px;border:1px solid #e5e7eb;border-radius:8px;">
+      <img id="qrImage" src="" alt="Payment QR Code" style="max-width:220px;border:1px solid var(--border-color, rgba(255,255,255,0.12));border-radius:8px;background:rgba(255,255,255,0.05);padding:6px;">
     </div>
-    <div id="cardNotice" class="alert" style="background:#e7f1ff;color:#1d3557;display:none;">
+    <div id="cardNotice" class="alert alert-info" style="display:none;">
       Pay using your card via the org's payment terms, then enter the transaction reference below.
     </div>
-    <div id="noQrNotice" class="alert" style="background:#fff3cd;color:#8a6500;display:none;">
+    <div id="noQrNotice" class="alert alert-warning" style="display:none;">
       No QR code uploaded yet for this method. Coordinate payment details with the admin.
     </div>
+
 
     <div class="field">
       <label>Reference / Transaction Number</label>

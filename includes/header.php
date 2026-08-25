@@ -623,7 +623,20 @@ $page_title = $page_title ?? 'Dues System';
   .alert-success strong {
     color: #fff !important;
   }
+  .alert-warning {
+    background-color: rgba(245, 158, 11, 0.15) !important;
+    color: var(--text-primary) !important;
+    border: 1px solid rgba(245, 158, 11, 0.3) !important;
+    border-left: 4px solid #f59e0b !important;
+  }
+  .alert-info {
+    background-color: rgba(59, 130, 246, 0.15) !important;
+    color: var(--text-primary) !important;
+    border: 1px solid rgba(59, 130, 246, 0.3) !important;
+    border-left: 4px solid #3b82f6 !important;
+  }
   .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+
   .auth-shell { max-width: 980px; margin: 44px auto; padding: 0 16px; }
   .auth-card {
     display: grid;
