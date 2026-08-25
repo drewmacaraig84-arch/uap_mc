@@ -32,7 +32,6 @@ if ($member && !empty($member['user_id'])) {
     }
 }
 
-
 // 3. Fallback mock data if viewing default sample members
 if (!$member && ($prcNumber !== '' || $nameQuery !== '')) {
     $mockMembers = [
@@ -108,7 +107,6 @@ if ($member) {
 
 $pageTitle = $member ? htmlspecialchars($member['name']) . ' - Chapter Directory Profile' : 'Member Profile - UAP Mindoro Chapter';
 ?>
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -234,7 +232,9 @@ $pageTitle = $member ? htmlspecialchars($member['name']) . ' - Chapter Directory
         }
 
         .btn-yellow {
-            display: inline-block;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
             padding: 0.7rem 1.6rem;
             background-color: var(--accent-yellow);
             color: #000000;
@@ -242,11 +242,11 @@ $pageTitle = $member ? htmlspecialchars($member['name']) . ' - Chapter Directory
             text-transform: uppercase;
             letter-spacing: 1px;
             border-radius: 4px;
-            transition: background-color 0.2s ease;
+            transition: background-color 0.2s ease, transform 0.15s ease;
             font-size: 0.8rem;
         }
 
-        .btn-yellow:hover { background-color: var(--accent-yellow-hover); }
+        .btn-yellow:hover { background-color: var(--accent-yellow-hover); transform: translateY(-1px); }
 
         .main-container {
             width: 100%;
@@ -321,7 +321,7 @@ $pageTitle = $member ? htmlspecialchars($member['name']) . ' - Chapter Directory
 
         .info-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
             gap: 1.2rem;
         }
 
@@ -346,6 +346,7 @@ $pageTitle = $member ? htmlspecialchars($member['name']) . ' - Chapter Directory
             font-size: 1.05rem;
             color: #ffffff;
             font-weight: 600;
+            word-break: break-word;
         }
 
         .content-box {
@@ -424,8 +425,13 @@ $pageTitle = $member ? htmlspecialchars($member['name']) . ' - Chapter Directory
 
         @media (max-width: 768px) {
             nav ul { display: none; }
-            .profile-hero-card { flex-direction: column; text-align: center; }
             .header-container { padding: 0.8rem 1rem; }
+            .main-container { padding: 1.5rem 1rem 3rem; }
+            .profile-hero-card { flex-direction: column; text-align: center; padding: 20px 16px; }
+            .profile-hero-info h1 { font-size: 1.6rem; }
+            .profile-hero-info .role-tag { font-size: 1rem; }
+            .dark-card { padding: 1.2rem; }
+            .info-grid { grid-template-columns: 1fr; }
         }
     </style>
 </head>
@@ -456,11 +462,11 @@ $pageTitle = $member ? htmlspecialchars($member['name']) . ' - Chapter Directory
         </div>
     </header>
 
-    <!-- MAIN CONTAINER (NO SPONSOR SIDEBARS) -->
+    <!-- MAIN CONTAINER -->
     <div class="main-container">
         
         <div style="margin-bottom: 1.4rem;">
-            <a href="<?php echo BASE_URL; ?>/index.php#members" class="btn-yellow" style="display:inline-flex; align-items:center; gap:8px;">
+            <a href="<?php echo BASE_URL; ?>/index.php#members" class="btn-yellow">
                 &larr; Back to Chapter Directory
             </a>
         </div>
@@ -468,9 +474,9 @@ $pageTitle = $member ? htmlspecialchars($member['name']) . ' - Chapter Directory
         <?php if (!$member): ?>
             <section class="dark-card" style="text-align:center; padding: 4rem 2rem;">
                 <div style="font-size: 3rem; margin-bottom: 12px;">🏛️</div>
-                <h2 style="color:#fff; margin-bottom: 10px;">Member Profile Not Found</h2>
-                <p style="color:var(--text-muted); max-width: 500px; margin: 0 auto 20px;">
-                    This member profile is either not published yet or is currently undergoing annual chapter dues verification.
+                <h2 style="color:#fff; margin-bottom: 10px;">Member Profile Not Found / Under Verification</h2>
+                <p style="color:var(--text-muted); max-width: 520px; margin: 0 auto 24px; font-size: 0.95rem; line-height: 1.6;">
+                    This member profile is either not published yet or is currently awaiting annual directory placement fee verification.
                 </p>
                 <a href="<?php echo BASE_URL; ?>/index.php#members" class="btn-yellow">Return to Directory</a>
             </section>
@@ -481,6 +487,12 @@ $pageTitle = $member ? htmlspecialchars($member['name']) . ' - Chapter Directory
                 if (!empty($p)) $initials .= strtoupper($p[0]);
             }
             $initials = substr($initials, 0, 2) ?: 'AR';
+
+            // Sanitize text fields
+            $cleanSpecialty = (!empty($member['specialty']) && strcasecmp(trim($member['specialty']), 'none') !== 0) ? $member['specialty'] : 'General Practice';
+            $cleanLocation = (!empty($member['location']) && strcasecmp(trim($member['location']), 'none') !== 0) ? $member['location'] : 'Mindoro, Philippines';
+            $cleanAchievements = (!empty($member['achievements']) && strcasecmp(trim($member['achievements']), 'none') !== 0) ? $member['achievements'] : 'Registered Architect actively practicing in the Mindoro region.';
+            $cleanAwards = (!empty($member['awards']) && strcasecmp(trim($member['awards']), 'none') !== 0) ? $member['awards'] : 'Active professional member in good standing under UAP Mindoro Chapter (121).';
         ?>
 
             <!-- HERO MEMBER HEADER -->
@@ -510,11 +522,11 @@ $pageTitle = $member ? htmlspecialchars($member['name']) . ' - Chapter Directory
                     </div>
                     <div class="info-cell">
                         <label>Architectural Specialty</label>
-                        <span><?php echo htmlspecialchars($member['specialty'] ?: 'General Practice'); ?></span>
+                        <span><?php echo htmlspecialchars($cleanSpecialty); ?></span>
                     </div>
                     <div class="info-cell">
                         <label>Primary Location / Base</label>
-                        <span><?php echo htmlspecialchars($member['location'] ?: 'Mindoro, Philippines'); ?></span>
+                        <span><?php echo htmlspecialchars($cleanLocation); ?></span>
                     </div>
                 </div>
             </section>
@@ -525,10 +537,10 @@ $pageTitle = $member ? htmlspecialchars($member['name']) . ' - Chapter Directory
                 <div class="section-heading">
                     <h2>📸 Project Portfolio & Works Gallery (<?php echo count($gallery); ?>)</h2>
                 </div>
-                <div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 22px;">
+                <div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px;">
                     <?php foreach ($gallery as $gIndex => $gItem): ?>
                         <div style="background: var(--bg-inner-card); border: 1px solid var(--border-dark); border-radius: 8px; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 8px 24px rgba(0,0,0,0.3);">
-                            <div style="width: 100%; height: 240px; overflow: hidden; background: #000; display: flex; align-items: center; justify-content: center;">
+                            <div style="width: 100%; height: 230px; overflow: hidden; background: #000; display: flex; align-items: center; justify-content: center;">
                                 <img src="<?php echo BASE_URL; ?>/<?php echo htmlspecialchars($gItem['path']); ?>" 
                                      alt="<?php echo htmlspecialchars($member['name']); ?> Work <?php echo $gIndex + 1; ?>" 
                                      style="width: 100%; height: 100%; object-fit: cover; transition: transform 0.3s ease;"
@@ -546,14 +558,13 @@ $pageTitle = $member ? htmlspecialchars($member['name']) . ' - Chapter Directory
             </section>
             <?php endif; ?>
 
-
             <!-- ACHIEVEMENTS -->
             <section class="dark-card">
                 <div class="section-heading">
                     <h2>🏆 Career Achievements & Practice</h2>
                 </div>
                 <div class="content-box">
-                    <?php echo nl2br(htmlspecialchars($member['achievements'] ?: 'No specific achievements submitted yet.')); ?>
+                    <?php echo nl2br(htmlspecialchars($cleanAchievements)); ?>
                 </div>
             </section>
 
@@ -563,7 +574,7 @@ $pageTitle = $member ? htmlspecialchars($member['name']) . ' - Chapter Directory
                     <h2>🎖️ Honors, Distinctions & Awards</h2>
                 </div>
                 <div class="content-box">
-                    <?php echo nl2br(htmlspecialchars($member['awards'] ?: 'No awards or distinctions listed.')); ?>
+                    <?php echo nl2br(htmlspecialchars($cleanAwards)); ?>
                 </div>
             </section>
 

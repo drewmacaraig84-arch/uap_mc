@@ -1,7 +1,9 @@
 <?php
 require_once __DIR__ . '/../includes/config.php';
+require_once __DIR__ . '/../includes/auth.php';
 
 $pageTitle = 'UAP - Mindoro Chapter | United Architects of the Philippines';
+
 
 // Fetch website directory members if published
 $members = [
@@ -421,13 +423,21 @@ $newsItems = [
             margin-bottom: 2rem;
         }
 
-        .table-responsive { overflow-x: auto; }
+        .table-responsive {
+            width: 100%;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            border-radius: 6px;
+            border: 1px solid var(--border-dark);
+        }
 
         table {
             width: 100%;
+            min-width: 660px;
             border-collapse: collapse;
             text-align: left;
         }
+
 
         th {
             background-color: #000000;
@@ -687,13 +697,17 @@ $newsItems = [
                                 </tr>
                             </thead>
                             <tbody>
-                                <?php foreach ($members as $member): ?>
+                                <?php foreach ($members as $member): 
+                                    $mRole = (!empty($member['role']) && strcasecmp(trim($member['role']), 'none') !== 0) ? $member['role'] : 'Architect';
+                                    $mSpec = (!empty($member['specialty']) && strcasecmp(trim($member['specialty']), 'none') !== 0) ? $member['specialty'] : 'General Practice';
+                                    $mLoc = (!empty($member['location']) && strcasecmp(trim($member['location']), 'none') !== 0) ? $member['location'] : 'Mindoro';
+                                ?>
                                     <tr>
                                         <td><strong><?php echo htmlspecialchars($member['name']); ?></strong></td>
-                                        <td><?php echo htmlspecialchars($member['role']); ?></td>
-                                        <td><?php echo htmlspecialchars($member['specialty']); ?></td>
-                                        <td><?php echo htmlspecialchars($member['prc']); ?></td>
-                                        <td><?php echo htmlspecialchars($member['location']); ?></td>
+                                        <td><?php echo htmlspecialchars($mRole); ?></td>
+                                        <td><?php echo htmlspecialchars($mSpec); ?></td>
+                                        <td><code><?php echo htmlspecialchars($member['prc']); ?></code></td>
+                                        <td><?php echo htmlspecialchars($mLoc); ?></td>
                                         <td>
                                             <a 
                                                 href="<?php echo BASE_URL; ?>/public/member_profile.php?prc=<?php echo urlencode($member['prc'] ?? ''); ?>&name=<?php echo urlencode($member['name'] ?? ''); ?>" 
@@ -705,6 +719,7 @@ $newsItems = [
                                         </td>
                                     </tr>
                                 <?php endforeach; ?>
+
                             </tbody>
                         </table>
 
