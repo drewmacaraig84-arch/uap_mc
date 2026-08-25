@@ -87,12 +87,6 @@ if (!$member && ($prcNumber !== '' || $nameQuery !== '')) {
     }
 }
 
-// Fetch sponsors from database
-$sponsors = [];
-try {
-    $sponsors = $pdo->query("SELECT * FROM sponsors WHERE is_active = 1 ORDER BY display_order ASC LIMIT 6")->fetchAll();
-} catch (Exception $e) {}
-
 $pageTitle = $member ? htmlspecialchars($member['name']) . ' - Chapter Directory Profile' : 'Member Profile - UAP Mindoro Chapter';
 ?>
 <!DOCTYPE html>
@@ -122,6 +116,9 @@ $pageTitle = $member ? htmlspecialchars($member['name']) . ' - Chapter Directory
             color: var(--text-light);
             font-family: var(--font-family);
             line-height: 1.6;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
         }
 
         a { color: inherit; text-decoration: none; }
@@ -233,56 +230,11 @@ $pageTitle = $member ? htmlspecialchars($member['name']) . ' - Chapter Directory
 
         .main-container {
             width: 100%;
-            max-width: 1800px;
+            max-width: 1200px;
             margin: 0 auto;
-            padding: 2rem 1.5rem;
+            padding: 2.5rem 1.5rem 4rem;
+            flex: 1 0 auto;
         }
-
-        .page-layout {
-            display: grid;
-            grid-template-columns: 280px 1fr 280px;
-            gap: 1.5rem;
-            align-items: start;
-        }
-
-        .sponsors-sidebar {
-            background-color: var(--bg-card);
-            border: 1px solid var(--border-dark);
-            border-radius: 8px;
-            padding: 1.5rem;
-            text-align: center;
-        }
-
-        .sponsors-sidebar h3 {
-            font-size: 1.1rem;
-            color: var(--accent-yellow);
-            margin-bottom: 1.2rem;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            border-bottom: 1px solid var(--border-dark);
-            padding-bottom: 0.5rem;
-        }
-
-        .sponsor-box {
-            background-color: var(--bg-inner-card);
-            border: 1px dashed var(--border-dark);
-            border-radius: 6px;
-            padding: 1rem;
-            margin-bottom: 1rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: var(--text-muted);
-            font-size: 0.85rem;
-            transition: all 0.2s ease;
-        }
-
-        .sponsor-box:hover {
-            border-color: var(--accent-yellow);
-            color: var(--text-light);
-        }
-
-        .center-content { width: 100%; }
 
         .dark-card {
             background-color: var(--bg-card);
@@ -334,7 +286,7 @@ $pageTitle = $member ? htmlspecialchars($member['name']) . ' - Chapter Directory
         }
 
         .profile-hero-info h1 {
-            font-size: 2rem;
+            font-size: 2.2rem;
             font-weight: 800;
             color: #ffffff;
             margin-bottom: 4px;
@@ -343,13 +295,13 @@ $pageTitle = $member ? htmlspecialchars($member['name']) . ' - Chapter Directory
 
         .profile-hero-info .role-tag {
             color: var(--accent-yellow);
-            font-size: 1.1rem;
+            font-size: 1.15rem;
             font-weight: 700;
         }
 
         .info-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
             gap: 1.2rem;
         }
 
@@ -357,12 +309,12 @@ $pageTitle = $member ? htmlspecialchars($member['name']) . ' - Chapter Directory
             background: var(--bg-inner-card);
             border: 1px solid var(--border-dark);
             border-radius: 6px;
-            padding: 14px 16px;
+            padding: 16px 18px;
         }
 
         .info-cell label {
             display: block;
-            font-size: 0.72rem;
+            font-size: 0.75rem;
             color: var(--text-muted);
             text-transform: uppercase;
             letter-spacing: 0.8px;
@@ -371,7 +323,7 @@ $pageTitle = $member ? htmlspecialchars($member['name']) . ' - Chapter Directory
         }
 
         .info-cell span {
-            font-size: 1rem;
+            font-size: 1.05rem;
             color: #ffffff;
             font-weight: 600;
         }
@@ -380,10 +332,10 @@ $pageTitle = $member ? htmlspecialchars($member['name']) . ' - Chapter Directory
             background: var(--bg-inner-card);
             border-left: 3px solid var(--accent-yellow);
             border-radius: 0 6px 6px 0;
-            padding: 16px 20px;
+            padding: 18px 22px;
             color: #d1d5db;
-            font-size: 0.95rem;
-            line-height: 1.7;
+            font-size: 0.98rem;
+            line-height: 1.75;
         }
 
         .qr-wrapper {
@@ -405,11 +357,11 @@ $pageTitle = $member ? htmlspecialchars($member['name']) . ' - Chapter Directory
             background-color: #000000;
             border-top: 1px solid var(--border-dark);
             padding: 3rem 2rem 1.5rem;
-            margin-top: 3rem;
+            width: 100%;
         }
 
         .footer-container {
-            max-width: 1800px;
+            max-width: 1200px;
             margin: 0 auto;
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
@@ -450,11 +402,6 @@ $pageTitle = $member ? htmlspecialchars($member['name']) . ' - Chapter Directory
             font-size: 0.85rem;
         }
 
-        @media (max-width: 1200px) {
-            .page-layout { grid-template-columns: 1fr; }
-            .sponsors-sidebar { position: static; }
-        }
-
         @media (max-width: 768px) {
             nav ul { display: none; }
             .profile-hero-card { flex-direction: column; text-align: center; }
@@ -489,166 +436,113 @@ $pageTitle = $member ? htmlspecialchars($member['name']) . ' - Chapter Directory
         </div>
     </header>
 
-    <!-- MAIN CONTAINER (SAME AS HOMEPAGE) -->
+    <!-- MAIN CONTAINER (NO SPONSOR SIDEBARS) -->
     <div class="main-container">
-        <div class="page-layout">
-            
-            <!-- LEFT SIDEBAR: MAJOR SPONSORS -->
-            <aside class="sponsors-sidebar">
-                <h3>Major Sponsors</h3>
-                <?php 
-                $displaySponsors = array_slice($sponsors, 0, 3);
-                if (empty($displaySponsors)): 
-                ?>
-                    <div class="sponsor-box">No sponsors yet</div>
-                <?php else: ?>
-                    <?php foreach ($displaySponsors as $sponsor): ?>
-                        <div class="sponsor-box" style="padding:6px;height:auto;">
-                            <?php if (!empty(trim((string)($sponsor['url'] ?? '')))): ?>
-                                <a href="<?php echo htmlspecialchars(trim((string)$sponsor['url'])); ?>" target="_blank" rel="noopener noreferrer" style="display:block;">
-                                    <img src="../<?php echo htmlspecialchars($sponsor['logo_path']); ?>" alt="<?php echo htmlspecialchars($sponsor['name']); ?>" style="max-width:100%;max-height:120px;object-fit:contain;display:block;cursor:pointer;">
-                                </a>
-                            <?php else: ?>
-                                <img src="../<?php echo htmlspecialchars($sponsor['logo_path']); ?>" alt="<?php echo htmlspecialchars($sponsor['name']); ?>" style="max-width:100%;max-height:120px;object-fit:contain;display:block;">
-                            <?php endif; ?>
-                        </div>
-                    <?php endforeach; ?>
-                <?php endif; ?>
-            </aside>
-
-            <!-- CENTER CONTENT: MEMBER PROFILE -->
-            <main class="center-content">
-                
-                <div style="margin-bottom: 1.2rem;">
-                    <a href="<?php echo BASE_URL; ?>/index.php#members" class="btn-yellow" style="display:inline-flex; align-items:center; gap:8px;">
-                        &larr; Back to Chapter Directory
-                    </a>
-                </div>
-
-                <?php if (!$member): ?>
-                    <section class="dark-card" style="text-align:center; padding: 4rem 2rem;">
-                        <div style="font-size: 3rem; margin-bottom: 12px;">🏛️</div>
-                        <h2 style="color:#fff; margin-bottom: 10px;">Member Profile Not Found</h2>
-                        <p style="color:var(--text-muted); max-width: 500px; margin: 0 auto 20px;">
-                            This member profile is either not published yet or is currently undergoing annual chapter dues verification.
-                        </p>
-                        <a href="<?php echo BASE_URL; ?>/index.php#members" class="btn-yellow">Return to Directory</a>
-                    </section>
-                <?php else: 
-                    $initials = '';
-                    $parts = explode(' ', preg_replace('/^(Ar\.|Arch\.|Architect)\s+/i', '', $member['name']));
-                    foreach ($parts as $p) {
-                        if (!empty($p)) $initials .= strtoupper($p[0]);
-                    }
-                    $initials = substr($initials, 0, 2) ?: 'AR';
-                ?>
-
-                    <!-- HERO MEMBER HEADER -->
-                    <div class="profile-hero-card">
-                        <div class="profile-avatar-circle">
-                            <?php echo htmlspecialchars($initials); ?>
-                        </div>
-                        <div class="profile-hero-info">
-                            <h1><?php echo htmlspecialchars($member['name']); ?></h1>
-                            <div class="role-tag"><?php echo htmlspecialchars($member['role_title'] ?: 'Architect'); ?></div>
-                        </div>
-                    </div>
-
-                    <!-- PROFESSIONAL CREDENTIALS -->
-                    <section class="dark-card">
-                        <div class="section-heading">
-                            <h2>🏛️ Professional Credentials</h2>
-                        </div>
-                        <div class="info-grid">
-                            <div class="info-cell">
-                                <label>PRC License Number</label>
-                                <span><?php echo htmlspecialchars($member['id_number'] ?: '—'); ?></span>
-                            </div>
-                            <div class="info-cell">
-                                <label>Chapter Affiliation</label>
-                                <span>UAP Mindoro Chapter (121)</span>
-                            </div>
-                            <div class="info-cell">
-                                <label>Architectural Specialty</label>
-                                <span><?php echo htmlspecialchars($member['specialty'] ?: 'General Practice'); ?></span>
-                            </div>
-                            <div class="info-cell">
-                                <label>Primary Location / Base</label>
-                                <span><?php echo htmlspecialchars($member['location'] ?: 'Mindoro, Philippines'); ?></span>
-                            </div>
-                        </div>
-                    </section>
-
-                    <!-- ACHIEVEMENTS -->
-                    <section class="dark-card">
-                        <div class="section-heading">
-                            <h2>🏆 Career Achievements & Practice</h2>
-                        </div>
-                        <div class="content-box">
-                            <?php echo nl2br(htmlspecialchars($member['achievements'] ?: 'No specific achievements submitted yet.')); ?>
-                        </div>
-                    </section>
-
-                    <!-- AWARDS -->
-                    <section class="dark-card">
-                        <div class="section-heading">
-                            <h2>🎖️ Honors, Distinctions & Awards</h2>
-                        </div>
-                        <div class="content-box">
-                            <?php echo nl2br(htmlspecialchars($member['awards'] ?: 'No awards or distinctions listed.')); ?>
-                        </div>
-                    </section>
-
-                    <!-- CHAPTER VERIFICATION & QR -->
-                    <section class="dark-card" style="text-align: center;">
-                        <div class="section-heading" style="text-align: left;">
-                            <h2>📱 Chapter Verification</h2>
-                        </div>
-                        <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1rem;">
-                            Official registered architect verified under the United Architects of the Philippines – Mindoro Chapter.
-                        </p>
-                        
-                        <?php if (!empty($member['qr_image_path'])): ?>
-                            <div class="qr-wrapper">
-                                <img src="<?php echo BASE_URL; ?>/<?php echo htmlspecialchars($member['qr_image_path']); ?>" alt="Architect QR Card">
-                            </div>
-                            <p style="font-size: 0.8rem; color: var(--text-muted);">Scan to verify / contact</p>
-                        <?php else: ?>
-                            <div style="background: var(--bg-inner-card); border: 1px dashed var(--border-dark); border-radius: 8px; padding: 24px; max-width: 400px; margin: 0 auto;">
-                                <span style="font-size: 2.2rem; display: block; margin-bottom: 6px;">🏛️</span>
-                                <strong style="color: #ffffff; font-size: 0.95rem;">UAP Mindoro Chapter Registered Member</strong>
-                            </div>
-                        <?php endif; ?>
-                    </section>
-
-                <?php endif; ?>
-
-            </main>
-
-            <!-- RIGHT SIDEBAR: OFFICIAL PARTNERS -->
-            <aside class="sponsors-sidebar">
-                <h3>Official Partners</h3>
-                <?php 
-                $displayPartners = array_slice($sponsors, 3, 3);
-                if (empty($displayPartners)): 
-                ?>
-                    <div class="sponsor-box">No partners yet</div>
-                <?php else: ?>
-                    <?php foreach ($displayPartners as $partner): ?>
-                        <div class="sponsor-box" style="padding:6px;height:auto;">
-                            <?php if (!empty(trim((string)($partner['url'] ?? '')))): ?>
-                                <a href="<?php echo htmlspecialchars(trim((string)$partner['url'])); ?>" target="_blank" rel="noopener noreferrer" style="display:block;">
-                                    <img src="../<?php echo htmlspecialchars($partner['logo_path']); ?>" alt="<?php echo htmlspecialchars($partner['name']); ?>" style="max-width:100%;max-height:120px;object-fit:contain;display:block;cursor:pointer;">
-                                </a>
-                            <?php else: ?>
-                                <img src="../<?php echo htmlspecialchars($partner['logo_path']); ?>" alt="<?php echo htmlspecialchars($partner['name']); ?>" style="max-width:100%;max-height:120px;object-fit:contain;display:block;">
-                            <?php endif; ?>
-                        </div>
-                    <?php endforeach; ?>
-                <?php endif; ?>
-            </aside>
-
+        
+        <div style="margin-bottom: 1.4rem;">
+            <a href="<?php echo BASE_URL; ?>/index.php#members" class="btn-yellow" style="display:inline-flex; align-items:center; gap:8px;">
+                &larr; Back to Chapter Directory
+            </a>
         </div>
+
+        <?php if (!$member): ?>
+            <section class="dark-card" style="text-align:center; padding: 4rem 2rem;">
+                <div style="font-size: 3rem; margin-bottom: 12px;">🏛️</div>
+                <h2 style="color:#fff; margin-bottom: 10px;">Member Profile Not Found</h2>
+                <p style="color:var(--text-muted); max-width: 500px; margin: 0 auto 20px;">
+                    This member profile is either not published yet or is currently undergoing annual chapter dues verification.
+                </p>
+                <a href="<?php echo BASE_URL; ?>/index.php#members" class="btn-yellow">Return to Directory</a>
+            </section>
+        <?php else: 
+            $initials = '';
+            $parts = explode(' ', preg_replace('/^(Ar\.|Arch\.|Architect)\s+/i', '', $member['name']));
+            foreach ($parts as $p) {
+                if (!empty($p)) $initials .= strtoupper($p[0]);
+            }
+            $initials = substr($initials, 0, 2) ?: 'AR';
+        ?>
+
+            <!-- HERO MEMBER HEADER -->
+            <div class="profile-hero-card">
+                <div class="profile-avatar-circle">
+                    <?php echo htmlspecialchars($initials); ?>
+                </div>
+                <div class="profile-hero-info">
+                    <h1><?php echo htmlspecialchars($member['name']); ?></h1>
+                    <div class="role-tag"><?php echo htmlspecialchars($member['role_title'] ?: 'Architect'); ?></div>
+                </div>
+            </div>
+
+            <!-- PROFESSIONAL CREDENTIALS -->
+            <section class="dark-card">
+                <div class="section-heading">
+                    <h2>🏛️ Professional Credentials</h2>
+                </div>
+                <div class="info-grid">
+                    <div class="info-cell">
+                        <label>PRC License Number</label>
+                        <span><?php echo htmlspecialchars($member['id_number'] ?: '—'); ?></span>
+                    </div>
+                    <div class="info-cell">
+                        <label>Chapter Affiliation</label>
+                        <span>UAP Mindoro Chapter (121)</span>
+                    </div>
+                    <div class="info-cell">
+                        <label>Architectural Specialty</label>
+                        <span><?php echo htmlspecialchars($member['specialty'] ?: 'General Practice'); ?></span>
+                    </div>
+                    <div class="info-cell">
+                        <label>Primary Location / Base</label>
+                        <span><?php echo htmlspecialchars($member['location'] ?: 'Mindoro, Philippines'); ?></span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ACHIEVEMENTS -->
+            <section class="dark-card">
+                <div class="section-heading">
+                    <h2>🏆 Career Achievements & Practice</h2>
+                </div>
+                <div class="content-box">
+                    <?php echo nl2br(htmlspecialchars($member['achievements'] ?: 'No specific achievements submitted yet.')); ?>
+                </div>
+            </section>
+
+            <!-- AWARDS -->
+            <section class="dark-card">
+                <div class="section-heading">
+                    <h2>🎖️ Honors, Distinctions & Awards</h2>
+                </div>
+                <div class="content-box">
+                    <?php echo nl2br(htmlspecialchars($member['awards'] ?: 'No awards or distinctions listed.')); ?>
+                </div>
+            </section>
+
+            <!-- CHAPTER VERIFICATION & QR -->
+            <section class="dark-card" style="text-align: center;">
+                <div class="section-heading" style="text-align: left;">
+                    <h2>📱 Chapter Verification</h2>
+                </div>
+                <p style="color: var(--text-muted); font-size: 0.95rem; margin-bottom: 1.2rem;">
+                    Official registered architect verified under the United Architects of the Philippines – Mindoro Chapter.
+                </p>
+                
+                <?php if (!empty($member['qr_image_path'])): ?>
+                    <div class="qr-wrapper">
+                        <img src="<?php echo BASE_URL; ?>/<?php echo htmlspecialchars($member['qr_image_path']); ?>" alt="Architect QR Card">
+                    </div>
+                    <p style="font-size: 0.82rem; color: var(--text-muted);">Scan to verify / contact</p>
+                <?php else: ?>
+                    <div style="background: var(--bg-inner-card); border: 1px dashed var(--border-dark); border-radius: 8px; padding: 24px; max-width: 440px; margin: 0 auto;">
+                        <span style="font-size: 2.2rem; display: block; margin-bottom: 6px;">🏛️</span>
+                        <strong style="color: #ffffff; font-size: 0.95rem;">UAP Mindoro Chapter Registered Member</strong>
+                    </div>
+                <?php endif; ?>
+            </section>
+
+        <?php endif; ?>
+
     </div>
 
     <!-- FOOTER -->
