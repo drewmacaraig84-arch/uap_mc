@@ -499,6 +499,25 @@ $pageTitle = $member ? htmlspecialchars($member['name']) . ' - Chapter Directory
                 </div>
             </section>
 
+            <!-- FEATURED PROJECT / WORK PHOTO -->
+            <?php if (!empty($member['photo_path'])): ?>
+            <section class="dark-card">
+                <div class="section-heading">
+                    <h2>📸 Featured Project / Work</h2>
+                </div>
+                <div style="text-align:center; margin-bottom:1rem;">
+                    <img src="<?php echo BASE_URL; ?>/<?php echo htmlspecialchars($member['photo_path']); ?>" 
+                         alt="<?php echo htmlspecialchars($member['name']); ?> Featured Work" 
+                         style="max-width:100%; max-height:520px; width:auto; border-radius:8px; object-fit:cover; border:1px solid var(--border-dark); box-shadow:0 12px 32px rgba(0,0,0,0.6);">
+                </div>
+                <?php if (!empty($member['photo_description'])): ?>
+                <div class="content-box">
+                    <?php echo nl2br(htmlspecialchars($member['photo_description'])); ?>
+                </div>
+                <?php endif; ?>
+            </section>
+            <?php endif; ?>
+
             <!-- ACHIEVEMENTS -->
             <section class="dark-card">
                 <div class="section-heading">
