@@ -41,9 +41,14 @@ include __DIR__ . '/../includes/header.php';
   </div>
 </div>
 <?php if ($isGoodMember): ?>
-  <div class="alert alert-success" style="margin-top: 12px;">
-    <strong>✅ Good Member</strong><br>
-    Your dues are up to date and you are consistently paying on time.
+  <div class="alert alert-success" style="margin-top: 12px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+    <div>
+      <strong>✅ Member in Good Standing</strong><br>
+      Your dues are fully settled for the active period.
+    </div>
+    <a href="certificate.php" target="_blank" class="btn btn-sm" style="background:#1e7e34;color:#fff;text-decoration:none;padding:8px 14px;border-radius:6px;font-weight:700;">
+      📜 View Certificate of Good Standing
+    </a>
   </div>
 <?php endif; ?>
 <?php
@@ -71,7 +76,6 @@ include __DIR__ . '/../includes/header.php';
   </div>
 </div>
 <div class="card">
-  <?php if (isset($_GET['submitted'])): ?><div class="alert alert-success">Payment submitted! Awaiting admin verification.</div><?php endif; ?>
   <?php if (empty($dues)): ?>
     <p class="muted">No dues have been assigned to you yet.</p>
   <?php else: ?>

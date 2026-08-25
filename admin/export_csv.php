@@ -3,7 +3,8 @@ require_once __DIR__ . '/../includes/auth.php';
 require_admin();
 
 $payments = $pdo->query("
-    SELECT u.name as member_name, u.id_number, d.title as due_title,
+    SELECT u.name as member_name, u.id_number, 
+           COALESCE(md.custom_title, d.title) as due_title,
            md.payment_type, p.installment_number, p.amount_paid,
            p.method, p.reference_number, p.status, r.receipt_number,
            p.submitted_at, p.verified_at

@@ -846,6 +846,7 @@ $page_title = $page_title ?? 'Dues System';
       </button>
       <div class="user-menu-divider"></div>
       <form method="post" action="<?php echo BASE_URL; ?>/auth/logout.php" class="logout-form" style="margin:0;padding:0;">
+        <?php echo csrf_field(); ?>
         <button type="submit" class="logout-btn">Log out</button>
       </form>
     </div>
@@ -853,3 +854,5 @@ $page_title = $page_title ?? 'Dues System';
 </header>
 <?php endif; ?>
 <div class="container">
+<?php if (function_exists('display_flash')) { display_flash(); } ?>
+

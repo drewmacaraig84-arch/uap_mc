@@ -7,70 +7,95 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     exit;
 }
 
-$payment_id = (int)$_POST['payment_id'];
-$action = $_POST['action'];
+require_csrf();
+
+$payment_id = (int)($_POST['payment_id'] ?? 0);
+$action = $_POST['action'] ?? '';
+$remarks = trim($_POST['remarks'] ?? '');
 
 $stmt = $pdo->prepare("SELECT * FROM payments WHERE id = ?");
 $stmt->execute([$payment_id]);
 $payment = $stmt->fetch();
 
 if (!$payment) {
+    if (function_exists('set_flash')) {
+        set_flash('error', 'Payment record not found.');
+    }
     header('Location: dashboard.php');
     exit;
 }
 
-if ($action === 'approve') {
-    // Mark payment as verified
-    $stmt = $pdo->prepare("UPDATE payments SET status = 'verified', verified_at = NOW(), verified_by = ? WHERE id = ?");
-    $stmt->execute([current_user_id(), $payment_id]);
+try {
+    $pdo->beginTransaction();
 
-    // Recalculate total verified payments for this member_due
-    $total_stmt = $pdo->prepare("SELECT SUM(amount_paid) as total FROM payments WHERE member_due_id = ? AND status = 'verified'");
-    $total_stmt->execute([$payment['member_due_id']]);
-    $total_paid = (float)($total_stmt->fetch()['total'] ?? 0);
+    if ($action === 'approve') {
+        // Mark payment as verified
+        $stmt = $pdo->prepare("UPDATE payments SET status = 'verified', verified_at = NOW(), verified_by = ?, remarks = ? WHERE id = ?");
+        $stmt->execute([current_user_id(), $remarks ?: 'Approved by admin', $payment_id]);
 
-    // Get the full due amount
-    $due_stmt = $pdo->prepare("SELECT d.amount FROM member_dues md JOIN dues d ON md.due_id = d.id WHERE md.id = ?");
-    $due_stmt->execute([$payment['member_due_id']]);
-    $due_amount = (float)($due_stmt->fetch()['amount'] ?? 0);
+        // Recalculate total verified payments for this member_due
+        $total_stmt = $pdo->prepare("SELECT SUM(amount_paid) as total FROM payments WHERE member_due_id = ? AND status = 'verified'");
+        $total_stmt->execute([$payment['member_due_id']]);
+        $total_paid = (float)($total_stmt->fetch()['total'] ?? 0);
 
-    // Determine new status (use bcmath for precise decimal comparison to avoid 0.04 shortfalls)
-    $total_paid_precise = round($total_paid, 2);
-    $due_amount_precise = round($due_amount, 2);
-    
-    if ($total_paid_precise >= $due_amount_precise) {
-        $new_status = 'paid';
-    } elseif ($total_paid > 0) {
-        $new_status = 'partial';
+        // Get the full due amount (support custom amount if present)
+        $due_stmt = $pdo->prepare("SELECT COALESCE(md.custom_amount, d.amount) as amount FROM member_dues md JOIN dues d ON md.due_id = d.id WHERE md.id = ?");
+        $due_stmt->execute([$payment['member_due_id']]);
+        $due_amount = (float)($due_stmt->fetch()['amount'] ?? 0);
+
+        $new_status = calculate_due_status($total_paid, $due_amount);
+        $total_paid_precise = round($total_paid, 2);
+
+        $stmt = $pdo->prepare("UPDATE member_dues SET status = ?, total_paid = ? WHERE id = ?");
+        $stmt->execute([$new_status, $total_paid_precise, $payment['member_due_id']]);
+
+        // Issue official receipt
+        $existingReceipt = $pdo->prepare("SELECT id FROM receipts WHERE payment_id = ?");
+        $existingReceipt->execute([$payment_id]);
+        if (!$existingReceipt->fetch()) {
+            $receipt_number = generate_receipt_number($pdo);
+            $stmt = $pdo->prepare("INSERT INTO receipts (payment_id, receipt_number) VALUES (?, ?)");
+            $stmt->execute([$payment_id, $receipt_number]);
+        }
+
+        $pdo->commit();
+        if (function_exists('set_flash')) {
+            set_flash('success', "Payment #{$payment_id} approved successfully and official receipt generated.");
+        }
+
+    } elseif ($action === 'reject') {
+        $stmt = $pdo->prepare("UPDATE payments SET status = 'rejected', verified_at = NOW(), verified_by = ?, remarks = ? WHERE id = ?");
+        $stmt->execute([current_user_id(), $remarks ?: 'Payment rejected by admin', $payment_id]);
+
+        // Revert member_due status based on remaining verified payments
+        $total_stmt = $pdo->prepare("SELECT SUM(amount_paid) as total FROM payments WHERE member_due_id = ? AND status = 'verified'");
+        $total_stmt->execute([$payment['member_due_id']]);
+        $total_paid = (float)($total_stmt->fetch()['total'] ?? 0);
+
+        $due_stmt = $pdo->prepare("SELECT COALESCE(md.custom_amount, d.amount) as amount FROM member_dues md JOIN dues d ON md.due_id = d.id WHERE md.id = ?");
+        $due_stmt->execute([$payment['member_due_id']]);
+        $due_amount = (float)($due_stmt->fetch()['amount'] ?? 0);
+
+        $new_status = calculate_due_status($total_paid, $due_amount);
+
+        $stmt = $pdo->prepare("UPDATE member_dues SET status = ?, total_paid = ? WHERE id = ?");
+        $stmt->execute([$new_status, round($total_paid, 2), $payment['member_due_id']]);
+
+        $pdo->commit();
+        if (function_exists('set_flash')) {
+            set_flash('warning', "Payment #{$payment_id} has been rejected.");
+        }
     } else {
-        $new_status = 'unpaid';
+        $pdo->rollBack();
     }
-
-    $stmt = $pdo->prepare("UPDATE member_dues SET status = ?, total_paid = ? WHERE id = ?");
-    $stmt->execute([$new_status, $total_paid_precise, $payment['member_due_id']]);
-
-    // Generate receipt only if fully paid
-    if ($new_status === 'paid') {
-        $year = date('Y');
-        $count = $pdo->query("SELECT COUNT(*) FROM receipts WHERE receipt_number LIKE 'UAP-$year-%'")->fetchColumn();
-        $receipt_number = sprintf('UAP-%s-%05d', $year, $count + 1);
-        $stmt = $pdo->prepare("INSERT INTO receipts (payment_id, receipt_number) VALUES (?, ?)");
-        $stmt->execute([$payment_id, $receipt_number]);
+} catch (Exception $e) {
+    if ($pdo->inTransaction()) {
+        $pdo->rollBack();
     }
-
-} elseif ($action === 'reject') {
-    $stmt = $pdo->prepare("UPDATE payments SET status = 'rejected', verified_at = NOW(), verified_by = ? WHERE id = ?");
-    $stmt->execute([current_user_id(), $payment_id]);
-
-    // Revert member_due status based on remaining verified payments
-    $total_stmt = $pdo->prepare("SELECT SUM(amount_paid) as total FROM payments WHERE member_due_id = ? AND status = 'verified'");
-    $total_stmt->execute([$payment['member_due_id']]);
-    $total_paid = (float)($total_stmt->fetch()['total'] ?? 0);
-
-    $new_status = round($total_paid, 2) > 0 ? 'partial' : 'unpaid';
-    $stmt = $pdo->prepare("UPDATE member_dues SET status = ?, total_paid = ? WHERE id = ?");
-    $stmt->execute([$new_status, round($total_paid, 2), $payment['member_due_id']]);
+    if (function_exists('set_flash')) {
+        set_flash('error', 'An error occurred while updating payment verification status.');
+    }
 }
 
-header('Location: dashboard.php?done=1');
+header('Location: dashboard.php');
 exit;

@@ -12,6 +12,7 @@ $record->execute([current_user_id()]);
 $profile = $record->fetch();
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'save_profile') {
+    require_csrf();
     if (!is_good_member($pdo, current_user_id())) {
         header('Location: dashboard.php');
         exit;
@@ -38,6 +39,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'save_
             is_published = 1");
     $stmt->execute([current_user_id(), $name, $idNumber, $role, $specialty, $location, $achievements, $awards]);
 
+    if (function_exists('set_flash')) {
+        set_flash('success', 'Profile updated successfully.');
+    }
+
     $record = $pdo->prepare("SELECT * FROM website_members WHERE user_id = ? LIMIT 1");
     $record->execute([current_user_id()]);
     $profile = $record->fetch();
@@ -51,7 +56,9 @@ include __DIR__ . '/../includes/header.php';
   <p class="muted">This profile appears on the public website when you are recognized as a good member.</p>
 
   <form method="post" enctype="multipart/form-data" style="margin-top: 20px;">
+    <?php echo csrf_field(); ?>
     <input type="hidden" name="action" value="save_profile">
+
 
     <div class="grid-2">
       <div class="field">

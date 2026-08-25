@@ -3,9 +3,10 @@ require_once __DIR__ . '/../includes/config.php';
 $error = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $name = trim($_POST['name']);
-    $id_number = trim($_POST['id_number']);
-    $password = $_POST['password'];
+    require_csrf();
+    $name = trim($_POST['name'] ?? '');
+    $id_number = trim($_POST['id_number'] ?? '');
+    $password = $_POST['password'] ?? '';
 
     if (!$name || !$id_number || !$password) {
         $error = 'Please fill in all required fields.';
@@ -41,6 +42,7 @@ include __DIR__ . '/../includes/header.php';
       <h1>Create Member Account</h1>
       <?php if ($error): ?><div class="alert alert-error"><strong>⚠ Registration Error</strong><br><?php echo htmlspecialchars($error); ?></div><?php endif; ?>
       <form method="post">
+        <?php echo csrf_field(); ?>
         <div class="field"><label>Full Name</label><input name="name" required></div>
         <div class="field"><label>PRC ID No.</label><input name="id_number" required placeholder="e.g. 0123456"></div>
         <div class="field"><label>Password</label><input type="password" name="password" required></div>

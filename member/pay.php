@@ -1,8 +1,4 @@
 <?php
-ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
-error_reporting(E_ALL);
-
 require_once __DIR__ . '/../includes/auth.php';
 require_member();
 
@@ -48,127 +44,126 @@ foreach ($qrcodes as $q) { $qr_by_method[$q['method']] = $q['image_path']; }
 $error = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $method = $_POST['method'];
-    $reference_number = trim($_POST['reference_number']);
-   $payment_type = $_POST['payment_type'];
+    require_csrf();
+    $method = $_POST['method'] ?? '';
+    $reference_number = trim($_POST['reference_number'] ?? '');
+    $payment_type = $_POST['payment_type'] ?? '';
 
-switch($payment_type){
-
-  case "full":
-    if ($already_paid > 0) {
-        $amount_paid = $remaining;
-    } else {
-        $amount_paid = $due['amount'];
+    switch ($payment_type) {
+        case "full":
+            $amount_paid = ($already_paid > 0) ? $remaining : (float)$due['amount'];
+            break;
+        case "first_half":
+            $amount_paid = $halfAmount;
+            break;
+        case "second_half":
+            $amount_paid = $remaining;
+            break;
+        default:
+            $amount_paid = 0;
     }
-    break;
 
-    case "first_half":
-        $amount_paid = $halfAmount;
-        break;
-
-    case "second_half":
-        $amount_paid = $remaining;
-        break;
-
-    default:
-        $amount_paid = 0;
-}
-if ($amount_paid <= 0) {
-
-    $error = 'Invalid payment amount.';
-
-} elseif ($amount_paid > $remaining) {
-
-    $error = 'Amount exceeds remaining balance of ₱' . number_format($remaining, 2) . '.';
-
-} elseif ($verifiedPayments > 0 && $payment_type == "first_half") {
-
-    $error = "The first tranche has already been submitted.";
-
-} elseif (!isset($_FILES['proof']) || $_FILES['proof']['error'] !== UPLOAD_ERR_OK) {
-
-    $error = 'Please upload proof of payment.';
-
-} else {
-
-    $ext = strtolower(pathinfo($_FILES['proof']['name'], PATHINFO_EXTENSION));
-
-    if (!in_array($ext, ['jpg','jpeg','png','pdf'])) {
-
-        $error = 'Only JPG, JPEG, PNG and PDF are allowed.';
-
+    if ($amount_paid <= 0) {
+        $error = 'Invalid payment amount.';
+    } elseif ($amount_paid > ($remaining + 0.01)) {
+        $error = 'Amount exceeds remaining balance of ₱' . number_format($remaining, 2) . '.';
+    } elseif ($verifiedPayments > 0 && $payment_type === "first_half") {
+        $error = "The first tranche has already been submitted.";
+    } elseif (!isset($_FILES['proof']) || $_FILES['proof']['error'] !== UPLOAD_ERR_OK) {
+        $error = 'Please upload proof of payment.';
+    } elseif ($_FILES['proof']['size'] > 5 * 1024 * 1024) {
+        $error = 'Proof file is too large. Maximum allowed size is 5MB.';
     } else {
+        $ext = strtolower(pathinfo($_FILES['proof']['name'], PATHINFO_EXTENSION));
+        $allowedExtensions = ['jpg', 'jpeg', 'png', 'pdf'];
+        
+        $finfo = finfo_open(FILEINFO_MIME_TYPE);
+        $mime = finfo_file($finfo, $_FILES['proof']['tmp_name']);
+        finfo_close($finfo);
 
-        $filename = 'proof_' . $member_due_id . '_' . time() . '.' . $ext;
+        $allowedMimes = ['image/jpeg', 'image/png', 'application/pdf'];
 
-        move_uploaded_file(
-            $_FILES['proof']['tmp_name'],
-            __DIR__ . '/../uploads/' . $filename
-        );
+        if (!in_array($ext, $allowedExtensions) || !in_array($mime, $allowedMimes)) {
+            $error = 'Invalid file type. Only JPG, JPEG, PNG and PDF documents are allowed.';
+        } else {
+            $filename = 'proof_' . $member_due_id . '_' . time() . '_' . bin2hex(random_bytes(4)) . '.' . $ext;
+            $destination = __DIR__ . '/../uploads/' . $filename;
 
-        $proof_path = 'uploads/' . $filename;
+            if (!move_uploaded_file($_FILES['proof']['tmp_name'], $destination)) {
+                $error = 'Failed to save uploaded file. Please try again.';
+            } else {
+                $proof_path = 'uploads/' . $filename;
 
-// Set installment number
-switch ($payment_type) {
+                switch ($payment_type) {
+                    case "full":
+                        $inst_num = 0;
+                        break;
+                    case "first_half":
+                        $inst_num = 1;
+                        break;
+                    case "second_half":
+                        $inst_num = 2;
+                        break;
+                    default:
+                        $inst_num = null;
+                }
 
-    case "full":
-        $inst_num = 0;
-        break;
+                try {
+                    $pdo->beginTransaction();
 
-    case "first_half":
-        $inst_num = 1;
-        break;
+                    $stmt = $pdo->prepare("
+                        INSERT INTO payments
+                        (
+                            member_due_id,
+                            amount_paid,
+                            method,
+                            reference_number,
+                            proof_image,
+                            installment_number,
+                            status
+                        )
+                        VALUES
+                        (?, ?, ?, ?, ?, ?, 'pending')
+                    ");
 
-    case "second_half":
-        $inst_num = 2;
-        break;
+                    $stmt->execute([
+                        $member_due_id,
+                        $amount_paid,
+                        $method,
+                        $reference_number,
+                        $proof_path,
+                        $inst_num
+                    ]);
 
-    default:
-        $inst_num = NULL;
-}
+                    $stmt = $pdo->prepare("
+                        UPDATE member_dues
+                        SET status = 'pending',
+                            payment_type = ?
+                        WHERE id = ?
+                    ");
 
-// Insert payment
-$stmt = $pdo->prepare("
-    INSERT INTO payments
-    (
-        member_due_id,
-        amount_paid,
-        method,
-        reference_number,
-        proof_image,
-        installment_number,
-        status
-    )
-    VALUES
-    (?, ?, ?, ?, ?, ?, 'pending')
-");
+                    $stmt->execute([
+                        $payment_type,
+                        $member_due_id
+                    ]);
 
-$stmt->execute([
-    $member_due_id,
-    $amount_paid,
-    $method,
-    $reference_number,
-    $proof_path,
-    $inst_num
-]);
+                    $pdo->commit();
 
-        $stmt = $pdo->prepare("
-            UPDATE member_dues
-            SET status='pending',
-                payment_type=?
-            WHERE id=?
-        ");
-
-        $stmt->execute([
-            $payment_type,
-            $member_due_id
-        ]);
-
-        header("Location: dashboard.php?submitted=1");
-        exit;
-    	}
-	}
-    
+                    if (function_exists('set_flash')) {
+                        set_flash('success', 'Payment submitted successfully! Please wait for admin verification.');
+                    }
+                    header("Location: dashboard.php");
+                    exit;
+                } catch (Exception $e) {
+                    if ($pdo->inTransaction()) {
+                        $pdo->rollBack();
+                    }
+                    @unlink($destination);
+                    $error = 'A database error occurred while submitting payment. Please try again.';
+                }
+            }
+        }
+    }
 }
 
 $page_title = 'Submit Payment';
@@ -197,6 +192,7 @@ include __DIR__ . '/../includes/header.php';
   <?php if ($error): ?><div class="alert alert-error"><?php echo htmlspecialchars($error); ?></div><?php endif; ?>
 
   <form method="post" enctype="multipart/form-data">
+    <?php echo csrf_field(); ?>
     <input type="hidden" name="member_due_id" value="<?php echo $member_due_id; ?>">
 
     <!-- Payment type -->

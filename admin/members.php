@@ -13,55 +13,90 @@ if ($selected_member_id > 0) {
     }
 }
 
-// Handle member account delete — manual cascade for MyISAM
+// Handle member account delete — manual cascade with transaction
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'delete_member') {
+    require_csrf();
     $user_id = (int)$_POST['user_id'];
 
-    // Get all member_dues for this user
-    $md_ids = $pdo->prepare("SELECT id FROM member_dues WHERE user_id = ?");
-    $md_ids->execute([$user_id]);
-    $md_rows = $md_ids->fetchAll(PDO::FETCH_COLUMN);
+    try {
+        $pdo->beginTransaction();
 
-    if ($md_rows) {
-        foreach ($md_rows as $md_id) {
-            $pay_ids = $pdo->prepare("SELECT id FROM payments WHERE member_due_id = ?");
-            $pay_ids->execute([$md_id]);
-            $p_rows = $pay_ids->fetchAll(PDO::FETCH_COLUMN);
-            if ($p_rows) {
-                $in = implode(',', array_map('intval', $p_rows));
-                $pdo->exec("DELETE FROM receipts WHERE payment_id IN ($in)");
-                $pdo->exec("DELETE FROM payments WHERE id IN ($in)");
+        // Get all member_dues for this user
+        $md_ids = $pdo->prepare("SELECT id FROM member_dues WHERE user_id = ?");
+        $md_ids->execute([$user_id]);
+        $md_rows = $md_ids->fetchAll(PDO::FETCH_COLUMN);
+
+        if ($md_rows) {
+            foreach ($md_rows as $md_id) {
+                $pay_ids = $pdo->prepare("SELECT id FROM payments WHERE member_due_id = ?");
+                $pay_ids->execute([$md_id]);
+                $p_rows = $pay_ids->fetchAll(PDO::FETCH_COLUMN);
+                if ($p_rows) {
+                    $in = implode(',', array_map('intval', $p_rows));
+                    $pdo->exec("DELETE FROM receipts WHERE payment_id IN ($in)");
+                    $pdo->exec("DELETE FROM payments WHERE id IN ($in)");
+                }
             }
+            $in = implode(',', array_map('intval', $md_rows));
+            $pdo->exec("DELETE FROM member_dues WHERE id IN ($in)");
         }
-        $in = implode(',', array_map('intval', $md_rows));
-        $pdo->exec("DELETE FROM member_dues WHERE id IN ($in)");
+
+        $pdo->prepare("DELETE FROM users WHERE id = ? AND role = 'member'")->execute([$user_id]);
+        $pdo->commit();
+        if (function_exists('set_flash')) {
+            set_flash('success', 'Member account and related records deleted successfully.');
+        }
+    } catch (Exception $e) {
+        if ($pdo->inTransaction()) {
+            $pdo->rollBack();
+        }
+        if (function_exists('set_flash')) {
+            set_flash('error', 'Failed to delete member account.');
+        }
     }
 
-    $pdo->prepare("DELETE FROM users WHERE id = ? AND role = 'member'")->execute([$user_id]);
-    header('Location: members.php?deleted=1');
+    header('Location: members.php');
     exit;
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'delete_member_due') {
+    require_csrf();
     $member_due_id = (int)$_POST['member_due_id'];
     $member_id = (int)$_POST['member_id'];
 
-    $pay_ids = $pdo->prepare("SELECT id FROM payments WHERE member_due_id = ?");
-    $pay_ids->execute([$member_due_id]);
-    $p_rows = $pay_ids->fetchAll(PDO::FETCH_COLUMN);
+    try {
+        $pdo->beginTransaction();
 
-    if ($p_rows) {
-        $in = implode(',', array_map('intval', $p_rows));
-        $pdo->exec("DELETE FROM receipts WHERE payment_id IN ($in)");
-        $pdo->exec("DELETE FROM payments WHERE id IN ($in)");
+        $pay_ids = $pdo->prepare("SELECT id FROM payments WHERE member_due_id = ?");
+        $pay_ids->execute([$member_due_id]);
+        $p_rows = $pay_ids->fetchAll(PDO::FETCH_COLUMN);
+
+        if ($p_rows) {
+            $in = implode(',', array_map('intval', $p_rows));
+            $pdo->exec("DELETE FROM receipts WHERE payment_id IN ($in)");
+            $pdo->exec("DELETE FROM payments WHERE id IN ($in)");
+        }
+
+        $pdo->prepare("DELETE FROM member_dues WHERE id = ?")->execute([$member_due_id]);
+        $pdo->commit();
+        if (function_exists('set_flash')) {
+            set_flash('success', 'Assigned due was removed from member.');
+        }
+    } catch (Exception $e) {
+        if ($pdo->inTransaction()) {
+            $pdo->rollBack();
+        }
+        if (function_exists('set_flash')) {
+            set_flash('error', 'Failed to remove assigned due.');
+        }
     }
 
-    $pdo->prepare("DELETE FROM member_dues WHERE id = ?")->execute([$member_due_id]);
-    header('Location: members.php?member_id=' . $member_id . '&deleted_due=1');
+    header('Location: members.php?member_id=' . $member_id);
     exit;
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'update_member_due') {
+    require_csrf();
     $member_due_id = (int)$_POST['member_due_id'];
     $member_id = (int)$_POST['member_id'];
     $title = trim($_POST['title'] ?? '');
@@ -80,7 +115,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'updat
         $member_due_id,
     ]);
 
-    header('Location: members.php?member_id=' . $member_id . '&updated_due=1');
+    if (function_exists('set_flash')) {
+        set_flash('success', "Member's assigned due was updated.");
+    }
+
+    header('Location: members.php?member_id=' . $member_id);
     exit;
 }
 
@@ -192,13 +231,7 @@ include __DIR__ . '/../includes/header.php';
       <td>
         <?php echo htmlspecialchars($m['name']); ?>
         <?php
-        $isGoodMember = (
-            $m['total_dues'] == 0 || (
-                $m['paid_count'] == $m['total_dues'] &&
-                $m['remaining_balance'] <= 0 &&
-                $pdo->query("SELECT COUNT(*) FROM member_dues md LEFT JOIN dues d ON md.due_id = d.id WHERE md.user_id = " . (int)$m['id'] . " AND COALESCE(md.custom_due_date, d.due_date) < CURDATE() AND md.total_paid < COALESCE(md.custom_amount, d.amount)")->fetchColumn() == 0
-            )
-        );
+        $isGoodMember = is_good_member($pdo, $m['id']);
         ?>
         <?php if ($m['status'] === 'pending'): ?> <span class="badge badge-pending">Awaiting Approval</span><?php endif; ?>
         <?php if ($m['status'] === 'rejected'): ?> <span class="badge badge-rejected">Rejected</span><?php endif; ?>
@@ -228,6 +261,7 @@ include __DIR__ . '/../includes/header.php';
         <a class="btn btn-sm" href="members.php?member_id=<?php echo $m['id']; ?>#member-dues-panel">Manage Dues</a>
         <a class="btn btn-sm" href="account_manager.php?search=<?php echo urlencode($m['id_number']); ?>">Edit</a>
         <form method="post" class="inline" onsubmit="return confirm('Delete <?php echo htmlspecialchars(addslashes($m['name'])); ?>? This cannot be undone.');">
+          <?php echo csrf_field(); ?>
           <input type="hidden" name="user_id" value="<?php echo $m['id']; ?>">
           <input type="hidden" name="action" value="delete_member">
           <button class="btn btn-sm btn-danger" type="submit">Delete</button>
@@ -247,6 +281,7 @@ include __DIR__ . '/../includes/header.php';
 
   <?php if ($editing_member_due): ?>
   <form method="post" style="margin-bottom:16px;">
+    <?php echo csrf_field(); ?>
     <input type="hidden" name="action" value="update_member_due">
     <input type="hidden" name="member_due_id" value="<?php echo $editing_member_due['id']; ?>">
     <input type="hidden" name="member_id" value="<?php echo $selected_member['id']; ?>">
@@ -293,11 +328,13 @@ include __DIR__ . '/../includes/header.php';
       <td>
         <a class="btn btn-sm" href="members.php?member_id=<?php echo $selected_member['id']; ?>&edit_member_due=<?php echo $due['id']; ?>">Edit</a>
         <form method="post" class="inline" onsubmit="return confirm('Remove this due from <?php echo htmlspecialchars(addslashes($selected_member['name'])); ?>?');">
+          <?php echo csrf_field(); ?>
           <input type="hidden" name="action" value="delete_member_due">
           <input type="hidden" name="member_due_id" value="<?php echo $due['id']; ?>">
           <input type="hidden" name="member_id" value="<?php echo $selected_member['id']; ?>">
           <button class="btn btn-sm btn-danger" type="submit">Delete</button>
         </form>
+
       </td>
     </tr>
     <?php endforeach; ?>

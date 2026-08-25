@@ -6,77 +6,129 @@ $error = '';
 
 // Handle create
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'create') {
-    $title = trim($_POST['title']);
-    $description = trim($_POST['description']);
-    $amount = (float)$_POST['amount'];
-    $due_date = $_POST['due_date'] ?: null;
-    $term = trim($_POST['term']);
+    require_csrf();
+    $title = trim($_POST['title'] ?? '');
+    $description = trim($_POST['description'] ?? '');
+    $amount = (float)($_POST['amount'] ?? 0);
+    $due_date = !empty($_POST['due_date']) ? $_POST['due_date'] : null;
+    $term = trim($_POST['term'] ?? '');
     $assign_type = $_POST['assign_type'] ?? 'all';
     $specific_members = $_POST['specific_members'] ?? [];
 
-    $stmt = $pdo->prepare("INSERT INTO dues (title, description, amount, due_date, term) VALUES (?, ?, ?, ?, ?)");
-    $stmt->execute([$title, $description, $amount, $due_date, $term]);
-    $due_id = $pdo->lastInsertId();
-
-    $ins = $pdo->prepare("INSERT IGNORE INTO member_dues (user_id, due_id, status) VALUES (?, ?, 'unpaid')");
-
-    if ($assign_type === 'all') {
-        $members = $pdo->query("SELECT id FROM users WHERE role = 'member' AND status = 'approved'")->fetchAll();
-        foreach ($members as $m) { $ins->execute([$m['id'], $due_id]); }
+    if ($title === '' || $amount <= 0) {
+        if (function_exists('set_flash')) {
+            set_flash('error', 'Please provide a valid title and amount.');
+        }
     } else {
-        foreach ($specific_members as $uid) {
-            $ins->execute([(int)$uid, $due_id]);
+        try {
+            $pdo->beginTransaction();
+
+            $stmt = $pdo->prepare("INSERT INTO dues (title, description, amount, due_date, term) VALUES (?, ?, ?, ?, ?)");
+            $stmt->execute([$title, $description, $amount, $due_date, $term]);
+            $due_id = $pdo->lastInsertId();
+
+            $ins = $pdo->prepare("INSERT IGNORE INTO member_dues (user_id, due_id, status) VALUES (?, ?, 'unpaid')");
+
+            if ($assign_type === 'all') {
+                $members = $pdo->query("SELECT id FROM users WHERE role = 'member' AND status = 'approved'")->fetchAll();
+                foreach ($members as $m) {
+                    $ins->execute([$m['id'], $due_id]);
+                }
+            } else {
+                foreach ($specific_members as $uid) {
+                    $ins->execute([(int)$uid, $due_id]);
+                }
+            }
+
+            $pdo->commit();
+            if (function_exists('set_flash')) {
+                set_flash('success', 'Due created and assigned successfully.');
+            }
+        } catch (Exception $e) {
+            if ($pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
+            if (function_exists('set_flash')) {
+                set_flash('error', 'Failed to create due.');
+            }
         }
     }
 
-    header('Location: dues.php?created=1');
+    header('Location: dues.php');
     exit;
 }
 
 // Handle update
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'update') {
+    require_csrf();
     $due_id = (int)$_POST['due_id'];
     $stmt = $pdo->prepare("UPDATE dues SET title=?, description=?, amount=?, due_date=?, term=? WHERE id=?");
-    $stmt->execute([trim($_POST['title']), trim($_POST['description']), (float)$_POST['amount'], $_POST['due_date'] ?: null, trim($_POST['term']), $due_id]);
-    header('Location: dues.php?updated=1');
+    $stmt->execute([trim($_POST['title']), trim($_POST['description']), (float)$_POST['amount'], !empty($_POST['due_date']) ? $_POST['due_date'] : null, trim($_POST['term']), $due_id]);
+    
+    if (function_exists('set_flash')) {
+        set_flash('success', 'Due item updated.');
+    }
+    header('Location: dues.php');
     exit;
 }
 
-// Handle delete — manual cascade since MyISAM doesn't enforce FK
+// Handle delete — manual cascade with transaction
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'delete') {
+    require_csrf();
     $due_id = (int)$_POST['due_id'];
 
-    // Get all member_due IDs for this due
-    $md_ids = $pdo->prepare("SELECT id FROM member_dues WHERE due_id = ?");
-    $md_ids->execute([$due_id]);
-    $md_rows = $md_ids->fetchAll(PDO::FETCH_COLUMN);
+    try {
+        $pdo->beginTransaction();
 
-    if ($md_rows) {
-        // Delete receipts → payments → member_dues manually
-        foreach ($md_rows as $md_id) {
-            $pay_ids = $pdo->prepare("SELECT id FROM payments WHERE member_due_id = ?");
-            $pay_ids->execute([$md_id]);
-            $p_rows = $pay_ids->fetchAll(PDO::FETCH_COLUMN);
-            if ($p_rows) {
-                $in = implode(',', array_map('intval', $p_rows));
-                $pdo->exec("DELETE FROM receipts WHERE payment_id IN ($in)");
-                $pdo->exec("DELETE FROM payments WHERE id IN ($in)");
+        // Get all member_due IDs for this due
+        $md_ids = $pdo->prepare("SELECT id FROM member_dues WHERE due_id = ?");
+        $md_ids->execute([$due_id]);
+        $md_rows = $md_ids->fetchAll(PDO::FETCH_COLUMN);
+
+        if ($md_rows) {
+            // Delete receipts → payments → member_dues manually
+            foreach ($md_rows as $md_id) {
+                $pay_ids = $pdo->prepare("SELECT id FROM payments WHERE member_due_id = ?");
+                $pay_ids->execute([$md_id]);
+                $p_rows = $pay_ids->fetchAll(PDO::FETCH_COLUMN);
+                if ($p_rows) {
+                    $in = implode(',', array_map('intval', $p_rows));
+                    $pdo->exec("DELETE FROM receipts WHERE payment_id IN ($in)");
+                    $pdo->exec("DELETE FROM payments WHERE id IN ($in)");
+                }
             }
+            $in = implode(',', array_map('intval', $md_rows));
+            $pdo->exec("DELETE FROM member_dues WHERE id IN ($in)");
         }
-        $in = implode(',', array_map('intval', $md_rows));
-        $pdo->exec("DELETE FROM member_dues WHERE id IN ($in)");
+        $pdo->prepare("DELETE FROM dues WHERE id=?")->execute([$due_id]);
+        $pdo->commit();
+        if (function_exists('set_flash')) {
+            set_flash('success', 'Due deleted and removed from assigned members.');
+        }
+    } catch (Exception $e) {
+        if ($pdo->inTransaction()) {
+            $pdo->rollBack();
+        }
+        if (function_exists('set_flash')) {
+            set_flash('error', 'Failed to delete due.');
+        }
     }
-    $pdo->prepare("DELETE FROM dues WHERE id=?")->execute([$due_id]);
-    header('Location: dues.php?deleted=1');
+
+    header('Location: dues.php');
     exit;
 }
 
 // Handle assign past due to specific member
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'assign') {
+    require_csrf();
     $due_id = (int)$_POST['due_id'];
     $user_id = (int)$_POST['user_id'];
     $pdo->prepare("INSERT IGNORE INTO member_dues (user_id, due_id, status) VALUES (?, ?, 'unpaid')")->execute([$user_id, $due_id]);
-    header('Location: dues.php?assigned=1');
+    
+    if (function_exists('set_flash')) {
+        set_flash('success', 'Due assigned to member.');
+    }
+    header('Location: dues.php');
     exit;
 }
 
@@ -171,6 +223,7 @@ include __DIR__ . '/../includes/header.php';
     <?php if ($editing): ?>
       <h1>Edit Due</h1>
       <form method="post">
+        <?php echo csrf_field(); ?>
         <input type="hidden" name="action" value="update">
         <input type="hidden" name="due_id" value="<?php echo $editing['id']; ?>">
         <div class="field"><label>Title</label><input name="title" required value="<?php echo htmlspecialchars($editing['title']); ?>"></div>
@@ -184,6 +237,7 @@ include __DIR__ . '/../includes/header.php';
     <?php else: ?>
       <h1>Create New Due</h1>
       <form method="post" id="createForm">
+        <?php echo csrf_field(); ?>
         <input type="hidden" name="action" value="create">
         <div class="field"><label>Title</label><input name="title" required placeholder="e.g. Annual Membership Fee"></div>
         <div class="field"><label>Description</label><input name="description"></div>
@@ -242,6 +296,7 @@ include __DIR__ . '/../includes/header.php';
       <p class="muted">Need at least one due and one approved member.</p>
     <?php else: ?>
     <form method="post">
+      <?php echo csrf_field(); ?>
       <input type="hidden" name="action" value="assign">
       <div class="field">
         <label>Select Due</label>
@@ -285,10 +340,12 @@ include __DIR__ . '/../includes/header.php';
       <td>
         <a class="btn btn-sm" href="dues.php?edit=<?php echo $d['id']; ?>">Edit</a>
         <form method="post" class="inline" onsubmit="return confirm('Delete this due? It will be removed from ALL members who have it assigned.');">
+          <?php echo csrf_field(); ?>
           <input type="hidden" name="action" value="delete">
           <input type="hidden" name="due_id" value="<?php echo $d['id']; ?>">
           <button class="btn btn-sm btn-danger" type="submit">Delete</button>
         </form>
+
       </td>
     </tr>
     <?php endforeach; ?>

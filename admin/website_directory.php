@@ -3,6 +3,7 @@ require_once __DIR__ . '/../includes/auth.php';
 require_admin();
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    require_csrf();
     $action = $_POST['action'] ?? '';
 
     if ($action === 'publish_member') {
@@ -23,6 +24,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 } else {
                     $stmt = $pdo->prepare("INSERT INTO website_members (user_id, name, id_number, role_title, specialty, location, achievements, awards, is_published) VALUES (?, ?, ?, '', '', '', '', '', 1)");
                     $stmt->execute([$userId, $user['name'], $user['id_number']]);
+                }
+
+                if (function_exists('set_flash')) {
+                    set_flash('success', 'Member added to website directory.');
                 }
             }
         }
@@ -52,6 +57,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     qr_image_path = VALUES(qr_image_path),
                     is_published = 1");
             $stmt->execute([$userId, $name, $idNumber, $role, $specialty, $location, $achievements, $awards, null]);
+
+            if (function_exists('set_flash')) {
+                set_flash('success', 'Member profile updated.');
+            }
         }
     }
 }
@@ -102,6 +111,7 @@ include __DIR__ . '/../includes/header.php';
           </div>
           <?php if (!$isListed): ?>
             <form method="post">
+              <?php echo csrf_field(); ?>
               <input type="hidden" name="action" value="publish_member">
               <input type="hidden" name="user_id" value="<?php echo (int)$member['id']; ?>">
               <button class="btn btn-sm" type="submit">Add to Website</button>
@@ -112,6 +122,7 @@ include __DIR__ . '/../includes/header.php';
         </div>
       <?php endforeach; ?>
     </section>
+
 
     <section style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 18px;">
       <h2 style="margin-top:0;">Website Members</h2>

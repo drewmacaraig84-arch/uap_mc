@@ -5,74 +5,105 @@ require_admin();
 $error = '';
 $success = '';
 
-// ============ LOGO UPLOAD ============
-if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST' && ($_POST['action'] ?? null) === 'upload_logo' && isset($_FILES['logo'])) {
-    if ($_FILES['logo']['error'] !== UPLOAD_ERR_OK) {
-        $error = 'Please choose a logo image to upload.';
-    } else {
-        $ext = strtolower(pathinfo($_FILES['logo']['name'], PATHINFO_EXTENSION));
-        if (!in_array($ext, ['jpg', 'jpeg', 'png'])) {
-            $error = 'Only JPG or PNG images are allowed for logo.';
-        } else {
-            $filename = 'logo_' . time() . '.' . $ext;
-            $dest = __DIR__ . '/../uploads/' . $filename;
-            move_uploaded_file($_FILES['logo']['tmp_name'], $dest);
-            $path = 'uploads/' . $filename;
+if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
+    require_csrf();
+    $action = $_POST['action'] ?? null;
 
-            $stmt = $pdo->prepare("INSERT INTO site_settings (setting_key, setting_value) VALUES ('logo', ?) ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)");
-            $stmt->execute([$path]);
-            cache_delete('site_setting:logo');
-            $success = 'Logo updated successfully.';
+    // ============ LOGO UPLOAD ============
+    if ($action === 'upload_logo' && isset($_FILES['logo'])) {
+        if ($_FILES['logo']['error'] !== UPLOAD_ERR_OK) {
+            $error = 'Please choose a logo image to upload.';
+        } else {
+            $ext = strtolower(pathinfo($_FILES['logo']['name'], PATHINFO_EXTENSION));
+            $allowedExtensions = ['jpg', 'jpeg', 'png'];
+
+            $finfo = finfo_open(FILEINFO_MIME_TYPE);
+            $mime = finfo_file($finfo, $_FILES['logo']['tmp_name']);
+            finfo_close($finfo);
+
+            $allowedMimes = ['image/jpeg', 'image/png'];
+
+            if (!in_array($ext, $allowedExtensions) || !in_array($mime, $allowedMimes)) {
+                $error = 'Only valid JPG or PNG images are allowed for logo.';
+            } else {
+                $filename = 'logo_' . time() . '_' . bin2hex(random_bytes(3)) . '.' . $ext;
+                $dest = __DIR__ . '/../uploads/' . $filename;
+                if (move_uploaded_file($_FILES['logo']['tmp_name'], $dest)) {
+                    $path = 'uploads/' . $filename;
+
+                    $stmt = $pdo->prepare("INSERT INTO site_settings (setting_key, setting_value) VALUES ('logo', ?) ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)");
+                    $stmt->execute([$path]);
+                    if (function_exists('cache_delete')) {
+                        cache_delete('site_setting:logo');
+                    }
+                    $success = 'Logo updated successfully.';
+                } else {
+                    $error = 'Failed to upload logo image.';
+                }
+            }
         }
     }
-}
 
-// ============ ABOUT US UPDATE ============
-if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST' && ($_POST['action'] ?? null) === 'update_about' && !empty($_POST['about_us'] ?? '')) {
-    $stmt = $pdo->prepare("INSERT INTO site_settings (setting_key, setting_value) VALUES ('about_us', ?) ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)");
-    $stmt->execute([$_POST['about_us']]);
-    cache_delete('site_setting:about_us');
-    $success = 'About Us section updated successfully.';
-}
+    // ============ ABOUT US UPDATE ============
+    if ($action === 'update_about' && !empty($_POST['about_us'] ?? '')) {
+        $stmt = $pdo->prepare("INSERT INTO site_settings (setting_key, setting_value) VALUES ('about_us', ?) ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)");
+        $stmt->execute([$_POST['about_us']]);
+        if (function_exists('cache_delete')) {
+            cache_delete('site_setting:about_us');
+        }
+        $success = 'About Us section updated successfully.';
+    }
 
-// ============ SPONSOR MANAGEMENT ============
-if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST' && ($_POST['action'] ?? null) === 'add_sponsor' && isset($_FILES['sponsor_logo'])) {
-    if ($_FILES['sponsor_logo']['error'] !== UPLOAD_ERR_OK) {
-        $error = 'Please choose a sponsor logo to upload.';
-    } else {
-        $ext = strtolower(pathinfo($_FILES['sponsor_logo']['name'], PATHINFO_EXTENSION));
-        if (!in_array($ext, ['jpg', 'jpeg', 'png'])) {
-            $error = 'Only JPG or PNG images are allowed for sponsors.';
+    // ============ SPONSOR MANAGEMENT ============
+    if ($action === 'add_sponsor' && isset($_FILES['sponsor_logo'])) {
+        if ($_FILES['sponsor_logo']['error'] !== UPLOAD_ERR_OK) {
+            $error = 'Please choose a sponsor logo to upload.';
         } else {
-            $filename = 'sponsor_' . time() . '.' . $ext;
-            $dest = __DIR__ . '/../uploads/' . $filename;
-            move_uploaded_file($_FILES['sponsor_logo']['tmp_name'], $dest);
-            $logo_path = 'uploads/' . $filename;
+            $ext = strtolower(pathinfo($_FILES['sponsor_logo']['name'], PATHINFO_EXTENSION));
+            $allowedExtensions = ['jpg', 'jpeg', 'png'];
 
-            $stmt = $pdo->prepare("INSERT INTO sponsors (name, logo_path, description, url, display_order) VALUES (?, ?, ?, ?, (SELECT COALESCE(MAX(display_order), 0) + 1 FROM sponsors s2))");
-            $stmt->execute([$_POST['sponsor_name'] ?? '', $logo_path, $_POST['sponsor_desc'] ?? '', $_POST['sponsor_url'] ?? '']);
-            $success = 'Sponsor added successfully.';
+            $finfo = finfo_open(FILEINFO_MIME_TYPE);
+            $mime = finfo_file($finfo, $_FILES['sponsor_logo']['tmp_name']);
+            finfo_close($finfo);
+
+            $allowedMimes = ['image/jpeg', 'image/png'];
+
+            if (!in_array($ext, $allowedExtensions) || !in_array($mime, $allowedMimes)) {
+                $error = 'Only valid JPG or PNG images are allowed for sponsors.';
+            } else {
+                $filename = 'sponsor_' . time() . '_' . bin2hex(random_bytes(3)) . '.' . $ext;
+                $dest = __DIR__ . '/../uploads/' . $filename;
+                if (move_uploaded_file($_FILES['sponsor_logo']['tmp_name'], $dest)) {
+                    $logo_path = 'uploads/' . $filename;
+
+                    $stmt = $pdo->prepare("INSERT INTO sponsors (name, logo_path, description, url, display_order) VALUES (?, ?, ?, ?, (SELECT COALESCE(MAX(display_order), 0) + 1 FROM sponsors s2))");
+                    $stmt->execute([$_POST['sponsor_name'] ?? '', $logo_path, $_POST['sponsor_desc'] ?? '', $_POST['sponsor_url'] ?? '']);
+                    $success = 'Sponsor added successfully.';
+                } else {
+                    $error = 'Failed to upload sponsor logo.';
+                }
+            }
         }
     }
-}
 
-if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST' && ($_POST['action'] ?? null) === 'delete_sponsor' && !empty($_POST['sponsor_id'] ?? '')) {
-    $stmt = $pdo->prepare("DELETE FROM sponsors WHERE id = ?");
-    $stmt->execute([$_POST['sponsor_id']]);
-    $success = 'Sponsor deleted successfully.';
-}
+    if ($action === 'delete_sponsor' && !empty($_POST['sponsor_id'] ?? '')) {
+        $stmt = $pdo->prepare("DELETE FROM sponsors WHERE id = ?");
+        $stmt->execute([$_POST['sponsor_id']]);
+        $success = 'Sponsor deleted successfully.';
+    }
 
-// ============ NEWS & ANNOUNCEMENTS MANAGEMENT ============
-if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST' && ($_POST['action'] ?? null) === 'add_news' && !empty($_POST['news_title'] ?? '')) {
-    $stmt = $pdo->prepare("INSERT INTO news_announcements (title, summary, date_posted, display_order) VALUES (?, ?, ?, (SELECT COALESCE(MAX(display_order), 0) + 1 FROM news_announcements n2))");
-    $stmt->execute([$_POST['news_title'], $_POST['news_summary'] ?? '', $_POST['news_date'] ?? null]);
-    $success = 'News announcement added successfully.';
-}
+    // ============ NEWS & ANNOUNCEMENTS MANAGEMENT ============
+    if ($action === 'add_news' && !empty($_POST['news_title'] ?? '')) {
+        $stmt = $pdo->prepare("INSERT INTO news_announcements (title, summary, date_posted, display_order) VALUES (?, ?, ?, (SELECT COALESCE(MAX(display_order), 0) + 1 FROM news_announcements n2))");
+        $stmt->execute([$_POST['news_title'], $_POST['news_summary'] ?? '', $_POST['news_date'] ?? null]);
+        $success = 'News announcement added successfully.';
+    }
 
-if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST' && ($_POST['action'] ?? null) === 'delete_news' && !empty($_POST['news_id'] ?? '')) {
-    $stmt = $pdo->prepare("DELETE FROM news_announcements WHERE id = ?");
-    $stmt->execute([$_POST['news_id']]);
-    $success = 'News announcement deleted successfully.';
+    if ($action === 'delete_news' && !empty($_POST['news_id'] ?? '')) {
+        $stmt = $pdo->prepare("DELETE FROM news_announcements WHERE id = ?");
+        $stmt->execute([$_POST['news_id']]);
+        $success = 'News announcement deleted successfully.';
+    }
 }
 
 // Fetch current data
@@ -104,6 +135,7 @@ include __DIR__ . '/../includes/header.php';
     <?php endif; ?>
 
     <form method="post" enctype="multipart/form-data" style="display:flex;gap:10px;align-items:flex-start;">
+      <?php echo csrf_field(); ?>
       <input type="hidden" name="action" value="upload_logo">
       <input type="file" name="logo" accept=".jpg,.jpeg,.png" required style="flex:1;">
       <button class="btn" type="submit" style="flex-shrink:0;"><?php echo $logo ? 'Replace' : 'Upload'; ?></button>
@@ -116,6 +148,7 @@ include __DIR__ . '/../includes/header.php';
     <p class="muted">Edit the About Us section text displayed on the public homepage.</p>
     
     <form method="post">
+      <?php echo csrf_field(); ?>
       <input type="hidden" name="action" value="update_about">
       <div class="field" style="margin-top:12px;">
         <textarea name="about_us" rows="6" required style="width:100%;padding:10px;border:1px solid rgba(255,255,255,0.2);border-radius:6px;background:rgba(0,0,0,0.2);color:#fff;font-family:monospace;font-size:13px;line-height:1.5;"><?php echo htmlspecialchars($about_us['setting_value'] ?? ''); ?></textarea>
@@ -130,6 +163,7 @@ include __DIR__ . '/../includes/header.php';
     <p class="muted">Add sponsor logos that will appear on the public website. Arrange them in your preferred order.</p>
     
     <form method="post" enctype="multipart/form-data" style="background:rgba(0,0,0,0.2);padding:16px;border-radius:6px;margin-bottom:20px;">
+      <?php echo csrf_field(); ?>
       <input type="hidden" name="action" value="add_sponsor">
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
         <div class="field" style="margin:0;">
@@ -163,6 +197,7 @@ include __DIR__ . '/../includes/header.php';
               <img src="../<?php echo htmlspecialchars($sponsor['logo_path']); ?>" alt="<?php echo htmlspecialchars($sponsor['name']); ?>" style="width:100%;height:100px;object-fit:contain;margin-bottom:10px;background:rgba(0,0,0,0.3);border-radius:4px;padding:6px;">
               <p style="font-weight:600;font-size:13px;margin-bottom:4px;"><?php echo htmlspecialchars($sponsor['name']); ?></p>
               <form method="post" style="margin-top:8px;">
+                <?php echo csrf_field(); ?>
                 <input type="hidden" name="action" value="delete_sponsor">
                 <input type="hidden" name="sponsor_id" value="<?php echo $sponsor['id']; ?>">
                 <button type="submit" class="btn" style="width:100%;background:#d32f2f;font-size:12px;padding:6px;">Delete</button>
@@ -182,6 +217,7 @@ include __DIR__ . '/../includes/header.php';
     <p class="muted">Add news and announcements that will display on the public website in a 3-column grid layout.</p>
     
     <form method="post" style="background:rgba(0,0,0,0.2);padding:16px;border-radius:6px;margin-bottom:20px;">
+      <?php echo csrf_field(); ?>
       <input type="hidden" name="action" value="add_news">
       <div style="display:grid;grid-template-columns:2fr 1fr;gap:12px;margin-bottom:12px;">
         <div class="field" style="margin:0;">
@@ -210,6 +246,7 @@ include __DIR__ . '/../includes/header.php';
               <h4 style="font-size:14px;margin:0 0 8px 0;color:#fff;"><?php echo htmlspecialchars($item['title']); ?></h4>
               <p style="font-size:12px;color:#bfd0de;margin:0 0 12px 0;flex-grow:1;"><?php echo htmlspecialchars($item['summary']); ?></p>
               <form method="post">
+                <?php echo csrf_field(); ?>
                 <input type="hidden" name="action" value="delete_news">
                 <input type="hidden" name="news_id" value="<?php echo $item['id']; ?>">
                 <button type="submit" class="btn" style="width:100%;background:#d32f2f;font-size:12px;padding:6px;">Delete</button>
@@ -217,6 +254,7 @@ include __DIR__ . '/../includes/header.php';
             </div>
           <?php endforeach; ?>
         </div>
+
       </div>
     <?php else: ?>
       <p class="muted" style="text-align:center;padding:20px;">No news/announcements added yet.</p>

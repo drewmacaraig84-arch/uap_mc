@@ -3,8 +3,10 @@ require_once __DIR__ . '/../includes/auth.php';
 require_admin();
 
 $payments = $pdo->query("
-    SELECT p.id, u.name as member_name, u.id_number, d.title as due_title, p.amount_paid,
-           p.method, p.reference_number, p.status, p.submitted_at, p.verified_at, r.receipt_number
+    SELECT p.id, u.name as member_name, u.id_number, 
+           COALESCE(md.custom_title, d.title) as due_title, 
+           p.amount_paid, p.method, p.reference_number, p.status, 
+           p.submitted_at, p.verified_at, r.receipt_number
     FROM payments p
     JOIN member_dues md ON p.member_due_id = md.id
     JOIN users u ON md.user_id = u.id

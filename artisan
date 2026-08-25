@@ -28,8 +28,23 @@ switch (true) {
         require_once $root . '/database/setup.php';
         break;
 
+    case $command === 'serve' || $command === 'serve ':
+    case in_array('serve', $args, true):
+        $port = 8000;
+        foreach ($args as $arg) {
+            if (strpos($arg, '--port=') === 0) {
+                $port = (int)substr($arg, 7);
+            }
+        }
+        echo "Starting PHP development server at http://localhost:{$port}\n";
+        echo "Press Ctrl+C to stop the server.\n";
+        passthru("php -S localhost:{$port} -t \"{$root}\"");
+        break;
+
     case $command === 'help' || $command === '' || $command === null:
         echo "Available commands:\n";
+        echo "  php artisan serve           (Start local dev server on http://localhost:8000)\n";
+        echo "  php artisan serve --port=8080\n";
         echo "  php artisan migrate\n";
         echo "  php artisan seed\n";
         echo "  php artisan migrate --seed\n";

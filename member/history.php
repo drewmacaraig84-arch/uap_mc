@@ -3,7 +3,9 @@ require_once __DIR__ . '/../includes/auth.php';
 require_member();
 
 $stmt = $pdo->prepare("
-    SELECT p.*, d.title, d.amount as due_amount, md.total_paid, md.installment_months,
+    SELECT p.*, COALESCE(md.custom_title, d.title) as title, 
+           COALESCE(md.custom_amount, d.amount) as due_amount, 
+           md.total_paid, md.installment_months,
            md.payment_type, r.receipt_number
     FROM payments p
     JOIN member_dues md ON p.member_due_id = md.id

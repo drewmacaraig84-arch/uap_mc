@@ -6,8 +6,9 @@ $error = '';
 $success = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $user_id = (int)$_POST['user_id'];
-    $action = $_POST['action'];
+    require_csrf();
+    $user_id = (int)($_POST['user_id'] ?? 0);
+    $action = $_POST['action'] ?? '';
 
     $stmt = $pdo->prepare("SELECT * FROM users WHERE id = ? AND role = 'member'");
     $stmt->execute([$user_id]);
@@ -16,9 +17,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!$target) {
         $error = 'Member not found.';
     } elseif ($action === 'update_info') {
-        $name = trim($_POST['name']);
-        $id_number = trim($_POST['id_number']);
-        $status = $_POST['status'];
+        $name = trim($_POST['name'] ?? '');
+        $id_number = trim($_POST['id_number'] ?? '');
+        $status = $_POST['status'] ?? 'pending';
 
         if (!$name || !$id_number) {
             $error = 'Name and PRC ID No. are required.';
@@ -30,14 +31,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             } else {
                 $stmt = $pdo->prepare("UPDATE users SET name = ?, id_number = ?, status = ? WHERE id = ?");
                 $stmt->execute([$name, $id_number, $status, $user_id]);
-
-                // No automatic dues assignment on approval anymore.
-                // New members will only receive dues when an admin explicitly assigns them.
                 $success = 'Account updated successfully.';
             }
         }
     } elseif ($action === 'reset_password') {
-        $new_password = $_POST['new_password'];
+        $new_password = $_POST['new_password'] ?? '';
         if (strlen($new_password) < 4) {
             $error = 'New password must be at least 4 characters.';
         } else {
@@ -64,18 +62,15 @@ $page_title = 'Account Manager';
 include __DIR__ . '/../includes/header.php';
 ?>
 <div class="card">
-  <h1>Account Manager</h1>
-  <p class="muted">Edit member info, reset passwords, or change account status (approve/reject) here.</p>
-  <?php if ($success): ?><div class="alert alert-success"><?php echo $success; ?></div><?php endif; ?>
-  <?php if ($error): ?><div class="alert alert-error"><?php echo htmlspecialchars($error); ?></div><?php endif; ?>
-  <form method="get" style="margin-top:10px;">
-    <div class="field" style="max-width:340px;">
-      <label>Search by Name or PRC ID No.</label>
-      <input type="text" name="search" value="<?php echo htmlspecialchars($search); ?>" placeholder="Type to search...">
-    </div>
-    <button class="btn btn-sm" type="submit">Search</button>
-    <?php if ($search): ?><a class="btn btn-sm" style="background:#6b7280;" href="account_manager.php">Clear</a><?php endif; ?>
+  <h1>Member Account Manager</h1>
+  <p class="muted">Edit member details, change their account status, or reset their passwords.</p>
+  <form method="get" style="display:flex;gap:8px;margin-top:12px;">
+    <input name="search" value="<?php echo htmlspecialchars($search); ?>" placeholder="Search by name or PRC ID No..." style="flex:1;">
+    <button class="btn" type="submit">Search</button>
+    <?php if ($search): ?><a href="account_manager.php" class="btn" style="background:#6b7280;">Clear</a><?php endif; ?>
   </form>
+  <?php if ($error): ?><div class="alert alert-error" style="margin-top:12px;"><?php echo htmlspecialchars($error); ?></div><?php endif; ?>
+  <?php if ($success): ?><div class="alert alert-success" style="margin-top:12px;"><?php echo htmlspecialchars($success); ?></div><?php endif; ?>
 </div>
 
 <?php if (empty($members)): ?>
@@ -94,6 +89,7 @@ include __DIR__ . '/../includes/header.php';
   <div class="grid-2">
     <!-- Edit info + status -->
     <form method="post">
+      <?php echo csrf_field(); ?>
       <input type="hidden" name="user_id" value="<?php echo $m['id']; ?>">
       <input type="hidden" name="action" value="update_info">
       <div class="field">
@@ -117,6 +113,7 @@ include __DIR__ . '/../includes/header.php';
 
     <!-- Reset password -->
     <form method="post">
+      <?php echo csrf_field(); ?>
       <input type="hidden" name="user_id" value="<?php echo $m['id']; ?>">
       <input type="hidden" name="action" value="reset_password">
       <div class="field">

@@ -13,3 +13,11 @@ receipts/*
 .DS_Store
 Thumbs.db
 .vscode/
+
+# Temporary test / dump files
+cookies.txt
+query
+members_page.html
+members_response.html
+stress-test.php
+

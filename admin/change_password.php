@@ -6,16 +6,17 @@ $error = '';
 $success = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $current = $_POST['current_password'];
-    $new = $_POST['new_password'];
-    $confirm = $_POST['confirm_password'];
+    require_csrf();
+    $current = $_POST['current_password'] ?? '';
+    $new = $_POST['new_password'] ?? '';
+    $confirm = $_POST['confirm_password'] ?? '';
 
     // Get current admin password
     $stmt = $pdo->prepare("SELECT password FROM users WHERE id = ?");
     $stmt->execute([current_user_id()]);
     $admin = $stmt->fetch();
 
-    if (!password_verify($current, $admin['password'])) {
+    if (!$admin || !password_verify($current, $admin['password'])) {
         $error = 'Current password is incorrect.';
     } elseif (strlen($new) < 6) {
         $error = 'New password must be at least 6 characters.';
@@ -37,6 +38,7 @@ include __DIR__ . '/../includes/header.php';
   <?php if ($error): ?><div class="alert alert-error"><?php echo htmlspecialchars($error); ?></div><?php endif; ?>
   <?php if ($success): ?><div class="alert alert-success"><?php echo htmlspecialchars($success); ?></div><?php endif; ?>
   <form method="post">
+    <?php echo csrf_field(); ?>
     <div class="field">
       <label>Current Password</label>
       <input type="password" name="current_password" required>

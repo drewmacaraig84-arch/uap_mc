@@ -5,7 +5,8 @@ require_admin();
 $error = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $method = $_POST['method'];
+    require_csrf();
+    $method = $_POST['method'] ?? '';
     $allowed_methods = ['gcash', 'maya', 'bank'];
 
     if (!in_array($method, $allowed_methods)) {
@@ -14,22 +15,36 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $error = 'Please choose a QR code image to upload.';
     } else {
         $ext = strtolower(pathinfo($_FILES['qr_image']['name'], PATHINFO_EXTENSION));
-        if (!in_array($ext, ['jpg', 'jpeg', 'png'])) {
-            $error = 'Only JPG or PNG images are allowed.';
+        $allowedExtensions = ['jpg', 'jpeg', 'png'];
+
+        $finfo = finfo_open(FILEINFO_MIME_TYPE);
+        $mime = finfo_file($finfo, $_FILES['qr_image']['tmp_name']);
+        finfo_close($finfo);
+
+        $allowedMimes = ['image/jpeg', 'image/png'];
+
+        if (!in_array($ext, $allowedExtensions) || !in_array($mime, $allowedMimes)) {
+            $error = 'Only valid JPG or PNG images are allowed.';
         } else {
-            $filename = 'qr_' . $method . '_' . time() . '.' . $ext;
+            $filename = 'qr_' . $method . '_' . time() . '_' . bin2hex(random_bytes(3)) . '.' . $ext;
             $dest = __DIR__ . '/../uploads/' . $filename;
-            move_uploaded_file($_FILES['qr_image']['tmp_name'], $dest);
-            $path = 'uploads/' . $filename;
+            if (move_uploaded_file($_FILES['qr_image']['tmp_name'], $dest)) {
+                $path = 'uploads/' . $filename;
 
-            $stmt = $pdo->prepare("
-                INSERT INTO qr_codes (method, image_path) VALUES (?, ?)
-                ON DUPLICATE KEY UPDATE image_path = VALUES(image_path), updated_at = NOW()
-            ");
-            $stmt->execute([$method, $path]);
+                $stmt = $pdo->prepare("
+                    INSERT INTO qr_codes (method, image_path) VALUES (?, ?)
+                    ON DUPLICATE KEY UPDATE image_path = VALUES(image_path), updated_at = NOW()
+                ");
+                $stmt->execute([$method, $path]);
 
-            header('Location: qr_codes.php?saved=1');
-            exit;
+                if (function_exists('set_flash')) {
+                    set_flash('success', 'QR code updated successfully.');
+                }
+                header('Location: qr_codes.php');
+                exit;
+            } else {
+                $error = 'Failed to upload QR image.';
+            }
         }
     }
 }
@@ -46,7 +61,6 @@ include __DIR__ . '/../includes/header.php';
 <div class="card">
   <h1>Payment QR Codes</h1>
   <p class="muted">Upload the QR code image for each payment method. Members will see the matching QR code when they select that method to pay.</p>
-  <?php if (isset($_GET['saved'])): ?><div class="alert alert-success">QR code updated.</div><?php endif; ?>
   <?php if ($error): ?><div class="alert alert-error"><?php echo htmlspecialchars($error); ?></div><?php endif; ?>
 </div>
 
@@ -58,9 +72,10 @@ include __DIR__ . '/../includes/header.php';
       <img src="../<?php echo htmlspecialchars($existing[$method]['image_path']); ?>" alt="<?php echo $label; ?> QR" style="max-width:180px;display:block;margin-bottom:10px;border:1px solid #e5e7eb;border-radius:6px;">
       <p class="muted">Last updated: <?php echo htmlspecialchars($existing[$method]['updated_at']); ?></p>
     <?php else: ?>
-      <p class="muted">No QR code uploaded yet.</p>
+      <p class="muted" style="margin-bottom:10px;">No QR code uploaded yet.</p>
     <?php endif; ?>
-    <form method="post" enctype="multipart/form-data" style="margin-top:10px;">
+    <form method="post" enctype="multipart/form-data">
+      <?php echo csrf_field(); ?>
       <input type="hidden" name="method" value="<?php echo $method; ?>">
       <div class="field">
         <input type="file" name="qr_image" accept=".jpg,.jpeg,.png" required>
