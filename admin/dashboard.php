@@ -143,8 +143,9 @@ include __DIR__ . '/../includes/header.php';
     ➕ Add New Due
   </a>
   <a href="good_members.php" class="btn" style="text-align: center; text-decoration: none; padding: 12px; font-size: 13px; font-weight: 600; background: var(--bg-secondary); border: 1px solid var(--border-color); color: var(--text-primary);">
-    ⭐ Good Members & Certs
+    ⭐ Good Members
   </a>
+
   <a href="export_csv.php" class="btn" style="text-align: center; text-decoration: none; padding: 12px; font-size: 13px; font-weight: 600; background: #10b981; color: #fff;">
     📥 Download CSV Report
   </a>

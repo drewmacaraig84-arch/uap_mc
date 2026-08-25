@@ -49,7 +49,6 @@ include __DIR__ . '/../includes/header.php';
             <th>Total Dues</th>
             <th>Total Paid</th>
             <th>Status</th>
-            <th>Actions</th>
           </tr>
         </thead>
         <tbody>
@@ -63,14 +62,12 @@ include __DIR__ . '/../includes/header.php';
               <td><?php echo (int)$member['total_dues']; ?></td>
               <td>₱<?php echo number_format((float)($member['total_paid_sum'] ?? 0), 2); ?></td>
               <td><span class="badge badge-paid">On Time</span></td>
-              <td>
-                <a href="../member/certificate.php?member_id=<?php echo (int)$member['id']; ?>" target="_blank" class="btn btn-sm">📜 Certificate</a>
-              </td>
             </tr>
           <?php endforeach; ?>
         </tbody>
       </table>
     </div>
+
   <?php endif; ?>
 
 </div>
