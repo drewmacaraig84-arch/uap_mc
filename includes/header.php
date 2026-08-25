@@ -32,8 +32,10 @@ require_once __DIR__ . '/icons.php';
 
     $pending_approvals_count = 0;
     $pending_payments_count = 0;
+    $pending_directory_count = 0;
     $pending_approvals = [];
     $pending_payments = [];
+    $pending_directory_apps = [];
 
     if ($_SESSION['role'] === 'admin') {
         try {
@@ -42,9 +44,12 @@ require_once __DIR__ . '/icons.php';
 
             $pending_payments = $pdo->query("SELECT p.id, p.submitted_at, u.name, u.id_number, d.title FROM payments p JOIN member_dues md ON p.member_due_id = md.id JOIN users u ON md.user_id = u.id JOIN dues d ON md.due_id = d.id WHERE p.status = 'pending' ORDER BY p.submitted_at DESC LIMIT 5")->fetchAll();
             $pending_payments_count = (int)$pdo->query("SELECT COUNT(*) FROM payments WHERE status = 'pending'")->fetchColumn();
+
+            $pending_directory_apps = $pdo->query("SELECT da.id, u.name, u.id_number, da.created_at FROM directory_applications da JOIN users u ON da.user_id = u.id WHERE da.status = 'pending_fee' ORDER BY da.created_at DESC LIMIT 5")->fetchAll();
+            $pending_directory_count = (int)$pdo->query("SELECT COUNT(*) FROM directory_applications WHERE status = 'pending_fee'")->fetchColumn();
         } catch (Throwable $e) {}
     }
-    $total_notifications = $pending_approvals_count + $pending_payments_count;
+    $total_notifications = $pending_approvals_count + $pending_payments_count + $pending_directory_count;
 
     $logo_path = function_exists('get_site_logo') ? get_site_logo($pdo) : 'public/logo.jpg';
     $logo_src = BASE_URL . '/' . htmlspecialchars(ltrim($logo_path ?: 'public/logo.jpg', '/'));
@@ -117,6 +122,9 @@ require_once __DIR__ . '/icons.php';
           <a class="nav-item<?php echo $nav_active('website_directory.php'); ?>" href="<?php echo BASE_URL; ?>/admin/website_directory.php">
             <span class="nav-icon"><?php echo icon('website_directory'); ?></span>
             <span>Website Directory</span>
+            <?php if ($pending_directory_count > 0): ?>
+              <span class="nav-badge"><?php echo $pending_directory_count; ?></span>
+            <?php endif; ?>
           </a>
         </div>
 
@@ -186,7 +194,7 @@ require_once __DIR__ . '/icons.php';
               <?php if ($total_notifications === 0): ?>
                 <div style="text-align: center; padding: 24px 16px; color: var(--text-secondary); font-size: 13px;">
                   <?php echo icon('check', '', 24); ?>
-                  <p style="margin: 6px 0 0 0;">All caught up! No pending approvals or payments.</p>
+                  <p style="margin: 6px 0 0 0;">All caught up! No pending approvals, payments, or applications.</p>
                 </div>
               <?php else: ?>
                 <?php foreach ($pending_approvals as $approval): ?>
@@ -201,6 +209,13 @@ require_once __DIR__ . '/icons.php';
                     <span class="notification-type payment">Payment Proof</span>
                     <div class="notification-member"><?php echo htmlspecialchars($payment['name']); ?></div>
                     <div class="notification-meta"><?php echo htmlspecialchars($payment['title']); ?> &bull; <?php echo date('M d, h:i A', strtotime($payment['submitted_at'])); ?></div>
+                  </div>
+                <?php endforeach; ?>
+                <?php foreach ($pending_directory_apps as $dirApp): ?>
+                  <div class="notification-item" onclick="window.location.href='<?php echo BASE_URL; ?>/admin/website_directory.php'">
+                    <span class="notification-type directory">Directory Application</span>
+                    <div class="notification-member"><?php echo htmlspecialchars($dirApp['name']); ?></div>
+                    <div class="notification-meta">PRC: <?php echo htmlspecialchars($dirApp['id_number']); ?> &bull; <?php echo date('M d, Y', strtotime($dirApp['created_at'])); ?></div>
                   </div>
                 <?php endforeach; ?>
               <?php endif; ?>
