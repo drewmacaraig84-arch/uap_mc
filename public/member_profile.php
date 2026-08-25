@@ -306,20 +306,6 @@ $pageTitle = $member ? htmlspecialchars($member['name']) . ' - Chapter Directory
             font-weight: 700;
         }
 
-        .verified-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            background: rgba(16, 185, 129, 0.15);
-            color: #10b981;
-            border: 1px solid rgba(16, 185, 129, 0.35);
-            padding: 8px 16px;
-            border-radius: 999px;
-            font-size: 0.85rem;
-            font-weight: 700;
-            letter-spacing: 0.5px;
-        }
-
         .profile-grid {
             display: grid;
             grid-template-columns: 2fr 1fr;
@@ -550,11 +536,6 @@ $pageTitle = $member ? htmlspecialchars($member['name']) . ' - Chapter Directory
                             <h1><?php echo htmlspecialchars($member['name']); ?></h1>
                             <div class="role-tag"><?php echo htmlspecialchars($member['role_title'] ?: 'Architect'); ?></div>
                         </div>
-                    </div>
-                    <div>
-                        <span class="verified-badge">
-                            ✓ Good Standing Member
-                        </span>
                     </div>
                 </div>
             </div>
