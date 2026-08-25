@@ -147,69 +147,70 @@ $page_title = 'Manage Dues';
 include __DIR__ . '/../includes/header.php';
 ?>
 <style>
-.member-search-box { border:1px solid #d8dde6; border-radius:8px; padding:10px; background:#f8f9fc; }
-.member-results{
-    max-height:220px;
-    overflow-y:auto;
+.member-search-box { 
+  border: 1px solid var(--border-color, rgba(255,255,255,0.12)); 
+  border-radius: 8px; 
+  padding: 12px; 
+  background: var(--bg-secondary, rgba(0,0,0,0.15)); 
+  color: var(--text-primary);
+  margin-bottom: 12px;
 }
-
-.member-row{
-    display:grid;
-    grid-template-columns:40px 1fr;
-    align-items:center;
-    padding:12px 10px;
-    border-bottom:1px solid #e5e7eb;
-    cursor:pointer;
+.member-results {
+  max-height: 220px;
+  overflow-y: auto;
+  margin-top: 8px;
+  border: 1px solid var(--border-color, rgba(255,255,255,0.08));
+  border-radius: 6px;
+  background: var(--field-bg, rgba(0,0,0,0.2));
 }
-
-.member-row:hover{
-    background:#f4f6fb;
+.member-row {
+  display: grid;
+  grid-template-columns: 36px 1fr;
+  align-items: center;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border-color, rgba(255,255,255,0.06));
+  cursor: pointer;
+  transition: background 0.15s ease;
+  color: var(--text-primary);
 }
-
-.member-row input[type="checkbox"]{
-    justify-self:center;
+.member-row:last-child {
+  border-bottom: none;
 }
-
-.member-info{
-    display:flex;
-    flex-direction:column;
-    align-items:flex-start;
+.member-row:hover {
+  background: var(--hover-row-bg, rgba(255,255,255,0.05));
 }
-
-.member-name{
-    font-weight:500;
-    color:#243b63;
+.member-row input[type="checkbox"] {
+  justify-self: center;
+  cursor: pointer;
+  accent-color: var(--accent-primary);
 }
-
-.member-id{
-    color:#6b7280;
-    font-size:13px;
+.member-info {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
 }
-.member-results label{
-    display:grid;
-    grid-template-columns:40px 1fr;
-    align-items:center;
-    padding:10px 8px;
-    border-bottom:1px solid #edf0f5;
-    cursor:pointer;
-    transition:.2s;
+.member-name {
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--text-primary);
 }
-
-.member-results label:hover{
-    background:#eef1f8;
+.member-id {
+  color: var(--text-secondary);
+  font-size: 12px;
 }
-
-.member-results input[type="checkbox"]{
-    margin:0 auto;
+.selected-members { 
+  margin-top: 10px; 
 }
-
-.member-results span{
-    text-align:left;
-    line-height:1.4;
+.selected-tag { 
+  display: inline-block; 
+  background: var(--accent-primary, #f5b800); 
+  color: #000; 
+  font-weight: 600;
+  border-radius: 20px; 
+  padding: 3px 10px; 
+  font-size: 12px; 
+  margin: 3px; 
 }
-.member-results label:hover { background:#eef1f8; }
-.selected-members { margin-top:10px; }
-.selected-tag { display:inline-block; background:linear-gradient(120deg,#1d3557,#3a5a9c); color:#fff; border-radius:20px; padding:4px 12px; font-size:12px; margin:3px; }
 </style>
 
 <?php if (isset($_GET['created'])): ?><div class="alert alert-success">Due created and assigned successfully.</div><?php endif; ?>
@@ -254,9 +255,10 @@ include __DIR__ . '/../includes/header.php';
         </div>
 
         <div id="memberSearchBox" class="member-search-box" style="display:none;">
-          <label style="font-weight:700;color:#3a4a6b;">Search Members</label>
+          <label style="font-weight:700;color:var(--text-primary);">Search Members</label>
           <input type="text" id="memberSearchInput" placeholder="Type name or PRC ID No..." oninput="filterMembers()" style="margin-top:6px;">
           <div class="member-results" id="memberResults">
+
             <?php foreach ($all_members as $m): ?>
            <label class="member-row">
     <input type="checkbox"
