@@ -87,8 +87,25 @@ if (!$member && ($prcNumber !== '' || $nameQuery !== '')) {
     }
 }
 
+// Decode multiple project gallery photos
+$gallery = [];
+if ($member) {
+    if (!empty($member['gallery_json'])) {
+        $decoded = json_decode($member['gallery_json'], true);
+        if (is_array($decoded)) {
+            $gallery = $decoded;
+        }
+    } elseif (!empty($member['photo_path'])) {
+        $gallery[] = [
+            'path' => $member['photo_path'],
+            'description' => $member['photo_description'] ?? ''
+        ];
+    }
+}
+
 $pageTitle = $member ? htmlspecialchars($member['name']) . ' - Chapter Directory Profile' : 'Member Profile - UAP Mindoro Chapter';
 ?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -499,24 +516,33 @@ $pageTitle = $member ? htmlspecialchars($member['name']) . ' - Chapter Directory
                 </div>
             </section>
 
-            <!-- FEATURED PROJECT / WORK PHOTO -->
-            <?php if (!empty($member['photo_path'])): ?>
+            <!-- FEATURED PROJECT / WORK GALLERY -->
+            <?php if (!empty($gallery)): ?>
             <section class="dark-card">
                 <div class="section-heading">
-                    <h2>📸 Featured Project / Work</h2>
+                    <h2>📸 Project Portfolio & Works Gallery (<?php echo count($gallery); ?>)</h2>
                 </div>
-                <div style="text-align:center; margin-bottom:1rem;">
-                    <img src="<?php echo BASE_URL; ?>/<?php echo htmlspecialchars($member['photo_path']); ?>" 
-                         alt="<?php echo htmlspecialchars($member['name']); ?> Featured Work" 
-                         style="max-width:100%; max-height:520px; width:auto; border-radius:8px; object-fit:cover; border:1px solid var(--border-dark); box-shadow:0 12px 32px rgba(0,0,0,0.6);">
+                <div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 22px;">
+                    <?php foreach ($gallery as $gIndex => $gItem): ?>
+                        <div style="background: var(--bg-inner-card); border: 1px solid var(--border-dark); border-radius: 8px; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 8px 24px rgba(0,0,0,0.3);">
+                            <div style="width: 100%; height: 240px; overflow: hidden; background: #000; display: flex; align-items: center; justify-content: center;">
+                                <img src="<?php echo BASE_URL; ?>/<?php echo htmlspecialchars($gItem['path']); ?>" 
+                                     alt="<?php echo htmlspecialchars($member['name']); ?> Work <?php echo $gIndex + 1; ?>" 
+                                     style="width: 100%; height: 100%; object-fit: cover; transition: transform 0.3s ease;"
+                                     onmouseover="this.style.transform='scale(1.04)'"
+                                     onmouseout="this.style.transform='scale(1)'">
+                            </div>
+                            <?php if (!empty(trim($gItem['description'] ?? ''))): ?>
+                                <div style="padding: 14px 16px; color: #d1d5db; font-size: 0.92rem; line-height: 1.6; border-top: 1px solid var(--border-dark); flex: 1;">
+                                    <?php echo nl2br(htmlspecialchars($gItem['description'])); ?>
+                                </div>
+                            <?php endif; ?>
+                        </div>
+                    <?php endforeach; ?>
                 </div>
-                <?php if (!empty($member['photo_description'])): ?>
-                <div class="content-box">
-                    <?php echo nl2br(htmlspecialchars($member['photo_description'])); ?>
-                </div>
-                <?php endif; ?>
             </section>
             <?php endif; ?>
+
 
             <!-- ACHIEVEMENTS -->
             <section class="dark-card">

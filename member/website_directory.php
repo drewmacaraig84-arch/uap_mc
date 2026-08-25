@@ -28,75 +28,109 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'save_
     $location = trim($_POST['location'] ?? '');
     $achievements = trim($_POST['achievements'] ?? '');
     $awards = trim($_POST['awards'] ?? '');
-    $photoDescription = trim($_POST['photo_description'] ?? '');
 
-    $photoPath = $profile['photo_path'] ?? null;
+    // 1. Process Existing Photos
+    $gallery = [];
+    $existingPhotos = $_POST['existing_photos'] ?? [];
+    $deletePhotos = $_POST['delete_photos'] ?? [];
 
-    // Handle Photo Upload
-    if (!empty($_FILES['photo']['name']) && $_FILES['photo']['error'] === UPLOAD_ERR_OK) {
-        $allowedExts = ['jpg', 'jpeg', 'png', 'webp'];
-        $ext = strtolower(pathinfo($_FILES['photo']['name'], PATHINFO_EXTENSION));
-        
-        if (!in_array($ext, $allowedExts)) {
-            $error = 'Invalid image format. Please upload JPG, PNG, or WEBP.';
-        } elseif ($_FILES['photo']['size'] > 10 * 1024 * 1024) {
-            $error = 'Image file size must not exceed 10MB.';
-        } else {
-            $uploadDir = __DIR__ . '/../uploads/members/';
-            if (!is_dir($uploadDir)) {
-                mkdir($uploadDir, 0755, true);
-            }
-            $filename = 'member_' . current_user_id() . '_' . time() . '.' . $ext;
-            $targetPath = $uploadDir . $filename;
-            
-            if (move_uploaded_file($_FILES['photo']['tmp_name'], $targetPath)) {
-                $photoPath = 'uploads/members/' . $filename;
-            } else {
-                $error = 'Failed to upload image. Please try again.';
+    if (is_array($existingPhotos)) {
+        foreach ($existingPhotos as $idx => $item) {
+            if (!empty($item['path']) && !in_array((string)$idx, $deletePhotos, true)) {
+                $gallery[] = [
+                    'path' => $item['path'],
+                    'description' => trim($item['description'] ?? '')
+                ];
             }
         }
     }
 
-    if (!$error) {
-        $stmt = $pdo->prepare("INSERT INTO website_members 
-            (user_id, name, id_number, role_title, specialty, location, achievements, awards, photo_path, photo_description, is_published)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)
-            ON DUPLICATE KEY UPDATE
-                name = VALUES(name),
-                id_number = VALUES(id_number),
-                role_title = VALUES(role_title),
-                specialty = VALUES(specialty),
-                location = VALUES(location),
-                achievements = VALUES(achievements),
-                awards = VALUES(awards),
-                photo_path = VALUES(photo_path),
-                photo_description = VALUES(photo_description),
-                is_published = 1");
-        $stmt->execute([
-            current_user_id(),
-            $name,
-            $idNumber,
-            $role,
-            $specialty,
-            $location,
-            $achievements,
-            $awards,
-            $photoPath,
-            $photoDescription
-        ]);
+    // 2. Process Newly Uploaded Photos
+    if (!empty($_FILES['new_photos']['name']) && is_array($_FILES['new_photos']['name'])) {
+        $allowedExts = ['jpg', 'jpeg', 'png', 'webp'];
+        $uploadDir = __DIR__ . '/../uploads/members/';
+        if (!is_dir($uploadDir)) {
+            mkdir($uploadDir, 0755, true);
+        }
 
-        $success = 'Profile updated successfully.';
+        $newDescriptions = $_POST['new_descriptions'] ?? [];
 
-        $record = $pdo->prepare("SELECT * FROM website_members WHERE user_id = ? LIMIT 1");
-        $record->execute([current_user_id()]);
-        $profile = $record->fetch();
+        foreach ($_FILES['new_photos']['name'] as $i => $filename) {
+            if (isset($_FILES['new_photos']['error'][$i]) && $_FILES['new_photos']['error'][$i] === UPLOAD_ERR_OK && !empty($filename)) {
+                $ext = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
+                if (in_array($ext, $allowedExts) && $_FILES['new_photos']['size'][$i] <= 10 * 1024 * 1024) {
+                    $uniqueName = 'member_' . current_user_id() . '_' . time() . '_' . $i . '_' . bin2hex(random_bytes(3)) . '.' . $ext;
+                    $targetPath = $uploadDir . $uniqueName;
+                    if (move_uploaded_file($_FILES['new_photos']['tmp_name'][$i], $targetPath)) {
+                        $gallery[] = [
+                            'path' => 'uploads/members/' . $uniqueName,
+                            'description' => trim($newDescriptions[$i] ?? '')
+                        ];
+                    }
+                }
+            }
+        }
     }
+
+    $galleryJson = json_encode($gallery);
+    $firstPhoto = !empty($gallery[0]['path']) ? $gallery[0]['path'] : null;
+    $firstDesc = !empty($gallery[0]['description']) ? $gallery[0]['description'] : null;
+
+    $stmt = $pdo->prepare("INSERT INTO website_members 
+        (user_id, name, id_number, role_title, specialty, location, achievements, awards, photo_path, photo_description, gallery_json, is_published)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)
+        ON DUPLICATE KEY UPDATE
+            name = VALUES(name),
+            id_number = VALUES(id_number),
+            role_title = VALUES(role_title),
+            specialty = VALUES(specialty),
+            location = VALUES(location),
+            achievements = VALUES(achievements),
+            awards = VALUES(awards),
+            photo_path = VALUES(photo_path),
+            photo_description = VALUES(photo_description),
+            gallery_json = VALUES(gallery_json),
+            is_published = 1");
+    $stmt->execute([
+        current_user_id(),
+        $name,
+        $idNumber,
+        $role,
+        $specialty,
+        $location,
+        $achievements,
+        $awards,
+        $firstPhoto,
+        $firstDesc,
+        $galleryJson
+    ]);
+
+    $success = 'Profile & project photos updated successfully.';
+
+    $record = $pdo->prepare("SELECT * FROM website_members WHERE user_id = ? LIMIT 1");
+    $record->execute([current_user_id()]);
+    $profile = $record->fetch();
+}
+
+// Load Gallery array
+$gallery = [];
+if (!empty($profile['gallery_json'])) {
+    $decoded = json_decode($profile['gallery_json'], true);
+    if (is_array($decoded)) {
+        $gallery = $decoded;
+    }
+} elseif (!empty($profile['photo_path'])) {
+    // Fallback from legacy single photo
+    $gallery[] = [
+        'path' => $profile['photo_path'],
+        'description' => $profile['photo_description'] ?? ''
+    ];
 }
 
 $page_title = 'Website Directory Profile';
 include __DIR__ . '/../includes/header.php';
 ?>
-<div class="card" style="max-width: 900px; margin: 0 auto;">
+<div class="card" style="max-width: 960px; margin: 0 auto;">
   <h1>Chapter Members Directory For Website</h1>
   <p class="muted">This profile appears on the public website directory while you are in good standing.</p>
 
@@ -146,29 +180,59 @@ include __DIR__ . '/../includes/header.php';
       </div>
     </div>
 
-    <!-- FEATURED PHOTO & DESCRIPTION SECTION -->
-    <div style="background: var(--bg-secondary, rgba(0,0,0,0.15)); border: 1px solid var(--border-color, rgba(255,255,255,0.1)); border-radius: 10px; padding: 18px; margin: 18px 0;">
-      <h3 style="margin-top:0; font-size:16px; color:var(--accent-primary, #f5b800);">📸 Featured Project / Work Photo</h3>
-      <p class="muted" style="font-size:13px; margin-bottom: 14px;">Upload a showcase photo of your architectural project or practice to be featured on your public directory profile.</p>
-      
-      <?php if (!empty($profile['photo_path'])): ?>
-        <div style="margin-bottom: 14px; display:flex; align-items:center; gap:16px; flex-wrap:wrap;">
-          <img src="<?php echo BASE_URL; ?>/<?php echo htmlspecialchars($profile['photo_path']); ?>" alt="Current Featured Photo" style="max-width:180px; max-height:120px; object-fit:cover; border-radius:8px; border:1px solid var(--border-color);">
-          <div>
-            <span style="font-size:13px; font-weight:600; color:var(--text-primary); display:block;">Current Featured Photo</span>
-            <span class="muted" style="font-size:12px;">Choose a new file below to replace it.</span>
-          </div>
+    <!-- MULTIPLE PROJECT PHOTOS & DESCRIPTIONS GALLERY -->
+    <div style="background: var(--bg-secondary, rgba(0,0,0,0.15)); border: 1px solid var(--border-color, rgba(255,255,255,0.1)); border-radius: 12px; padding: 22px; margin: 22px 0;">
+      <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom: 12px;">
+        <h3 style="margin:0; font-size:17px; color:var(--accent-primary, #f5b800);">📸 Project Portfolio Photos & Captions</h3>
+        <span class="muted" style="font-size:12px;">Showcase multiple architectural works & project descriptions</span>
+      </div>
+
+      <!-- Existing Photos List -->
+      <?php if (!empty($gallery)): ?>
+        <label style="font-size:13px; font-weight:700; color:var(--text-primary); margin-bottom:10px; display:block;">Current Uploaded Photos (<?php echo count($gallery); ?>):</label>
+        <div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; margin-bottom: 22px;">
+          <?php foreach ($gallery as $idx => $photo): ?>
+            <div style="background:var(--field-bg, rgba(0,0,0,0.25)); border:1px solid var(--border-color, rgba(255,255,255,0.1)); border-radius:10px; padding:12px; display:flex; flex-direction:column; gap:10px;">
+              <input type="hidden" name="existing_photos[<?php echo $idx; ?>][path]" value="<?php echo htmlspecialchars($photo['path']); ?>">
+              <div style="position:relative; width:100%; height:160px; overflow:hidden; border-radius:6px; background:#000;">
+                <img src="<?php echo BASE_URL; ?>/<?php echo htmlspecialchars($photo['path']); ?>" alt="Project Photo" style="width:100%; height:100%; object-fit:cover;">
+              </div>
+              <div class="field" style="margin-bottom:0;">
+                <label style="font-size:11px; text-transform:uppercase; color:var(--text-secondary);">Photo Description / Caption</label>
+                <textarea name="existing_photos[<?php echo $idx; ?>][description]" rows="2" placeholder="Project name, concept, or description..." style="font-size:12px; width:100%;"><?php echo htmlspecialchars($photo['description'] ?? ''); ?></textarea>
+              </div>
+              <div style="display:flex; align-items:center; justify-content:flex-end;">
+                <label style="font-size:12px; color:#ef4444; display:flex; align-items:center; gap:6px; cursor:pointer; font-weight:600;">
+                  <input type="checkbox" name="delete_photos[]" value="<?php echo $idx; ?>"> Delete this photo
+                </label>
+              </div>
+            </div>
+          <?php endforeach; ?>
         </div>
       <?php endif; ?>
 
-      <div class="field">
-        <label>Upload Photo (JPG, PNG, WEBP)</label>
-        <input type="file" name="photo" accept=".jpg,.jpeg,.png,.webp">
+      <!-- Upload New Photos Container -->
+      <label style="font-size:13px; font-weight:700; color:var(--text-primary); margin-bottom:8px; display:block;">Add New Project Photos:</label>
+      <div id="newPhotoSlotsContainer" style="display:flex; flex-direction:column; gap:14px;">
+        <div class="photo-upload-slot" style="background:var(--field-bg, rgba(0,0,0,0.25)); border:1px dashed var(--border-color, rgba(255,255,255,0.15)); border-radius:10px; padding:16px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+            <span style="font-size:13px; font-weight:700; color:var(--accent-primary, #f5b800);">New Photo Slot #1</span>
+          </div>
+          <div class="field" style="margin-bottom:10px;">
+            <label style="font-size:12px;">Select Photo (JPG, PNG, WEBP)</label>
+            <input type="file" name="new_photos[]" accept=".jpg,.jpeg,.png,.webp">
+          </div>
+          <div class="field" style="margin-bottom:0;">
+            <label style="font-size:12px;">Photo Description / Caption</label>
+            <textarea name="new_descriptions[]" rows="2" placeholder="Describe this project (e.g. project name, location, architectural concept)..."></textarea>
+          </div>
+        </div>
       </div>
 
-      <div class="field" style="margin-bottom:0;">
-        <label>Photo Description / Caption</label>
-        <textarea name="photo_description" rows="3" placeholder="Describe this project (e.g., project name, location, architectural concept, role in the project)..."><?php echo htmlspecialchars($profile['photo_description'] ?? ''); ?></textarea>
+      <div style="margin-top: 14px;">
+        <button type="button" onclick="addNewPhotoSlot()" class="btn btn-sm" style="background:transparent; border:1px dashed var(--accent-primary, #f5b800); color:var(--accent-primary, #f5b800); font-weight:700; padding:8px 16px;">
+          + Add Another Photo Slot
+        </button>
       </div>
     </div>
 
@@ -182,7 +246,34 @@ include __DIR__ . '/../includes/header.php';
       <textarea name="awards" rows="4" placeholder="List your awards or recognitions..."><?php echo htmlspecialchars($profile['awards'] ?? ''); ?></textarea>
     </div>
 
-    <button class="btn btn-success" type="submit" style="padding: 10px 24px; font-weight:700;">Save Website Profile</button>
+    <button class="btn btn-success" type="submit" style="padding: 12px 28px; font-weight:700; font-size:15px;">Save Website Profile</button>
   </form>
 </div>
+
+<script>
+let slotCounter = 1;
+function addNewPhotoSlot() {
+  slotCounter++;
+  const container = document.getElementById('newPhotoSlotsContainer');
+  const div = document.createElement('div');
+  div.className = 'photo-upload-slot';
+  div.style.cssText = 'background:var(--field-bg, rgba(0,0,0,0.25)); border:1px dashed var(--border-color, rgba(255,255,255,0.15)); border-radius:10px; padding:16px; margin-top:10px;';
+  div.innerHTML = `
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+      <span style="font-size:13px; font-weight:700; color:var(--accent-primary, #f5b800);">New Photo Slot #${slotCounter}</span>
+      <button type="button" onclick="this.closest('.photo-upload-slot').remove()" style="background:transparent; border:none; color:#ef4444; cursor:pointer; font-size:12px; font-weight:700;">✕ Remove Slot</button>
+    </div>
+    <div class="field" style="margin-bottom:10px;">
+      <label style="font-size:12px;">Select Photo (JPG, PNG, WEBP)</label>
+      <input type="file" name="new_photos[]" accept=".jpg,.jpeg,.png,.webp">
+    </div>
+    <div class="field" style="margin-bottom:0;">
+      <label style="font-size:12px;">Photo Description / Caption</label>
+      <textarea name="new_descriptions[]" rows="2" placeholder="Describe this project (e.g. project name, location, architectural concept)..."></textarea>
+    </div>
+  `;
+  container.appendChild(div);
+}
+</script>
+
 <?php include __DIR__ . '/../includes/footer.php'; ?>
