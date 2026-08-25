@@ -386,7 +386,7 @@ $pageTitle = $member ? htmlspecialchars($member['name']) . ' - Chapter Directory
         <div class="header-container">
             <div class="brand-logo">
                 <a href="<?php echo BASE_URL; ?>/index.php" style="display:flex;align-items:center;gap:14px;text-decoration:none;">
-                    <img src="<?php echo BASE_URL; ?>/uploads/uap_logo.jpg" alt="UAP Mindoro Logo" onerror="this.style.display='none'">
+                    <img src="<?php echo BASE_URL; ?>/public/logo.jpg" alt="UAP Mindoro Logo" onerror="if(this.src.indexOf('uploads/logo.jpg')===-1)this.src='<?php echo BASE_URL; ?>/uploads/logo.jpg';">
                     <div class="brand-title">UAP-<span>Mindoro Chapter</span></div>
                 </a>
             </div>

@@ -31,9 +31,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             unset($_SESSION[$rateKey], $_SESSION[$rateKey . '_time']);
 
             if ($user['role'] === 'member' && $user['status'] === 'pending') {
-                $error = 'Your account is still awaiting admin approval. Please check back later.';
+                $error = 'Your account is currently awaiting administrative approval. Please check back shortly.';
             } elseif ($user['role'] === 'member' && $user['status'] === 'rejected') {
-                $error = 'Your registration was not approved. Please contact the admin.';
+                $error = 'Your registration application was not approved. Please contact chapter administration.';
             } else {
                 $_SESSION['user_id'] = $user['id'];
                 $_SESSION['name'] = $user['name'];
@@ -44,36 +44,134 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } else {
             $_SESSION[$rateKey] = $attempts + 1;
             $_SESSION[$rateKey . '_time'] = time();
-            $error = 'Invalid PRC ID No. or password.';
+            $error = 'Invalid PRC ID Number or password.';
         }
     }
 }
 
-$page_title = 'Login';
+$page_title = 'Portal Login • UAP Mindoro Chapter';
 include __DIR__ . '/../includes/header.php';
 ?>
-<div class="auth-shell">
-  <div class="auth-card">
-    <div class="auth-illustration">
-      <h2>Welcome back</h2>
-      <p>Access your dues, payments, and account history from one secure portal.</p>
-    </div>
-    <div class="auth-form">
-      <div style="text-align:center;margin-bottom:16px;">
-        <img src="<?php echo BASE_URL; ?>/uploads/uap_logo.jpg" alt="UAP MC Logo" style="height:84px;width:84px;object-fit:contain;border-radius:12px;">
+
+<div class="auth-page">
+  <!-- THEME TOGGLE BUTTON -->
+  <div style="position: absolute; top: 20px; right: 20px; z-index: 50;">
+    <button type="button" class="btn btn-sm btn-secondary" onclick="toggleTheme()" style="padding: 8px 14px; display: inline-flex; align-items: center; gap: 6px;">
+      <?php echo icon('sun', '', 14); ?> <span id="themeToggleText">Switch Theme</span>
+    </button>
+  </div>
+
+  <div class="auth-card-modern">
+    <!-- LEFT BRANDING & HERO PANEL -->
+    <div class="auth-hero-panel">
+      <div>
+        <div class="auth-logo-badge">
+          <img src="<?php echo BASE_URL; ?>/public/logo.jpg" alt="UAP Mindoro Chapter Logo" onerror="if(this.src.indexOf('uploads/logo.jpg')===-1)this.src='<?php echo BASE_URL; ?>/uploads/logo.jpg';">
+        </div>
+        <p class="eyebrow" style="color: #fbbf24; margin-bottom: 6px;">OFFICIAL CHAPTER PORTAL</p>
+        <h2 class="auth-hero-title">United Architects of the Philippines</h2>
+        <p class="auth-hero-sub">Mindoro Chapter &bull; Centralized financial administration, dues tracking, and member compliance system.</p>
+
+        <div class="auth-feature-list">
+          <div class="auth-feature-item">
+            <div class="auth-feature-icon">
+              <?php echo icon('zap', '', 16); ?>
+            </div>
+            <span>Instant Chapter Dues &amp; Payment Processing</span>
+          </div>
+          <div class="auth-feature-item">
+            <div class="auth-feature-icon">
+              <?php echo icon('shield_check', '', 16); ?>
+            </div>
+            <span>Verified Good Standing Status Tracking</span>
+          </div>
+          <div class="auth-feature-item">
+            <div class="auth-feature-icon">
+              <?php echo icon('website_directory', '', 16); ?>
+            </div>
+            <span>Public Architect Directory &amp; Showcase</span>
+          </div>
+        </div>
       </div>
-      <h1>Login</h1>
-      <p class="page-subtitle">Sign in to continue managing your payment records.</p>
-      <?php if (isset($_GET['registered'])): ?><div class="alert alert-success"><strong>✓ Account Created!</strong><br>Please wait for admin approval before logging in.</div><?php endif; ?>
-      <?php if ($error): ?><div class="alert alert-error"><strong>⚠ Login Failed</strong><br><?php echo htmlspecialchars($error); ?></div><?php endif; ?>
-      <form method="post">
+
+      <div style="margin-top: 36px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.08); font-size: 12px; color: #64748b;">
+        &copy; <?php echo date('Y'); ?> UAP Mindoro Chapter &bull; Portal &amp; Management
+      </div>
+    </div>
+
+    <!-- RIGHT LOGIN FORM PANEL -->
+    <div class="auth-form-panel">
+      <div class="auth-header">
+        <h1>Welcome Back</h1>
+        <p>Sign in to access your administrative dashboard or member dues.</p>
+      </div>
+
+      <?php if (isset($_GET['registered'])): ?>
+        <div class="alert alert-success" style="display: flex; align-items: center; gap: 8px;">
+          <?php echo icon('check', '', 18); ?>
+          <div>
+            <strong>Registration Submitted!</strong><br>
+            <span style="font-size: 12.5px;">Your account is pending admin verification.</span>
+          </div>
+        </div>
+      <?php endif; ?>
+
+      <?php if ($error): ?>
+        <div class="alert alert-error" style="display: flex; align-items: center; gap: 8px;">
+          <?php echo icon('alert', '', 18); ?>
+          <div>
+            <strong>Login Failed</strong><br>
+            <span style="font-size: 12.5px;"><?php echo htmlspecialchars($error); ?></span>
+          </div>
+        </div>
+      <?php endif; ?>
+
+      <form method="post" autocomplete="on">
         <?php echo csrf_field(); ?>
-        <div class="field"><label>PRC ID No.</label><input name="id_number" required autofocus></div>
-        <div class="field"><label>Password</label><input type="password" name="password" required></div>
-        <button class="btn" type="submit" style="width:100%;">Login</button>
+        
+        <div class="field">
+          <label>PRC ID Number / Username</label>
+          <div class="input-icon-wrap">
+            <span class="input-leading-icon"><?php echo icon('user', '', 18); ?></span>
+            <input type="text" name="id_number" required autofocus placeholder="e.g. ADMIN or PRC ID" value="<?php echo htmlspecialchars($_POST['id_number'] ?? ''); ?>">
+          </div>
+        </div>
+
+        <div class="field" style="margin-bottom: 22px;">
+          <label>Password</label>
+          <div class="input-icon-wrap">
+            <span class="input-leading-icon"><?php echo icon('key', '', 18); ?></span>
+            <input type="password" id="loginPassword" name="password" required placeholder="Enter your password">
+            <button type="button" class="password-toggle-btn" onclick="togglePasswordVisibility('loginPassword', this)" aria-label="Toggle password visibility">
+              <?php echo icon('eye', '', 16); ?>
+            </button>
+          </div>
+        </div>
+
+        <button class="btn auth-btn-primary" type="submit" style="display: inline-flex; align-items: center; justify-content: center; gap: 8px;">
+          <?php echo icon('arrow_right', '', 16); ?> <span>Sign In to Portal</span>
+        </button>
       </form>
-      <p class="muted" style="margin-top:14px;">No account yet? <a href="<?php echo BASE_URL; ?>/auth/register.php">Register here</a></p>
+
+      <div class="auth-footer-link">
+        Don't have a chapter member account? <a href="<?php echo BASE_URL; ?>/auth/register.php">Register here</a>
+      </div>
     </div>
   </div>
 </div>
+
+<script>
+function togglePasswordVisibility(inputId, btn) {
+  const input = document.getElementById(inputId);
+  if (!input) return;
+  if (input.type === 'password') {
+    input.type = 'text';
+    btn.style.color = 'var(--accent-primary)';
+  } else {
+    input.type = 'password';
+    btn.style.color = 'var(--muted-text)';
+  }
+}
+</script>
+
 <?php include __DIR__ . '/../includes/footer.php'; ?>

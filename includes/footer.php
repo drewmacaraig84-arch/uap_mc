@@ -1,182 +1,97 @@
 </div>
-<footer class="footer">
-    <div class="footer-content">
+<footer class="footer" style="padding: 24px 28px; border-top: 1px solid var(--border-color); color: var(--text-secondary); font-size: 13px; margin-top: 40px;">
+    <div style="max-width: 1380px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
         <div>
-            © <?php echo date('Y'); ?> United Architects of the Philippines – Mindoro Chapter
+            &copy; <?php echo date('Y'); ?> <strong>United Architects of the Philippines &bull; Mindoro Chapter</strong>
         </div>
-
-        <div class="developer-credit">
-            UAP Mindoro Portal | Developed by <strong>Drew Macaraig</strong>
+        <div style="font-size: 12px; color: var(--text-secondary);">
+            UAP-MC Portal &bull; Designed &amp; Developed by <strong>Drew Macaraig</strong>
         </div>
     </div>
 </footer>
+
 <script>
-// Theme Management: follow system preference unless the user has explicitly chosen a theme.
-function initTheme() {
+// ================= THEME MANAGEMENT =================
+function toggleTheme() {
   const html = document.getElementById('htmlElement');
-  const storedTheme = localStorage.getItem('theme');
-  const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-  const theme = storedTheme || (systemPrefersDark ? 'dark' : 'light');
-  html.setAttribute('data-theme', theme);
-  document.documentElement.style.colorScheme = theme;
-  updateThemeSwitch(theme);
+  const current = html.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
+  const next = current === 'dark' ? 'light' : 'dark';
+  html.setAttribute('data-theme', next);
+  document.documentElement.style.colorScheme = next;
+  localStorage.setItem('theme', next);
+  updateThemeText(next);
 }
 
-function syncThemeToSystem() {
-  const html = document.getElementById('htmlElement');
-  if (!localStorage.getItem('theme')) {
-    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    const theme = prefersDark ? 'dark' : 'light';
-    html.setAttribute('data-theme', theme);
-    document.documentElement.style.colorScheme = theme;
-    updateThemeSwitch(theme);
+function updateThemeText(theme) {
+  const textEl = document.getElementById('themeToggleText');
+  if (textEl) {
+    textEl.textContent = theme === 'dark' ? 'Light mode' : 'Dark mode';
   }
 }
 
-function updateThemeSwitch(theme) {
-  const switchButton = document.getElementById('themeSwitchButton');
-  if (!switchButton) return;
-  const isDark = theme === 'dark';
-  switchButton.classList.toggle('active', isDark);
-  switchButton.setAttribute('aria-checked', String(isDark));
-}
+document.addEventListener('DOMContentLoaded', function() {
+  const theme = document.getElementById('htmlElement').getAttribute('data-theme') || 'dark';
+  updateThemeText(theme);
 
-function toggleThemeFromMenu() {
-  const html = document.getElementById('htmlElement');
-  const currentTheme = html.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
-  const nextTheme = currentTheme === 'dark' ? 'light' : 'dark';
-  html.setAttribute('data-theme', nextTheme);
-  document.documentElement.style.colorScheme = nextTheme;
-  localStorage.setItem('theme', nextTheme);
-  updateThemeSwitch(nextTheme);
-}
-
-const systemThemeQuery = window.matchMedia('(prefers-color-scheme: dark)');
-if (systemThemeQuery.addEventListener) {
-  systemThemeQuery.addEventListener('change', syncThemeToSystem);
-} else if (systemThemeQuery.addListener) {
-  systemThemeQuery.addListener(syncThemeToSystem);
-}
-
-// Initialize theme switch UI on page load (theme is already applied in HEAD)
-updateThemeSwitch(document.getElementById('htmlElement').getAttribute('data-theme'));
-
-// Search system: narrow visible navigation items and table rows to the current query.
-function setupGlobalSearch() {
-  const input = document.getElementById('globalSearchInput');
-  if (!input) return;
-
-  const matchText = (value) => {
-    const query = value.trim().toLowerCase();
-    if (!query) return true;
-    return value.toLowerCase().includes(query);
-  };
-
-  input.addEventListener('input', function () {
-    const query = this.value.trim();
-
-    document.querySelectorAll('.nav-item').forEach((item) => {
-      const text = item.textContent || '';
-      item.style.display = matchText(text, query) ? '' : 'none';
+  const themeBtn = document.getElementById('themeMenuToggle');
+  if (themeBtn) {
+    themeBtn.addEventListener('click', function(e) {
+      e.stopPropagation();
+      toggleTheme();
     });
-
-    document.querySelectorAll('table tbody tr, table tr').forEach((row) => {
-      const text = row.textContent || '';
-      if (row.querySelector('th')) return;
-      row.style.display = matchText(text, query) ? '' : 'none';
-    });
-  });
-}
-
-setupGlobalSearch();
-
-// Toggle mobile menu
-function toggleMobileMenu() {
-  const menu = document.getElementById('mobileNavLinks');
-  if (menu) {
-    menu.classList.toggle('open');
   }
-}
+});
 
-function setupUserMenu() {
-  const trigger = document.getElementById('userMenuTrigger');
-  const button = document.getElementById('themeMenuToggle');
+// ================= USER MENU & NOTIFICATIONS =================
+document.addEventListener('DOMContentLoaded', function() {
+  const userTrigger = document.getElementById('userMenuTrigger');
+  if (userTrigger) {
+    userTrigger.addEventListener('click', function(e) {
+      e.stopPropagation();
+      userTrigger.classList.toggle('open');
+      const bell = document.getElementById('notificationBell');
+      if (bell) bell.classList.remove('open');
+    });
+  }
 
-  if (!trigger || !button) return;
-
-  trigger.addEventListener('click', function (event) {
-    event.stopPropagation();
-    trigger.classList.toggle('open');
-  });
-
-  button.addEventListener('click', function (event) {
-    event.stopPropagation();
-    toggleThemeFromMenu();
-  });
-
-  document.addEventListener('click', function (event) {
-    if (!trigger.contains(event.target)) {
-      trigger.classList.remove('open');
-    }
-  });
-}
-
-setupUserMenu();
-
-function setupNotificationBell() {
   const bell = document.getElementById('notificationBell');
-  const dropdown = bell ? bell.querySelector('.notification-dropdown') : null;
-  
-  if (!bell || !dropdown) return;
+  if (bell) {
+    bell.addEventListener('click', function(e) {
+      e.stopPropagation();
+      bell.classList.toggle('open');
+      if (userTrigger) userTrigger.classList.remove('open');
+    });
+  }
 
-  // Prevent clicks inside dropdown from closing it
-  dropdown.addEventListener('click', function (event) {
-    event.stopPropagation();
-  });
-
-  // Handle bell button clicks to toggle dropdown
-  bell.addEventListener('click', function (event) {
-    event.stopPropagation();
-    bell.classList.toggle('open');
-  });
-
-  // Close dropdown when clicking outside the bell
-  document.addEventListener('click', function (event) {
-    if (!bell.contains(event.target)) {
+  document.addEventListener('click', function(e) {
+    if (userTrigger && !userTrigger.contains(e.target)) {
+      userTrigger.classList.remove('open');
+    }
+    if (bell && !bell.contains(e.target)) {
       bell.classList.remove('open');
     }
   });
 
-  // Allow notification items to navigate but keep dropdown closing logic
-  const notificationItems = dropdown.querySelectorAll('.notification-item');
-  notificationItems.forEach(item => {
-    item.addEventListener('click', function (event) {
-      event.stopPropagation();
-      // Allow the navigation to happen from the onclick attribute
-      // but make sure the dropdown closes
-      bell.classList.remove('open');
+  // Global Search across table rows and card titles
+  const searchInput = document.getElementById('globalSearchInput');
+  if (searchInput) {
+    searchInput.addEventListener('input', function() {
+      const q = this.value.trim().toLowerCase();
+      document.querySelectorAll('table tbody tr').forEach(row => {
+        const text = row.textContent.toLowerCase();
+        row.style.display = (q === '' || text.includes(q)) ? '' : 'none';
+      });
     });
-  });
+  }
+});
+
+// ================= MOBILE NAVIGATION =================
+function toggleMobileMenu() {
+  const nav = document.getElementById('sidebarNav');
+  if (nav) {
+    nav.classList.toggle('open');
+  }
 }
-
-setupNotificationBell();
-
-document.addEventListener('click', function (event) {
-  const menu = document.getElementById('mobileNavLinks');
-  const toggle = document.querySelector('.menu-toggle');
-  if (!menu || !toggle) return;
-  const clickedInside = menu.contains(event.target) || toggle.contains(event.target);
-  if (window.innerWidth <= 900 && !clickedInside) {
-    menu.classList.remove('open');
-  }
-});
-
-window.addEventListener('resize', function () {
-  const menu = document.getElementById('mobileNavLinks');
-  if (menu && window.innerWidth > 900) {
-    menu.classList.remove('open');
-  }
-});
 
 // ================= GLOBAL CONFIRMATION MODAL =================
 let pendingConfirmAction = null;
@@ -188,11 +103,9 @@ function showConfirmModal(event, targetAction, options = {}) {
   const message = options.message || 'Are you sure you want to proceed?';
   const confirmText = options.confirmText || 'Confirm';
   const btnClass = options.btnClass || 'btn-success';
-  const icon = options.icon || '⚠️';
 
   document.getElementById('uapConfirmTitle').textContent = title;
   document.getElementById('uapConfirmMessage').textContent = message;
-  document.getElementById('uapConfirmIcon').textContent = icon;
 
   const okBtn = document.getElementById('uapConfirmOkBtn');
   okBtn.textContent = confirmText;
@@ -206,7 +119,8 @@ function showConfirmModal(event, targetAction, options = {}) {
     pendingConfirmAction = null;
   }
 
-  document.getElementById('uapConfirmModal').style.display = 'flex';
+  const modal = document.getElementById('uapConfirmModal');
+  if (modal) modal.style.display = 'flex';
   return false;
 }
 
@@ -235,7 +149,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
 
-  // Intercept any form with data-confirm
+  // Intercept forms with data-confirm
   document.addEventListener('submit', function(e) {
     const form = e.target;
     if (form && form.getAttribute && form.getAttribute('data-confirm')) {
@@ -248,28 +162,29 @@ document.addEventListener('DOMContentLoaded', function() {
       const title = form.getAttribute('data-confirm-title') || 'Confirm Action';
       const btnText = form.getAttribute('data-confirm-btn') || 'Confirm';
       const btnClass = form.getAttribute('data-confirm-class') || 'btn-success';
-      const icon = form.getAttribute('data-confirm-icon') || '⚠️';
 
       showConfirmModal(e, () => {
         form.dataset.confirmed = 'true';
         form.submit();
-      }, { title, message, confirmText: btnText, btnClass, icon });
+      }, { title, message, confirmText: btnText, btnClass });
     }
   });
 });
 </script>
 
 <!-- Global Confirmation Modal Markup -->
-<div id="uapConfirmModal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.72);z-index:99999;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(6px);">
-  <div style="background:var(--card-bg, #18243a);border:1px solid var(--border-color, rgba(255,255,255,0.12));border-radius:14px;max-width:440px;width:100%;overflow:hidden;box-shadow:0 25px 50px -12px rgba(0,0,0,0.5);color:var(--text-primary);">
-    <div style="padding:22px 24px;">
-      <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
-        <div id="uapConfirmIcon" style="width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;background:rgba(245,158,11,0.15);flex-shrink:0;">⚠️</div>
+<div id="uapConfirmModal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.75);z-index:99999;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);">
+  <div style="background:var(--card-bg, #131d33);border:1px solid var(--border-color, rgba(255,255,255,0.12));border-radius:16px;max-width:440px;width:100%;overflow:hidden;box-shadow:0 25px 50px -12px rgba(0,0,0,0.6);color:var(--text-primary);">
+    <div style="padding:24px;">
+      <div style="display:flex;align-items:center;gap:14px;margin-bottom:14px;">
+        <div id="uapConfirmIcon" style="width:42px;height:42px;border-radius:10px;display:flex;align-items:center;justify-content:center;background:rgba(245,158,11,0.15);color:var(--accent-primary);flex-shrink:0;">
+          <?php echo function_exists('icon') ? icon('alert', '', 20) : '⚠️'; ?>
+        </div>
         <h3 id="uapConfirmTitle" style="margin:0;font-size:17px;font-weight:700;color:var(--text-primary);">Confirm Action</h3>
       </div>
-      <p id="uapConfirmMessage" style="margin:0 0 20px 0;font-size:14px;line-height:1.5;color:var(--text-secondary);"></p>
+      <p id="uapConfirmMessage" style="margin:0 0 24px 0;font-size:14px;line-height:1.5;color:var(--text-secondary);"></p>
       <div style="display:flex;justify-content:flex-end;gap:10px;">
-        <button type="button" onclick="closeUapConfirmModal()" class="btn btn-sm" style="background:transparent;border:1px solid var(--border-color);color:var(--text-primary);padding:8px 16px;">Cancel</button>
+        <button type="button" onclick="closeUapConfirmModal()" class="btn btn-sm btn-secondary" style="padding:8px 16px;">Cancel</button>
         <button type="button" id="uapConfirmOkBtn" class="btn btn-sm btn-success" style="padding:8px 18px;font-weight:700;">Confirm</button>
       </div>
     </div>
@@ -277,4 +192,3 @@ document.addEventListener('DOMContentLoaded', function() {
 </div>
 </body>
 </html>
-

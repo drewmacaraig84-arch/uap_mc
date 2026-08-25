@@ -15,7 +15,6 @@ try {
 } catch (Throwable $e) {}
 $totalActionItems = $pendingPaymentsCount + $pendingMembersCount + $pendingDirectoryAppsCount;
 
-
 // Members breakdown
 $totalMembers = (int)$pdo->query("SELECT COUNT(*) FROM users WHERE role = 'member' AND status = 'approved'")->fetchColumn();
 
@@ -85,52 +84,80 @@ $recentTransactions = $pdo->query("
     LIMIT 5
 ")->fetchAll();
 
-$page_title = 'Admin Executive Dashboard';
+$page_title = 'Executive Dashboard • UAP Mindoro Chapter';
 include __DIR__ . '/../includes/header.php';
 ?>
 
 <!-- EXECUTIVE HERO SECTION -->
 <div class="page-hero">
   <div>
-    <p class="eyebrow">UAP Mindoro Chapter • Management Portal</p>
+    <p class="eyebrow">UAP Mindoro Chapter &bull; Admin Management Portal</p>
     <h1>Executive Dashboard</h1>
-    <p class="page-subtitle">Unified summary of chapter finances, member compliance, pending approvals, and active dues.</p>
+    <p class="page-subtitle">Live overview of chapter collections, member compliance, pending verification queues, and active dues.</p>
   </div>
-  <div class="hero-badge">⚡ Command Center</div>
+  <div class="hero-badge">
+    <?php echo icon('zap', '', 14); ?> <span>Command Center</span>
+  </div>
 </div>
 
 <!-- TOP KPI METRIC CARDS -->
-<div class="stat-grid" style="grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); margin-bottom: 24px;">
+<div class="stat-grid" style="grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));">
   
-  <div class="stat-card" style="border-left: 4px solid #10b981;">
-    <span class="muted">💰 Total Verified Collections</span>
-    <strong style="color: #10b981; font-size: 24px;">₱<?php echo number_format($totalVerifiedCollections, 2); ?></strong>
-    <span style="font-size: 12px; color: var(--text-secondary); margin-top: 4px; display: block;">Lifetime approved dues</span>
+  <!-- Verified Collections -->
+  <div class="stat-card" style="border-top: 3px solid #10b981;">
+    <div class="stat-card-header">
+      <span class="muted" style="font-size: 13px; font-weight: 600;">Total Verified Collections</span>
+      <div class="stat-card-icon" style="background: rgba(16,185,129,0.12); color: #10b981;">
+        <?php echo icon('wallet', '', 20); ?>
+      </div>
+    </div>
+    <strong style="color: #10b981;">₱<?php echo number_format($totalVerifiedCollections, 2); ?></strong>
+    <span style="font-size: 12px; color: var(--text-secondary); margin-top: 6px; display: flex; align-items: center; gap: 4px;">
+      <?php echo icon('check', '', 12); ?> Lifetime approved payments
+    </span>
   </div>
 
-  <div class="stat-card" style="border-left: 4px solid <?php echo $totalActionItems > 0 ? '#f59e0b' : '#3b82f6'; ?>;">
-    <span class="muted">⏳ Action Items Needed</span>
-    <strong style="color: <?php echo $totalActionItems > 0 ? '#f59e0b' : 'inherit'; ?>; font-size: 24px;">
+  <!-- Action Items Needed -->
+  <div class="stat-card" style="border-top: 3px solid <?php echo $totalActionItems > 0 ? '#f59e0b' : '#3b82f6'; ?>;">
+    <div class="stat-card-header">
+      <span class="muted" style="font-size: 13px; font-weight: 600;">Action Items Needed</span>
+      <div class="stat-card-icon" style="background: <?php echo $totalActionItems > 0 ? 'rgba(245,158,11,0.12)' : 'rgba(59,130,246,0.12)'; ?>; color: <?php echo $totalActionItems > 0 ? '#f59e0b' : '#3b82f6'; ?>;">
+        <?php echo icon('clock', '', 20); ?>
+      </div>
+    </div>
+    <strong style="color: <?php echo $totalActionItems > 0 ? '#f59e0b' : 'inherit'; ?>;">
       <?php echo $totalActionItems; ?>
     </strong>
-    <span style="font-size: 12px; color: var(--text-secondary); margin-top: 4px; display: block;">
-      <?php echo $pendingPaymentsCount; ?> payments, <?php echo $pendingMembersCount; ?> sign-ups
+    <span style="font-size: 12px; color: var(--text-secondary); margin-top: 6px; display: block;">
+      <?php echo $pendingPaymentsCount; ?> payments, <?php echo $pendingMembersCount; ?> sign-ups pending
     </span>
   </div>
 
-  <div class="stat-card" style="border-left: 4px solid #3b82f6;">
-    <span class="muted">👥 Approved Members</span>
-    <strong style="font-size: 24px;"><?php echo $totalMembers; ?></strong>
-    <span style="font-size: 12px; color: var(--text-secondary); margin-top: 4px; display: block;">
-      ⭐ <?php echo $goodMembersCount; ?> in Good Standing (<?php echo $goodStandingRate; ?>%)
+  <!-- Approved Members -->
+  <div class="stat-card" style="border-top: 3px solid #3b82f6;">
+    <div class="stat-card-header">
+      <span class="muted" style="font-size: 13px; font-weight: 600;">Approved Members</span>
+      <div class="stat-card-icon" style="background: rgba(59,130,246,0.12); color: #3b82f6;">
+        <?php echo icon('members', '', 20); ?>
+      </div>
+    </div>
+    <strong><?php echo $totalMembers; ?></strong>
+    <span style="font-size: 12px; color: var(--text-secondary); margin-top: 6px; display: flex; align-items: center; gap: 4px;">
+      <?php echo icon('good_members', '', 12); ?> <?php echo $goodMembersCount; ?> in Good Standing (<?php echo $goodStandingRate; ?>%)
     </span>
   </div>
 
-  <div class="stat-card" style="border-left: 4px solid #8b5cf6;">
-    <span class="muted">📋 Active Dues Packages</span>
-    <strong style="font-size: 24px;"><?php echo $totalDuesCount; ?></strong>
-    <span style="font-size: 12px; color: var(--text-secondary); margin-top: 4px; display: block;">
-      Managed chapter dues
+  <!-- Active Dues Packages -->
+  <div class="stat-card" style="border-top: 3px solid #8b5cf6;">
+    <div class="stat-card-header">
+      <span class="muted" style="font-size: 13px; font-weight: 600;">Active Dues Packages</span>
+      <div class="stat-card-icon" style="background: rgba(139,92,246,0.12); color: #8b5cf6;">
+        <?php echo icon('dues', '', 20); ?>
+      </div>
+    </div>
+    <strong><?php echo $totalDuesCount; ?></strong>
+    <span style="font-size: 12px; color: var(--text-secondary); margin-top: 6px; display: block;">
+      Configured chapter dues
     </span>
   </div>
 
@@ -138,25 +165,23 @@ include __DIR__ . '/../includes/header.php';
 
 <!-- QUICK ACTION SHORTCUTS -->
 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 24px;">
-  <a href="payments.php" class="btn" style="text-align: center; text-decoration: none; padding: 12px; font-size: 13px; font-weight: 600;">
-    💳 Review Payments (<?php echo $pendingPaymentsCount; ?>)
+  <a href="payments.php" class="btn" style="padding: 12px; font-size: 13px;">
+    <?php echo icon('payments', '', 16); ?> <span>Review Payments (<?php echo $pendingPaymentsCount; ?>)</span>
   </a>
-  <a href="approvals.php" class="btn" style="text-align: center; text-decoration: none; padding: 12px; font-size: 13px; font-weight: 600; background: var(--bg-secondary); border: 1px solid var(--border-color); color: var(--text-primary);">
-    👤 Member Approvals (<?php echo $pendingMembersCount; ?>)
+  <a href="approvals.php" class="btn btn-secondary" style="padding: 12px; font-size: 13px;">
+    <?php echo icon('approvals', '', 16); ?> <span>Member Approvals (<?php echo $pendingMembersCount; ?>)</span>
   </a>
-  <a href="website_directory.php" class="btn" style="text-align: center; text-decoration: none; padding: 12px; font-size: 13px; font-weight: 600; background: var(--bg-secondary); border: 1px solid <?php echo $pendingDirectoryAppsCount > 0 ? '#f59e0b' : 'var(--border-color)'; ?>; color: var(--text-primary);">
-    📘 Directory Apps (<?php echo $pendingDirectoryAppsCount; ?>)
+  <a href="website_directory.php" class="btn btn-secondary" style="padding: 12px; font-size: 13px; border-color: <?php echo $pendingDirectoryAppsCount > 0 ? '#f59e0b' : 'var(--border-color)'; ?>;">
+    <?php echo icon('website_directory', '', 16); ?> <span>Directory Apps (<?php echo $pendingDirectoryAppsCount; ?>)</span>
   </a>
-  <a href="dues.php" class="btn" style="text-align: center; text-decoration: none; padding: 12px; font-size: 13px; font-weight: 600; background: var(--bg-secondary); border: 1px solid var(--border-color); color: var(--text-primary);">
-    ➕ Add New Due
+  <a href="dues.php" class="btn btn-secondary" style="padding: 12px; font-size: 13px;">
+    <?php echo icon('plus', '', 16); ?> <span>Add New Due</span>
   </a>
-
-  <a href="good_members.php" class="btn" style="text-align: center; text-decoration: none; padding: 12px; font-size: 13px; font-weight: 600; background: var(--bg-secondary); border: 1px solid var(--border-color); color: var(--text-primary);">
-    ⭐ Good Members
+  <a href="good_members.php" class="btn btn-secondary" style="padding: 12px; font-size: 13px;">
+    <?php echo icon('good_members', '', 16); ?> <span>Good Members</span>
   </a>
-
-  <a href="export_csv.php" class="btn" style="text-align: center; text-decoration: none; padding: 12px; font-size: 13px; font-weight: 600; background: #10b981; color: #fff;">
-    📥 Download CSV Report
+  <a href="export_csv.php" class="btn btn-success" style="padding: 12px; font-size: 13px;">
+    <?php echo icon('download', '', 16); ?> <span>Download CSV</span>
   </a>
 </div>
 
@@ -166,15 +191,22 @@ include __DIR__ . '/../includes/header.php';
   <!-- COLUMN 1: PENDING PAYMENTS QUEUE -->
   <div class="card" style="margin-bottom: 0;">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-      <h2 style="font-size: 18px; margin: 0;">💳 Pending Payment Proofs</h2>
-      <a href="payments.php" style="font-size: 12px; color: var(--accent-primary);">View All (<?php echo $pendingPaymentsCount; ?>) &rarr;</a>
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <span style="color: var(--accent-primary);"><?php echo icon('payments', '', 18); ?></span>
+        <h2 style="font-size: 16px; margin: 0;">Pending Payment Proofs</h2>
+      </div>
+      <a href="payments.php" style="font-size: 12px; font-weight: 600; display: inline-flex; align-items: center; gap: 4px;">
+        <span>View All (<?php echo $pendingPaymentsCount; ?>)</span> <?php echo icon('arrow_right', '', 12); ?>
+      </a>
     </div>
 
     <?php if (empty($pendingPayments)): ?>
-      <div style="text-align: center; padding: 30px 10px; color: var(--text-secondary);">
-        <span style="font-size: 32px; display: block; margin-bottom: 8px;">🎉</span>
-        <strong>All payments are reviewed!</strong>
-        <p style="font-size: 12px; margin-top: 4px;" class="muted">No pending payment submissions awaiting verification.</p>
+      <div style="text-align: center; padding: 36px 12px; color: var(--text-secondary);">
+        <div style="width: 48px; height: 48px; border-radius: 12px; background: rgba(16,185,129,0.1); color: #10b981; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 10px;">
+          <?php echo icon('check', '', 24); ?>
+        </div>
+        <strong style="display: block; font-size: 14px; color: var(--text-primary);">All payments are reviewed!</strong>
+        <p style="font-size: 12px; margin-top: 4px;" class="muted">No pending payment proofs awaiting administrative verification.</p>
       </div>
     <?php else: ?>
       <div class="table-shell">
@@ -185,7 +217,7 @@ include __DIR__ . '/../includes/header.php';
               <th>Due</th>
               <th>Amount</th>
               <th>Proof</th>
-              <th>Action</th>
+              <th style="text-align: right;">Action</th>
             </tr>
           </thead>
           <tbody>
@@ -204,36 +236,42 @@ include __DIR__ . '/../includes/header.php';
                       $isPdf = strtolower(pathinfo($p['proof_image'], PATHINFO_EXTENSION)) === 'pdf';
                     ?>
                     <?php if ($isPdf): ?>
-                      <a href="<?php echo $proofPath; ?>" target="_blank" class="btn btn-sm" style="padding: 4px 8px; font-size: 11px;">📄 PDF</a>
+                      <a href="<?php echo $proofPath; ?>" target="_blank" class="btn btn-sm btn-secondary" style="padding: 4px 8px; font-size: 11px;">
+                        <?php echo icon('file', '', 12); ?> PDF
+                      </a>
                     <?php else: ?>
-                      <button type="button" class="btn btn-sm" style="padding: 4px 8px; font-size: 11px;" onclick="openProofModal('<?php echo $proofPath; ?>', '<?php echo htmlspecialchars(addslashes($p['member_name'])); ?>', '<?php echo htmlspecialchars(addslashes($p['reference_number'])); ?>')">🖼️ View</button>
+                      <button type="button" class="btn btn-sm btn-secondary" style="padding: 4px 8px; font-size: 11px;" onclick="openProofModal('<?php echo $proofPath; ?>', '<?php echo htmlspecialchars(addslashes($p['member_name'])); ?>', '<?php echo htmlspecialchars(addslashes($p['reference_number'])); ?>')">
+                        <?php echo icon('image', '', 12); ?> View
+                      </button>
                     <?php endif; ?>
                   <?php else: ?>
                     <span class="muted">—</span>
                   <?php endif; ?>
                 </td>
-                <td style="white-space: nowrap;">
-                  <form method="post" action="verify.php" class="inline" style="display:inline-block;margin-right:2px;"
+                <td style="white-space: nowrap; text-align: right;">
+                  <form method="post" action="verify.php" class="inline" style="display:inline-block;margin-right:4px;"
                         data-confirm="Approve payment of ₱<?php echo number_format($p['amount_paid'], 2); ?> for <?php echo htmlspecialchars($p['member_name']); ?>?"
                         data-confirm-title="Approve Payment"
                         data-confirm-btn="Approve"
-                        data-confirm-class="btn-success"
-                        data-confirm-icon="💳">
+                        data-confirm-class="btn-success">
                     <?php echo csrf_field(); ?>
                     <input type="hidden" name="payment_id" value="<?php echo $p['id']; ?>">
                     <input type="hidden" name="action" value="approve">
-                    <button class="btn btn-sm btn-success" type="submit" style="padding: 4px 8px; font-size: 11px;">✓</button>
+                    <button class="btn btn-sm btn-success" type="submit" style="padding: 5px 9px;" title="Approve Payment">
+                      <?php echo icon('check', '', 13); ?>
+                    </button>
                   </form>
                   <form method="post" action="verify.php" class="inline" style="display:inline-block;"
                         data-confirm="Reject this payment submission from <?php echo htmlspecialchars($p['member_name']); ?>?"
                         data-confirm-title="Reject Payment"
                         data-confirm-btn="Reject"
-                        data-confirm-class="btn-danger"
-                        data-confirm-icon="❌">
+                        data-confirm-class="btn-danger">
                     <?php echo csrf_field(); ?>
                     <input type="hidden" name="payment_id" value="<?php echo $p['id']; ?>">
                     <input type="hidden" name="action" value="reject">
-                    <button class="btn btn-sm btn-danger" type="submit" style="padding: 4px 8px; font-size: 11px;">✕</button>
+                    <button class="btn btn-sm btn-danger" type="submit" style="padding: 5px 9px;" title="Reject Payment">
+                      <?php echo icon('x', '', 13); ?>
+                    </button>
                   </form>
                 </td>
               </tr>
@@ -247,15 +285,22 @@ include __DIR__ . '/../includes/header.php';
   <!-- COLUMN 2: PENDING MEMBER REGISTRATIONS -->
   <div class="card" style="margin-bottom: 0;">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-      <h2 style="font-size: 18px; margin: 0;">👤 Pending Member Sign-Ups</h2>
-      <a href="approvals.php" style="font-size: 12px; color: var(--accent-primary);">View All (<?php echo $pendingMembersCount; ?>) &rarr;</a>
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <span style="color: #3b82f6;"><?php echo icon('approvals', '', 18); ?></span>
+        <h2 style="font-size: 16px; margin: 0;">Pending Member Sign-Ups</h2>
+      </div>
+      <a href="approvals.php" style="font-size: 12px; font-weight: 600; display: inline-flex; align-items: center; gap: 4px;">
+        <span>View All (<?php echo $pendingMembersCount; ?>)</span> <?php echo icon('arrow_right', '', 12); ?>
+      </a>
     </div>
 
     <?php if (empty($pendingMembers)): ?>
-      <div style="text-align: center; padding: 30px 10px; color: var(--text-secondary);">
-        <span style="font-size: 32px; display: block; margin-bottom: 8px;">✨</span>
-        <strong>No pending registrations!</strong>
-        <p style="font-size: 12px; margin-top: 4px;" class="muted">All member accounts have been processed.</p>
+      <div style="text-align: center; padding: 36px 12px; color: var(--text-secondary);">
+        <div style="width: 48px; height: 48px; border-radius: 12px; background: rgba(59,130,246,0.1); color: #3b82f6; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 10px;">
+          <?php echo icon('sparkles', '', 24); ?>
+        </div>
+        <strong style="display: block; font-size: 14px; color: var(--text-primary);">No pending registrations!</strong>
+        <p style="font-size: 12px; margin-top: 4px;" class="muted">All member account applications have been processed.</p>
       </div>
     <?php else: ?>
       <div class="table-shell">
@@ -265,7 +310,7 @@ include __DIR__ . '/../includes/header.php';
               <th>Applicant Name</th>
               <th>PRC ID No.</th>
               <th>Registered</th>
-              <th>Action</th>
+              <th style="text-align: right;">Action</th>
             </tr>
           </thead>
           <tbody>
@@ -274,35 +319,36 @@ include __DIR__ . '/../includes/header.php';
                 <td><strong><?php echo htmlspecialchars($m['name']); ?></strong></td>
                 <td><code><?php echo htmlspecialchars($m['id_number']); ?></code></td>
                 <td><span class="muted" style="font-size: 11px;"><?php echo htmlspecialchars(date('M d, Y', strtotime($m['created_at']))); ?></span></td>
-                <td style="white-space: nowrap;">
-                  <form method="post" action="approvals.php" class="inline" style="display:inline-block;margin-right:2px;"
+                <td style="white-space: nowrap; text-align: right;">
+                  <form method="post" action="approvals.php" class="inline" style="display:inline-block;margin-right:4px;"
                         data-confirm="Approve registration for <?php echo htmlspecialchars($m['name']); ?>?"
                         data-confirm-title="Approve Member"
                         data-confirm-btn="Approve"
-                        data-confirm-class="btn-success"
-                        data-confirm-icon="👤">
+                        data-confirm-class="btn-success">
                     <?php echo csrf_field(); ?>
                     <input type="hidden" name="user_id" value="<?php echo $m['id']; ?>">
                     <input type="hidden" name="action" value="approve">
-                    <button class="btn btn-sm btn-success" type="submit" style="padding: 4px 8px; font-size: 11px;">Approve</button>
+                    <button class="btn btn-sm btn-success" type="submit" style="padding: 4px 8px; font-size: 11px;">
+                      <?php echo icon('check', '', 12); ?> Approve
+                    </button>
                   </form>
                   <form method="post" action="approvals.php" class="inline" style="display:inline-block;"
                         data-confirm="Reject registration for <?php echo htmlspecialchars($m['name']); ?>?"
                         data-confirm-title="Reject Member"
                         data-confirm-btn="Reject"
-                        data-confirm-class="btn-danger"
-                        data-confirm-icon="❌">
+                        data-confirm-class="btn-danger">
                     <?php echo csrf_field(); ?>
                     <input type="hidden" name="user_id" value="<?php echo $m['id']; ?>">
                     <input type="hidden" name="action" value="reject">
-                    <button class="btn btn-sm btn-danger" type="submit" style="padding: 4px 8px; font-size: 11px;">Reject</button>
+                    <button class="btn btn-sm btn-danger" type="submit" style="padding: 4px 8px; font-size: 11px;">
+                      <?php echo icon('x', '', 12); ?> Reject
+                    </button>
                   </form>
                 </td>
               </tr>
             <?php endforeach; ?>
           </tbody>
         </table>
-
       </div>
     <?php endif; ?>
   </div>
@@ -312,26 +358,33 @@ include __DIR__ . '/../includes/header.php';
 <!-- DUES COLLECTION PROGRESS TRACKER -->
 <div class="card" style="margin-bottom: 24px;">
   <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 10px;">
-    <div>
-      <h2 style="font-size: 18px; margin: 0;">📊 Dues Financial Health & Collection Progress</h2>
-      <p class="muted" style="font-size: 13px; margin: 4px 0 0;">Monitoring expected targets versus collected funds per due cycle.</p>
+    <div style="display: flex; align-items: center; gap: 10px;">
+      <div style="width: 36px; height: 36px; border-radius: 9px; background: rgba(245,158,11,0.12); color: var(--accent-primary); display: flex; align-items: center; justify-content: center;">
+        <?php echo icon('reports', '', 18); ?>
+      </div>
+      <div>
+        <h2 style="font-size: 16px; margin: 0;">Dues Financial Health &amp; Collection Progress</h2>
+        <p class="muted" style="font-size: 12px; margin: 2px 0 0;">Monitoring expected targets versus collected funds per due cycle.</p>
+      </div>
     </div>
-    <a href="dues.php" class="btn btn-sm" style="background: transparent; border: 1px solid var(--border-color); color: var(--text-primary);">Manage Dues &rarr;</a>
+    <a href="dues.php" class="btn btn-sm btn-secondary" style="display: inline-flex; align-items: center; gap: 4px;">
+      <span>Manage Dues</span> <?php echo icon('arrow_right', '', 12); ?>
+    </a>
   </div>
 
   <?php if (empty($duesSummary)): ?>
-    <p class="muted" style="text-align: center; padding: 20px;">No dues created yet.</p>
+    <p class="muted" style="text-align: center; padding: 24px;">No dues created yet.</p>
   <?php else: ?>
-    <div style="display: flex; flex-direction: column; gap: 16px;">
+    <div style="display: flex; flex-direction: column; gap: 14px;">
       <?php foreach ($duesSummary as $due):
         $expected = (float)($due['total_expected'] ?? 0);
         $collected = (float)($due['total_collected'] ?? 0);
         $percent = $expected > 0 ? min(100, round(($collected / $expected) * 100, 1)) : 0;
       ?>
-        <div style="background: var(--bg-secondary, rgba(0,0,0,0.04)); padding: 14px 16px; border-radius: 10px; border: 1px solid var(--border-color);">
+        <div style="background: var(--bg-secondary); padding: 14px 18px; border-radius: 12px; border: 1px solid var(--border-color);">
           <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; flex-wrap: wrap; gap: 8px;">
             <div>
-              <strong style="font-size: 15px;"><?php echo htmlspecialchars($due['title']); ?></strong>
+              <strong style="font-size: 14px; color: var(--text-primary);"><?php echo htmlspecialchars($due['title']); ?></strong>
               <span class="muted" style="font-size: 12px; margin-left: 8px;">
                 (Due: <?php echo date('M d, Y', strtotime($due['due_date'])); ?>)
               </span>
@@ -339,19 +392,19 @@ include __DIR__ . '/../includes/header.php';
             <div style="text-align: right;">
               <span style="font-size: 14px; font-weight: 700; color: #10b981;">₱<?php echo number_format($collected, 2); ?></span>
               <span class="muted" style="font-size: 13px;"> / ₱<?php echo number_format($expected, 2); ?></span>
-              <span style="font-weight: 700; margin-left: 8px; color: var(--accent-primary);"><?php echo $percent; ?>%</span>
+              <span style="font-weight: 800; margin-left: 8px; color: var(--accent-primary);"><?php echo $percent; ?>%</span>
             </div>
           </div>
           
           <!-- Progress Bar -->
-          <div style="width: 100%; height: 8px; background: rgba(0,0,0,0.15); border-radius: 999px; overflow: hidden; margin-bottom: 6px;">
-            <div style="height: 100%; width: <?php echo $percent; ?>%; background: linear-gradient(90deg, #f59e0b, #10b981); border-radius: 999px; transition: width 0.3s ease;"></div>
+          <div style="width: 100%; height: 8px; background: rgba(0,0,0,0.12); border-radius: 999px; overflow: hidden; margin-bottom: 8px;">
+            <div style="height: 100%; width: <?php echo $percent; ?>%; background: linear-gradient(90deg, #f59e0b, #10b981); border-radius: 999px; transition: width 0.4s ease;"></div>
           </div>
 
-          <div style="display: flex; justify-content: space-between; font-size: 12px; color: var(--text-secondary);">
+          <div style="display: flex; justify-content: space-between; font-size: 12px; color: var(--text-secondary); flex-wrap: wrap; gap: 8px;">
             <span>Assigned: <strong><?php echo (int)$due['assigned_count']; ?> members</strong></span>
             <span>Fully Paid: <strong><?php echo (int)$due['fully_paid_count']; ?> members</strong></span>
-            <span>Balance: <strong style="color:<?php echo ($expected - $collected) > 0 ? '#ef4444' : '#10b981'; ?>;">₱<?php echo number_format(max(0, $expected - $collected), 2); ?></strong></span>
+            <span>Outstanding Balance: <strong style="color:<?php echo ($expected - $collected) > 0 ? '#ef4444' : '#10b981'; ?>;">₱<?php echo number_format(max(0, $expected - $collected), 2); ?></strong></span>
           </div>
         </div>
       <?php endforeach; ?>
@@ -362,12 +415,17 @@ include __DIR__ . '/../includes/header.php';
 <!-- RECENT TRANSACTIONS STREAM -->
 <div class="card">
   <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-    <h2 style="font-size: 18px; margin: 0;">🧾 Recent Verified Transactions</h2>
-    <a href="reports.php" style="font-size: 12px; color: var(--accent-primary);">View All Reports &rarr;</a>
+    <div style="display: flex; align-items: center; gap: 8px;">
+      <span style="color: #10b981;"><?php echo icon('dues', '', 18); ?></span>
+      <h2 style="font-size: 16px; margin: 0;">Recent Verified Transactions</h2>
+    </div>
+    <a href="reports.php" style="font-size: 12px; font-weight: 600; display: inline-flex; align-items: center; gap: 4px;">
+      <span>View All Reports</span> <?php echo icon('arrow_right', '', 12); ?>
+    </a>
   </div>
 
   <?php if (empty($recentTransactions)): ?>
-    <p class="muted" style="text-align: center; padding: 20px;">No verified transactions yet.</p>
+    <p class="muted" style="text-align: center; padding: 24px;">No verified transactions recorded yet.</p>
   <?php else: ?>
     <div class="table-shell">
       <table>
@@ -377,9 +435,9 @@ include __DIR__ . '/../includes/header.php';
             <th>Due Title</th>
             <th>Amount Paid</th>
             <th>Method</th>
-            <th>Receipt #</th>
+            <th>Official Receipt #</th>
             <th>Verified Date</th>
-            <th>Receipt</th>
+            <th style="text-align: right;">Receipt</th>
           </tr>
         </thead>
         <tbody>
@@ -391,12 +449,14 @@ include __DIR__ . '/../includes/header.php';
               </td>
               <td><?php echo htmlspecialchars($tx['due_title']); ?></td>
               <td><strong style="color: #10b981;">₱<?php echo number_format($tx['amount_paid'], 2); ?></strong></td>
-              <td><span class="badge"><?php echo strtoupper(htmlspecialchars($tx['method'])); ?></span></td>
+              <td><span class="badge-pill badge-paid"><?php echo strtoupper(htmlspecialchars($tx['method'])); ?></span></td>
               <td><code><?php echo htmlspecialchars($tx['receipt_number'] ?: '—'); ?></code></td>
-              <td><span class="muted" style="font-size: 12px;"><?php echo htmlspecialchars(date('M d, Y H:i', strtotime($tx['verified_at']))); ?></span></td>
-              <td>
+              <td><span class="muted" style="font-size: 12px;"><?php echo htmlspecialchars(date('M d, Y h:i A', strtotime($tx['verified_at']))); ?></span></td>
+              <td style="text-align: right;">
                 <?php if ($tx['receipt_number']): ?>
-                  <a href="../receipt.php?payment_id=<?php echo $tx['id']; ?>" target="_blank" class="btn btn-sm" style="padding: 4px 8px; font-size: 11px;">View Receipt</a>
+                  <a href="../receipt.php?payment_id=<?php echo $tx['id']; ?>" target="_blank" class="btn btn-sm btn-secondary" style="padding: 4px 8px; font-size: 11px; display: inline-flex; align-items: center; gap: 4px;">
+                    <?php echo icon('file', '', 12); ?> <span>Receipt</span>
+                  </a>
                 <?php endif; ?>
               </td>
             </tr>
@@ -408,19 +468,23 @@ include __DIR__ . '/../includes/header.php';
 </div>
 
 <!-- Proof Lightbox Modal -->
-<div id="proofModal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.75);z-index:9999;align-items:center;justify-content:center;padding:20px;">
-  <div style="background:var(--card-bg, #fff);border-radius:12px;max-width:600px;width:100%;max-height:90vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 20px 40px rgba(0,0,0,0.3);border:1px solid var(--border-color);">
-    <div style="padding:14px 18px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border-color);">
+<div id="proofModal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.75);z-index:9999;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(6px);">
+  <div style="background:var(--card-bg, #131d33);border-radius:16px;max-width:600px;width:100%;max-height:90vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 25px 50px -12px rgba(0,0,0,0.6);border:1px solid var(--border-color);">
+    <div style="padding:16px 20px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border-color);">
       <h3 id="modalMemberTitle" style="margin:0;font-size:16px;color:var(--text-primary);">Proof of Payment</h3>
-      <button type="button" onclick="closeProofModal()" style="border:none;background:transparent;font-size:22px;cursor:pointer;line-height:1;color:var(--text-primary);">&times;</button>
+      <button type="button" onclick="closeProofModal()" style="border:none;background:transparent;cursor:pointer;color:var(--text-primary);display:flex;align-items:center;justify-content:center;padding:4px;">
+        <?php echo icon('x', '', 18); ?>
+      </button>
     </div>
-    <div style="padding:16px;overflow-y:auto;text-align:center;background:rgba(0,0,0,0.02);">
-      <img id="modalProofImg" src="" alt="Proof Preview" style="max-width:100%;max-height:65vh;object-fit:contain;border-radius:8px;border:1px solid var(--border-color);">
-      <div id="modalRefInfo" style="margin-top:10px;font-size:13px;color:var(--muted-text,#666);"></div>
+    <div style="padding:18px;overflow-y:auto;text-align:center;background:rgba(0,0,0,0.1);">
+      <img id="modalProofImg" src="" alt="Proof Preview" style="max-width:100%;max-height:65vh;object-fit:contain;border-radius:10px;border:1px solid var(--border-color);">
+      <div id="modalRefInfo" style="margin-top:10px;font-size:13px;color:var(--text-secondary);"></div>
     </div>
-    <div style="padding:10px 18px;display:flex;justify-content:flex-end;border-top:1px solid var(--border-color);">
-      <a id="modalDirectLink" href="#" target="_blank" class="btn btn-sm" style="margin-right:8px;">Open Full Image</a>
-      <button type="button" class="btn btn-sm" onclick="closeProofModal()">Close</button>
+    <div style="padding:12px 20px;display:flex;justify-content:flex-end;border-top:1px solid var(--border-color);gap:8px;">
+      <a id="modalDirectLink" href="#" target="_blank" class="btn btn-sm btn-secondary" style="display:inline-flex;align-items:center;gap:4px;">
+        <?php echo icon('external_link', '', 12); ?> <span>Open Full Image</span>
+      </a>
+      <button type="button" class="btn btn-sm btn-secondary" onclick="closeProofModal()">Close</button>
     </div>
   </div>
 </div>
@@ -429,7 +493,7 @@ include __DIR__ . '/../includes/header.php';
 function openProofModal(imgSrc, memberName, refNo) {
   document.getElementById('modalProofImg').src = imgSrc;
   document.getElementById('modalDirectLink').href = imgSrc;
-  document.getElementById('modalMemberTitle').innerText = 'Proof: ' + memberName;
+  document.getElementById('modalMemberTitle').innerText = 'Payment Proof: ' + memberName;
   document.getElementById('modalRefInfo').innerText = refNo ? 'Reference Number: ' + refNo : '';
   document.getElementById('proofModal').style.display = 'flex';
 }

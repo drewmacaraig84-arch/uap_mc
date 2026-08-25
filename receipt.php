@@ -168,7 +168,7 @@ $backUrl = $_SESSION['role'] === 'admin' ? BASE_URL . '/admin/reports.php' : BAS
 
 <div class="receipt-card">
   <div class="receipt-header">
-    <img src="<?php echo BASE_URL; ?>/uploads/uap_logo.jpg" alt="UAP Logo" class="receipt-logo">
+    <img src="<?php echo BASE_URL; ?>/public/logo.jpg" alt="UAP Logo" class="receipt-logo" onerror="if(this.src.indexOf('uploads/logo.jpg')===-1)this.src='<?php echo BASE_URL; ?>/uploads/logo.jpg';">
     <div class="org-title">United Architects of the Philippines</div>
     <div class="org-sub">Mindoro Chapter • Official Receipt</div>
     <div class="receipt-title">OFFICIAL RECEIPT</div>

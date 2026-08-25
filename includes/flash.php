@@ -30,12 +30,16 @@ function display_flash() {
     
     foreach ($messages as $msg) {
         $alertClass = 'alert-info';
-        if ($msg['type'] === 'success') $alertClass = 'alert-success';
-        if ($msg['type'] === 'error' || $msg['type'] === 'danger') $alertClass = 'alert-error';
-        if ($msg['type'] === 'warning') $alertClass = 'alert-warning';
+        $iconName = 'info';
+        if ($msg['type'] === 'success') { $alertClass = 'alert-success'; $iconName = 'check'; }
+        if ($msg['type'] === 'error' || $msg['type'] === 'danger') { $alertClass = 'alert-error'; $iconName = 'alert'; }
+        if ($msg['type'] === 'warning') { $alertClass = 'alert-warning'; $iconName = 'alert'; }
         
-        echo '<div class="alert ' . htmlspecialchars($alertClass, ENT_QUOTES, 'UTF-8') . '" style="margin-bottom: 16px;">';
-        echo htmlspecialchars($msg['message'], ENT_QUOTES, 'UTF-8');
+        echo '<div class="alert ' . htmlspecialchars($alertClass, ENT_QUOTES, 'UTF-8') . '" style="margin-bottom: 16px; display: flex; align-items: center; gap: 10px;">';
+        if (function_exists('icon')) {
+            echo icon($iconName, '', 18);
+        }
+        echo '<div>' . htmlspecialchars($msg['message'], ENT_QUOTES, 'UTF-8') . '</div>';
         echo '</div>';
     }
 }

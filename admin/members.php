@@ -21,7 +21,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'delet
     try {
         $pdo->beginTransaction();
 
-        // Get all member_dues for this user
         $md_ids = $pdo->prepare("SELECT id FROM member_dues WHERE user_id = ?");
         $md_ids->execute([$user_id]);
         $md_rows = $md_ids->fetchAll(PDO::FETCH_COLUMN);
@@ -179,119 +178,155 @@ if ($selected_member_id) {
     }
 }
 
-$page_title = 'Members';
+$page_title = 'Chapter Members • UAP Mindoro Chapter';
 include __DIR__ . '/../includes/header.php';
 ?>
-<div class="card">
-  <h1>Members Overview</h1>
-  <?php if (isset($_GET['deleted'])): ?><div class="alert alert-success">Member account deleted.</div><?php endif; ?>
-  <?php if (isset($_GET['updated_due'])): ?><div class="alert alert-success">The member's assigned due was updated.</div><?php endif; ?>
-  <?php if (isset($_GET['deleted_due'])): ?><div class="alert alert-success">The member's assigned due was removed.</div><?php endif; ?>
 
-  <div class="toolbar">
-    <div class="search-box">
-      <input type="text" id="memberSearch" placeholder="Search by name or PRC ID No..." oninput="filterTable()">
-    </div>
-    <div class="filter-box">
-      <select id="statusFilter" onchange="filterTable()">
-        <option value="all">All Members</option>
-        <option value="fully-paid">Fully Paid</option>
-        <option value="partially-paid">Partially Paid</option>
-        <option value="pending-verification">Pending Verification</option>
-        <option value="has-dues">Has Dues (Unpaid)</option>
-        <option value="awaiting-approval">Awaiting Approval</option>
-      </select>
+<div class="page-hero">
+  <div>
+    <p class="eyebrow">CHAPTER ROSTER</p>
+    <h1>Chapter Members Directory</h1>
+    <p class="page-subtitle">Manage member profiles, inspect individual due balances, and adjust member-specific fees.</p>
+  </div>
+  <div class="hero-badge">
+    <?php echo icon('members', '', 14); ?> <span><?php echo count($members); ?> Total Members</span>
+  </div>
+</div>
+
+<div class="card">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 12px;">
+    <div style="display: flex; gap: 12px; flex-wrap: wrap; flex-grow: 1; max-width: 600px;">
+      <div style="flex: 1; min-width: 220px; position: relative;">
+        <input type="text" id="memberSearch" placeholder="Search by name or PRC ID No..." oninput="filterTable()" style="padding-left: 36px;">
+        <div style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text-secondary);">
+          <?php echo icon('search', '', 16); ?>
+        </div>
+      </div>
+      <div style="width: 200px;">
+        <select id="statusFilter" onchange="filterTable()">
+          <option value="all">All Members</option>
+          <option value="fully-paid">Fully Paid</option>
+          <option value="partially-paid">Partially Paid</option>
+          <option value="pending-verification">Pending Verification</option>
+          <option value="has-dues">Has Outstanding Dues</option>
+          <option value="awaiting-approval">Awaiting Approval</option>
+        </select>
+      </div>
     </div>
   </div>
 
   <div class="table-shell">
-  <table id="membersTable">
-    <thead>
-    <tr><th>Name</th><th>PRC ID No.</th><th>Dues</th><th>Total Amount</th><th>Total Paid</th><th>Remaining Balance</th><th>Overall Status</th><th>Actions</th></tr>
-    </thead>
-    <tbody>
-    <?php foreach ($members as $m):
-      // Determine row status key for filtering
-      if ($m['status'] === 'pending') {
-          $row_status = 'awaiting-approval';
-      } elseif ($m['total_dues'] > 0 && $m['paid_count'] == $m['total_dues']) {
-          $row_status = 'fully-paid';
-      } elseif ($m['partial_count'] > 0) {
-          $row_status = 'partially-paid';
-      } elseif ($m['pending_count'] > 0) {
-          $row_status = 'pending-verification';
-      } elseif ($m['unpaid_count'] > 0) {
-          $row_status = 'has-dues';
-      } else {
-          $row_status = 'fully-paid';
-      }
-      $search_text = strtolower($m['name'] . ' ' . $m['id_number']);
-    ?>
-    <tr data-status="<?php echo $row_status; ?>" data-search="<?php echo htmlspecialchars($search_text); ?>">
-      <td>
-        <?php echo htmlspecialchars($m['name']); ?>
-        <?php
+    <table id="membersTable">
+      <thead>
+        <tr>
+          <th>Architect Name</th>
+          <th>PRC ID No.</th>
+          <th>Dues Progress</th>
+          <th>Total Expected</th>
+          <th>Total Paid</th>
+          <th>Remaining Balance</th>
+          <th>Status</th>
+          <th style="text-align: right;">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+      <?php foreach ($members as $m):
+        if ($m['status'] === 'pending') {
+            $row_status = 'awaiting-approval';
+        } elseif ($m['total_dues'] > 0 && $m['paid_count'] == $m['total_dues']) {
+            $row_status = 'fully-paid';
+        } elseif ($m['partial_count'] > 0) {
+            $row_status = 'partially-paid';
+        } elseif ($m['pending_count'] > 0) {
+            $row_status = 'pending-verification';
+        } elseif ($m['unpaid_count'] > 0) {
+            $row_status = 'has-dues';
+        } else {
+            $row_status = 'fully-paid';
+        }
+        $search_text = strtolower($m['name'] . ' ' . $m['id_number']);
         $isGoodMember = is_good_member($pdo, $m['id']);
-        ?>
-        <?php if ($m['status'] === 'pending'): ?> <span class="badge badge-pending">Awaiting Approval</span><?php endif; ?>
-        <?php if ($m['status'] === 'rejected'): ?> <span class="badge badge-rejected">Rejected</span><?php endif; ?>
-        <?php if ($isGoodMember): ?> <span class="badge badge-paid">Good Member</span><?php endif; ?>
-      </td>
-      <td><?php echo htmlspecialchars($m['id_number']); ?></td>
-      <td><?php echo $m['paid_count']; ?> paid / <?php echo $m['total_dues']; ?> total</td>
-      <td>₱<?php echo number_format($m['total_amount'] ?? 0, 2); ?></td>
-      <td style="color:#1e7e34;font-weight:600;">₱<?php echo number_format($m['total_paid_sum'] ?? 0, 2); ?></td>
-      <td style="color:<?php echo ($m['remaining_balance'] ?? 0) > 0 ? '#b3261e' : '#1e7e34'; ?>;font-weight:600;">
-        ₱<?php echo number_format($m['remaining_balance'] ?? 0, 2); ?>
-      </td>
-      <td>
-        <?php if ($m['total_dues'] > 0 && $m['paid_count'] == $m['total_dues']): ?>
-          <span class="badge badge-paid">Fully Paid</span>
-        <?php elseif ($m['partial_count'] > 0): ?>
-          <span class="badge badge-pending">Partially Paid</span>
-        <?php elseif ($m['pending_count'] > 0): ?>
-          <span class="badge badge-pending">Pending Verification</span>
-        <?php elseif ($m['unpaid_count'] > 0): ?>
-          <span class="badge badge-unpaid">Has Dues</span>
-        <?php else: ?>
-          <span class="muted">—</span>
-        <?php endif; ?>
-      </td>
-      <td>
-        <a class="btn btn-sm" href="members.php?member_id=<?php echo $m['id']; ?>#member-dues-panel">Manage Dues</a>
-        <a class="btn btn-sm" href="account_manager.php?search=<?php echo urlencode($m['id_number']); ?>">Edit</a>
-        <form method="post" class="inline"
-              data-confirm="Delete member <?php echo htmlspecialchars($m['name']); ?>? This action cannot be undone."
-              data-confirm-title="Delete Member"
-              data-confirm-btn="Delete Member"
-              data-confirm-class="btn-danger"
-              data-confirm-icon="🗑️">
-          <?php echo csrf_field(); ?>
-          <input type="hidden" name="user_id" value="<?php echo $m['id']; ?>">
-          <input type="hidden" name="action" value="delete_member">
-          <button class="btn btn-sm btn-danger" type="submit">Delete</button>
-        </form>
-
-      </td>
-    </tr>
-    <?php endforeach; ?>
-    </tbody>
-  </table>
+      ?>
+      <tr data-status="<?php echo $row_status; ?>" data-search="<?php echo htmlspecialchars($search_text); ?>">
+        <td>
+          <strong style="color: var(--text-primary);"><?php echo htmlspecialchars($m['name']); ?></strong>
+          <?php if ($m['status'] === 'pending'): ?>
+            <span class="badge-pill badge-pending" style="font-size: 10px;">Pending</span>
+          <?php elseif ($isGoodMember): ?>
+            <span class="badge-pill badge-paid" style="font-size: 10px;"><?php echo icon('good_members', '', 10); ?> Good Standing</span>
+          <?php endif; ?>
+        </td>
+        <td><code><?php echo htmlspecialchars($m['id_number']); ?></code></td>
+        <td>
+          <span style="font-size: 13px; font-weight: 600;"><?php echo $m['paid_count']; ?>/<?php echo $m['total_dues']; ?></span>
+          <span class="muted" style="font-size: 11px;"> cleared</span>
+        </td>
+        <td>₱<?php echo number_format($m['total_amount'] ?? 0, 2); ?></td>
+        <td><strong style="color:#10b981;">₱<?php echo number_format($m['total_paid_sum'] ?? 0, 2); ?></strong></td>
+        <td>
+          <strong style="color:<?php echo ($m['remaining_balance'] ?? 0) > 0 ? '#ef4444' : '#10b981'; ?>;">
+            ₱<?php echo number_format(max(0, $m['remaining_balance'] ?? 0), 2); ?>
+          </strong>
+        </td>
+        <td>
+          <?php if ($m['total_dues'] > 0 && $m['paid_count'] == $m['total_dues']): ?>
+            <span class="badge-pill badge-paid">Fully Paid</span>
+          <?php elseif ($m['partial_count'] > 0): ?>
+            <span class="badge-pill badge-pending">Partially Paid</span>
+          <?php elseif ($m['pending_count'] > 0): ?>
+            <span class="badge-pill badge-pending">Pending Verification</span>
+          <?php elseif ($m['unpaid_count'] > 0): ?>
+            <span class="badge-pill badge-unpaid">Outstanding Dues</span>
+          <?php else: ?>
+            <span class="muted">—</span>
+          <?php endif; ?>
+        </td>
+        <td style="white-space: nowrap; text-align: right;">
+          <a class="btn btn-sm btn-secondary" href="members.php?member_id=<?php echo $m['id']; ?>#member-dues-panel" style="display:inline-flex;align-items:center;gap:4px;margin-right:4px;">
+            <?php echo icon('dues', '', 12); ?> <span>Dues</span>
+          </a>
+          <a class="btn btn-sm btn-secondary" href="account_manager.php?search=<?php echo urlencode($m['id_number']); ?>" style="display:inline-flex;align-items:center;gap:4px;margin-right:4px;">
+            <?php echo icon('edit', '', 12); ?> <span>Edit</span>
+          </a>
+          <form method="post" class="inline" style="display:inline-block;"
+                data-confirm="Delete member <?php echo htmlspecialchars($m['name']); ?>? This action cannot be undone."
+                data-confirm-title="Delete Member"
+                data-confirm-btn="Delete Member"
+                data-confirm-class="btn-danger">
+            <?php echo csrf_field(); ?>
+            <input type="hidden" name="user_id" value="<?php echo $m['id']; ?>">
+            <input type="hidden" name="action" value="delete_member">
+            <button class="btn btn-sm btn-danger" type="submit" style="display:inline-flex;align-items:center;gap:4px;">
+              <?php echo icon('trash', '', 12); ?>
+            </button>
+          </form>
+        </td>
+      </tr>
+      <?php endforeach; ?>
+      </tbody>
+    </table>
   </div>
 </div>
 
 <?php if ($selected_member): ?>
-<div class="card" id="member-dues-panel" style="margin-top:20px;">
-  <h2>Assigned Dues for <?php echo htmlspecialchars($selected_member['name']); ?></h2>
-  <p class="muted">These are the dues assigned specifically to this member. Editing or deleting here affects only this member's assignment.</p>
+<div class="card" id="member-dues-panel" style="margin-top:24px;">
+  <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 16px;">
+    <div style="width: 36px; height: 36px; border-radius: 8px; background: rgba(245,158,11,0.12); color: var(--accent-primary); display: flex; align-items: center; justify-content: center;">
+      <?php echo icon('dues', '', 18); ?>
+    </div>
+    <div>
+      <h2 style="font-size: 17px; margin: 0;">Assigned Dues for <?php echo htmlspecialchars($selected_member['name']); ?> (<?php echo htmlspecialchars($selected_member['id_number']); ?>)</h2>
+      <p class="muted" style="font-size: 12px; margin: 2px 0 0;">Editing or removing dues here affects only this specific member.</p>
+    </div>
+  </div>
 
   <?php if ($editing_member_due): ?>
-  <form method="post" style="margin-bottom:16px;">
+  <form method="post" style="margin-bottom:20px; background: var(--bg-secondary); padding: 18px; border-radius: 12px; border: 1px solid var(--border-color);">
     <?php echo csrf_field(); ?>
     <input type="hidden" name="action" value="update_member_due">
     <input type="hidden" name="member_due_id" value="<?php echo $editing_member_due['id']; ?>">
     <input type="hidden" name="member_id" value="<?php echo $selected_member['id']; ?>">
-    <div class="grid-2">
+    <div class="grid-2" style="gap: 14px;">
       <div class="field"><label>Due Title</label><input name="title" required value="<?php echo htmlspecialchars($editing_member_due['title'] ?? ''); ?>"></div>
       <div class="field"><label>Description</label><input name="description" value="<?php echo htmlspecialchars($editing_member_due['description'] ?? ''); ?>"></div>
       <div class="field"><label>Amount (₱)</label><input type="number" step="0.01" name="amount" required value="<?php echo htmlspecialchars($editing_member_due['amount'] ?? ''); ?>"></div>
@@ -299,60 +334,79 @@ include __DIR__ . '/../includes/header.php';
       <div class="field"><label>Term</label><input name="term" value="<?php echo htmlspecialchars($editing_member_due['term'] ?? ''); ?>"></div>
     </div>
     <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:10px;">
-      <button class="btn" type="submit">Save Changes</button>
-      <a class="btn" href="members.php?member_id=<?php echo $selected_member['id']; ?>" style="background:#6b7280;">Cancel</a>
+      <button class="btn btn-sm" type="submit" style="display:inline-flex;align-items:center;gap:4px;">
+        <?php echo icon('check', '', 13); ?> <span>Save Changes</span>
+      </button>
+      <a class="btn btn-sm btn-secondary" href="members.php?member_id=<?php echo $selected_member['id']; ?>">Cancel</a>
     </div>
   </form>
   <?php endif; ?>
 
   <?php if (empty($selected_member_dues)): ?>
-    <p class="muted">No dues have been assigned to this member yet.</p>
+    <p class="muted" style="text-align: center; padding: 24px;">No dues have been assigned to this member yet.</p>
   <?php else: ?>
-  <table>
-    <tr><th>Due</th><th>Description</th><th>Amount</th><th>Due Date</th><th>Term</th><th>Status</th><th>Actions</th></tr>
-    <?php foreach ($selected_member_dues as $due): ?>
-    <tr>
-      <td><?php echo htmlspecialchars($due['title']); ?></td>
-      <td><?php echo htmlspecialchars($due['description'] ?? '—'); ?></td>
-      <td>₱<?php echo number_format($due['amount'], 2); ?></td>
-      <td><?php echo htmlspecialchars($due['due_date'] ?? '—'); ?></td>
-      <td><?php echo htmlspecialchars($due['term'] ?? '—'); ?></td>
-      <td>
-        <?php
-          $badge = $due['status'];
-          $label = match($due['status']) {
-            'unpaid' => 'Unpaid',
-            'pending' => 'Pending Verification',
-            'partial' => 'Partially Paid',
-            'paid' => 'Fully Paid',
-            'rejected' => 'Rejected',
-            default => ucfirst($due['status'])
-          };
-        ?>
-        <span class="badge badge-<?php echo $badge === 'partial' ? 'pending' : $badge; ?>"><?php echo $label; ?></span>
-      </td>
-      <td>
-        <a class="btn btn-sm" href="members.php?member_id=<?php echo $selected_member['id']; ?>&edit_member_due=<?php echo $due['id']; ?>">Edit</a>
-        <form method="post" class="inline"
-              data-confirm="Remove this due from <?php echo htmlspecialchars($selected_member['name']); ?>?"
-              data-confirm-title="Remove Assigned Due"
-              data-confirm-btn="Remove Due"
-              data-confirm-class="btn-danger"
-              data-confirm-icon="📋">
-          <?php echo csrf_field(); ?>
-          <input type="hidden" name="action" value="delete_member_due">
-          <input type="hidden" name="member_due_id" value="<?php echo $due['id']; ?>">
-          <input type="hidden" name="member_id" value="<?php echo $selected_member['id']; ?>">
-          <button class="btn btn-sm btn-danger" type="submit">Delete</button>
-        </form>
-      </td>
-
-    </tr>
-    <?php endforeach; ?>
-  </table>
+    <div class="table-shell">
+      <table>
+        <thead>
+          <tr>
+            <th>Due Package</th>
+            <th>Description</th>
+            <th>Amount</th>
+            <th>Due Date</th>
+            <th>Term</th>
+            <th>Payment Status</th>
+            <th style="text-align: right;">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+        <?php foreach ($selected_member_dues as $due): ?>
+        <tr>
+          <td><strong style="color: var(--text-primary);"><?php echo htmlspecialchars($due['title']); ?></strong></td>
+          <td><span class="muted"><?php echo htmlspecialchars($due['description'] ?? '—'); ?></span></td>
+          <td><strong style="color: #10b981;">₱<?php echo number_format($due['amount'], 2); ?></strong></td>
+          <td><?php echo $due['due_date'] ? date('M d, Y', strtotime($due['due_date'])) : '<span class="muted">—</span>'; ?></td>
+          <td><span class="badge-pill badge-partial"><?php echo htmlspecialchars($due['term'] ?: 'Standard'); ?></span></td>
+          <td>
+            <?php
+              $badge = $due['status'];
+              $label = match($due['status']) {
+                'unpaid' => 'Unpaid',
+                'pending' => 'Pending Verification',
+                'partial' => 'Partially Paid',
+                'paid' => 'Fully Paid',
+                'rejected' => 'Rejected',
+                default => ucfirst($due['status'])
+              };
+            ?>
+            <span class="badge-pill badge-<?php echo $badge === 'partial' ? 'pending' : ($badge === 'rejected' ? 'unpaid' : $badge); ?>"><?php echo $label; ?></span>
+          </td>
+          <td style="white-space: nowrap; text-align: right;">
+            <a class="btn btn-sm btn-secondary" href="members.php?member_id=<?php echo $selected_member['id']; ?>&edit_member_due=<?php echo $due['id']; ?>#member-dues-panel" style="display:inline-flex;align-items:center;gap:4px;margin-right:4px;">
+              <?php echo icon('edit', '', 12); ?> <span>Edit</span>
+            </a>
+            <form method="post" class="inline" style="display:inline-block;"
+                  data-confirm="Remove this due from <?php echo htmlspecialchars($selected_member['name']); ?>?"
+                  data-confirm-title="Remove Assigned Due"
+                  data-confirm-btn="Remove"
+                  data-confirm-class="btn-danger">
+              <?php echo csrf_field(); ?>
+              <input type="hidden" name="action" value="delete_member_due">
+              <input type="hidden" name="member_due_id" value="<?php echo $due['id']; ?>">
+              <input type="hidden" name="member_id" value="<?php echo $selected_member['id']; ?>">
+              <button class="btn btn-sm btn-danger" type="submit" style="display:inline-flex;align-items:center;gap:4px;">
+                <?php echo icon('trash', '', 12); ?>
+              </button>
+            </form>
+          </td>
+        </tr>
+        <?php endforeach; ?>
+        </tbody>
+      </table>
+    </div>
   <?php endif; ?>
 </div>
 <?php endif; ?>
+
 <script>
 function filterTable() {
   const search = document.getElementById('memberSearch').value.toLowerCase();
@@ -366,17 +420,7 @@ function filterTable() {
     row.style.display = (matchSearch && matchStatus) ? '' : 'none';
     if (matchSearch && matchStatus) visible++;
   });
-
-  // Show no-results message
-  let noResults = document.getElementById('noResults');
-  if (!noResults) {
-    noResults = document.createElement('p');
-    noResults.id = 'noResults';
-    noResults.className = 'muted';
-    noResults.textContent = 'No members match your search/filter.';
-    document.getElementById('membersTable').after(noResults);
-  }
-  noResults.style.display = visible === 0 ? 'block' : 'none';
 }
 </script>
+
 <?php include __DIR__ . '/../includes/footer.php'; ?>

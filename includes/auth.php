@@ -100,24 +100,26 @@ function has_unlocked_website_directory($pdo, $userId) {
 
 function get_site_logo($pdo) {
     static $cached = null;
-    if ($cached !== null) return $cached ?: null;
+    if ($cached !== null) return $cached ?: 'public/logo.jpg';
 
     $cacheKey = 'site_setting:logo';
-    $cached = cache_get($cacheKey);
-    if ($cached !== null) {
-        return $cached ?: null;
+    if (function_exists('cache_get')) {
+        $cached = cache_get($cacheKey);
+        if ($cached !== null && $cached !== '') {
+            return $cached;
+        }
     }
 
     try {
         $stmt = $pdo->prepare("SELECT setting_value FROM site_settings WHERE setting_key = 'logo'");
         $stmt->execute();
         $row = $stmt->fetch();
-        $cached = $row ? $row['setting_value'] : '';
-        if ($cached !== '') {
+        $cached = ($row && !empty($row['setting_value'])) ? $row['setting_value'] : 'public/logo.jpg';
+        if (function_exists('cache_set')) {
             cache_set($cacheKey, $cached);
         }
-        return $cached ?: null;
+        return $cached;
     } catch (Exception $e) {
-        return null;
+        return 'public/logo.jpg';
     }
 }
