@@ -87,6 +87,12 @@ if (!$member && ($prcNumber !== '' || $nameQuery !== '')) {
     }
 }
 
+// Fetch sponsors from database
+$sponsors = [];
+try {
+    $sponsors = $pdo->query("SELECT * FROM sponsors WHERE is_active = 1 ORDER BY display_order ASC LIMIT 6")->fetchAll();
+} catch (Exception $e) {}
+
 $pageTitle = $member ? htmlspecialchars($member['name']) . ' - Chapter Directory Profile' : 'Member Profile - UAP Mindoro Chapter';
 ?>
 <!DOCTYPE html>
@@ -99,7 +105,7 @@ $pageTitle = $member ? htmlspecialchars($member['name']) . ' - Chapter Directory
         :root {
             --bg-black: #080808;
             --bg-card: #121212;
-            --bg-inner-card: #182232;
+            --bg-inner-card: #1a1a1a;
             --accent-yellow: #f5b800;
             --accent-yellow-hover: #d9a300;
             --text-light: #f5f5f5;
@@ -116,9 +122,6 @@ $pageTitle = $member ? htmlspecialchars($member['name']) . ' - Chapter Directory
             color: var(--text-light);
             font-family: var(--font-family);
             line-height: 1.6;
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
         }
 
         a { color: inherit; text-decoration: none; }
@@ -213,67 +216,106 @@ $pageTitle = $member ? htmlspecialchars($member['name']) . ' - Chapter Directory
             background: var(--accent-yellow-hover);
         }
 
-        .main-wrapper {
-            flex: 1 0 auto;
-            max-width: 1100px;
+        .btn-yellow {
+            display: inline-block;
+            padding: 0.7rem 1.6rem;
+            background-color: var(--accent-yellow);
+            color: #000000;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            border-radius: 4px;
+            transition: background-color 0.2s ease;
+            font-size: 0.8rem;
+        }
+
+        .btn-yellow:hover { background-color: var(--accent-yellow-hover); }
+
+        .main-container {
             width: 100%;
+            max-width: 1800px;
             margin: 0 auto;
-            padding: 32px 20px 60px;
+            padding: 2rem 1.5rem;
         }
 
-        .back-nav {
-            margin-bottom: 24px;
+        .page-layout {
+            display: grid;
+            grid-template-columns: 280px 1fr 280px;
+            gap: 1.5rem;
+            align-items: start;
         }
 
-        .back-link {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
+        .sponsors-sidebar {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-dark);
+            border-radius: 8px;
+            padding: 1.5rem;
+            text-align: center;
+        }
+
+        .sponsors-sidebar h3 {
+            font-size: 1.1rem;
             color: var(--accent-yellow);
-            text-decoration: none;
-            font-weight: 700;
-            font-size: 0.95rem;
-            transition: transform 0.2s ease;
+            margin-bottom: 1.2rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            border-bottom: 1px solid var(--border-dark);
+            padding-bottom: 0.5rem;
         }
 
-        .back-link:hover {
-            transform: translateX(-4px);
+        .sponsor-box {
+            background-color: var(--bg-inner-card);
+            border: 1px dashed var(--border-dark);
+            border-radius: 6px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            transition: all 0.2s ease;
+        }
+
+        .sponsor-box:hover {
+            border-color: var(--accent-yellow);
+            color: var(--text-light);
+        }
+
+        .center-content { width: 100%; }
+
+        .dark-card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-dark);
+            border-radius: 8px;
+            padding: 2rem;
+            margin-bottom: 1.8rem;
+        }
+
+        .section-heading {
+            border-left: 4px solid var(--accent-yellow);
+            padding-left: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .section-heading h2 {
+            font-size: 1.35rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
             color: #ffffff;
         }
 
-        .profile-hero {
-            background: linear-gradient(135deg, #141f32 0%, #0d1522 100%);
+        .profile-hero-card {
+            background: linear-gradient(135deg, #141c28 0%, #0e141e 100%);
             border: 1px solid rgba(245, 184, 0, 0.35);
-            border-radius: 16px;
-            padding: 32px 36px;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
-            position: relative;
-            overflow: hidden;
-            margin-bottom: 28px;
-        }
-
-        .profile-hero::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 4px;
-            background: linear-gradient(90deg, #f5b800, #fbbf24, #10b981);
-        }
-
-        .profile-header-content {
+            border-radius: 12px;
+            padding: 28px 32px;
             display: flex;
             align-items: center;
-            justify-content: space-between;
-            flex-wrap: wrap;
-            gap: 20px;
-        }
-
-        .profile-avatar-block {
-            display: flex;
-            align-items: center;
-            gap: 20px;
+            gap: 24px;
+            margin-bottom: 1.8rem;
+            box-shadow: 0 12px 30px rgba(0,0,0,0.4);
         }
 
         .profile-avatar-circle {
@@ -287,152 +329,90 @@ $pageTitle = $member ? htmlspecialchars($member['name']) . ' - Chapter Directory
             justify-content: center;
             font-size: 2rem;
             font-weight: 900;
-            box-shadow: 0 8px 24px rgba(245, 184, 0, 0.3);
-            border: 2px solid rgba(255, 255, 255, 0.2);
             flex-shrink: 0;
+            box-shadow: 0 6px 20px rgba(245, 184, 0, 0.3);
         }
 
-        .profile-title-group h1 {
+        .profile-hero-info h1 {
             font-size: 2rem;
             font-weight: 800;
             color: #ffffff;
-            margin: 0 0 4px 0;
+            margin-bottom: 4px;
             line-height: 1.2;
         }
 
-        .profile-title-group .role-tag {
+        .profile-hero-info .role-tag {
             color: var(--accent-yellow);
             font-size: 1.1rem;
             font-weight: 700;
         }
 
-        .profile-grid {
+        .info-grid {
             display: grid;
-            grid-template-columns: 2fr 1fr;
-            gap: 24px;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 1.2rem;
         }
 
-        @media (max-width: 850px) {
-            .profile-grid {
-                grid-template-columns: 1fr;
-            }
-            .header-container {
-                padding: 0.8rem 1rem;
-            }
-            nav ul {
-                display: none;
-            }
-        }
-
-        .profile-card {
-            background: var(--bg-card);
+        .info-cell {
+            background: var(--bg-inner-card);
             border: 1px solid var(--border-dark);
-            border-radius: 14px;
-            padding: 26px;
-            margin-bottom: 24px;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+            border-radius: 6px;
+            padding: 14px 16px;
         }
 
-        .profile-card h2 {
-            font-size: 1.2rem;
-            font-weight: 700;
-            color: var(--accent-yellow);
-            margin: 0 0 16px 0;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            border-bottom: 1px solid var(--border-dark);
-            padding-bottom: 12px;
-        }
-
-        .info-list {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 18px;
-        }
-
-        @media (max-width: 540px) {
-            .info-list {
-                grid-template-columns: 1fr;
-            }
-        }
-
-        .info-item label {
+        .info-cell label {
             display: block;
-            font-size: 0.78rem;
+            font-size: 0.72rem;
             color: var(--text-muted);
             text-transform: uppercase;
-            letter-spacing: 0.5px;
+            letter-spacing: 0.8px;
             margin-bottom: 4px;
             font-weight: 700;
         }
 
-        .info-item span {
-            font-size: 1.05rem;
+        .info-cell span {
+            font-size: 1rem;
             color: #ffffff;
             font-weight: 600;
         }
 
         .content-box {
+            background: var(--bg-inner-card);
+            border-left: 3px solid var(--accent-yellow);
+            border-radius: 0 6px 6px 0;
+            padding: 16px 20px;
             color: #d1d5db;
             font-size: 0.95rem;
             line-height: 1.7;
-            background: #181818;
-            padding: 16px 18px;
-            border-radius: 10px;
-            border-left: 3px solid var(--accent-yellow);
         }
 
-        .qr-card {
-            text-align: center;
-        }
-
-        .qr-image-wrapper {
+        .qr-wrapper {
             background: #ffffff;
-            padding: 14px;
-            border-radius: 12px;
+            padding: 12px;
+            border-radius: 10px;
             display: inline-block;
-            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
-            margin: 14px 0;
+            margin: 12px 0;
         }
 
-        .qr-image-wrapper img {
-            max-width: 180px;
-            max-height: 180px;
+        .qr-wrapper img {
+            max-width: 160px;
+            max-height: 160px;
             object-fit: contain;
             display: block;
-        }
-
-        .btn-yellow {
-            display: inline-block;
-            background-color: var(--accent-yellow);
-            color: #000000;
-            padding: 0.8rem 1.6rem;
-            font-weight: 800;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            border-radius: 4px;
-            transition: all 0.2s ease;
-            font-size: 0.85rem;
-        }
-
-        .btn-yellow:hover {
-            background-color: var(--accent-yellow-hover);
         }
 
         footer {
             background-color: #000000;
             border-top: 1px solid var(--border-dark);
             padding: 3rem 2rem 1.5rem;
-            width: 100%;
-            margin-top: auto;
+            margin-top: 3rem;
         }
 
         .footer-container {
-            max-width: 1100px;
+            max-width: 1800px;
             margin: 0 auto;
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
             gap: 2.5rem;
             margin-bottom: 2rem;
         }
@@ -469,11 +449,22 @@ $pageTitle = $member ? htmlspecialchars($member['name']) . ' - Chapter Directory
             color: var(--text-muted);
             font-size: 0.85rem;
         }
+
+        @media (max-width: 1200px) {
+            .page-layout { grid-template-columns: 1fr; }
+            .sponsors-sidebar { position: static; }
+        }
+
+        @media (max-width: 768px) {
+            nav ul { display: none; }
+            .profile-hero-card { flex-direction: column; text-align: center; }
+            .header-container { padding: 0.8rem 1rem; }
+        }
     </style>
 </head>
 <body>
 
-    <!-- STICKY HEADER NAVBAR -->
+    <!-- STICKY HEADER -->
     <header>
         <div class="header-container">
             <div class="brand-logo">
@@ -493,131 +484,171 @@ $pageTitle = $member ? htmlspecialchars($member['name']) . ' - Chapter Directory
                         <li><a href="<?php echo BASE_URL; ?>/index.php#contact">Contact</a></li>
                     </ul>
                 </nav>
-                <a href="<?php echo BASE_URL; ?>/auth/login.php" class="login-btn">Portal Login</a>
+                <a href="<?php echo BASE_URL; ?>/auth/login.php" class="login-btn">Login</a>
             </div>
         </div>
     </header>
 
-    <!-- MAIN PROFILE VIEW CONTAINER -->
-    <div class="main-wrapper">
-        
-        <div class="back-nav">
-            <a href="<?php echo BASE_URL; ?>/index.php#members" class="back-link">
-                &larr; Back to Chapter Directory
-            </a>
-        </div>
+    <!-- MAIN CONTAINER (SAME AS HOMEPAGE) -->
+    <div class="main-container">
+        <div class="page-layout">
+            
+            <!-- LEFT SIDEBAR: MAJOR SPONSORS -->
+            <aside class="sponsors-sidebar">
+                <h3>Major Sponsors</h3>
+                <?php 
+                $displaySponsors = array_slice($sponsors, 0, 3);
+                if (empty($displaySponsors)): 
+                ?>
+                    <div class="sponsor-box">No sponsors yet</div>
+                <?php else: ?>
+                    <?php foreach ($displaySponsors as $sponsor): ?>
+                        <div class="sponsor-box" style="padding:6px;height:auto;">
+                            <?php if (!empty(trim((string)($sponsor['url'] ?? '')))): ?>
+                                <a href="<?php echo htmlspecialchars(trim((string)$sponsor['url'])); ?>" target="_blank" rel="noopener noreferrer" style="display:block;">
+                                    <img src="../<?php echo htmlspecialchars($sponsor['logo_path']); ?>" alt="<?php echo htmlspecialchars($sponsor['name']); ?>" style="max-width:100%;max-height:120px;object-fit:contain;display:block;cursor:pointer;">
+                                </a>
+                            <?php else: ?>
+                                <img src="../<?php echo htmlspecialchars($sponsor['logo_path']); ?>" alt="<?php echo htmlspecialchars($sponsor['name']); ?>" style="max-width:100%;max-height:120px;object-fit:contain;display:block;">
+                            <?php endif; ?>
+                        </div>
+                    <?php endforeach; ?>
+                <?php endif; ?>
+            </aside>
 
-        <?php if (!$member): ?>
-            <div class="profile-hero" style="text-align: center; padding: 60px 20px;">
-                <div style="font-size: 3rem; margin-bottom: 12px;">🏛️</div>
-                <h1 style="color:#fff; margin-bottom: 10px;">Member Profile Not Found</h1>
-                <p style="color:var(--text-muted); max-width: 500px; margin: 0 auto 24px;">
-                    This member profile is either not published yet or is currently undergoing annual chapter dues verification.
-                </p>
-                <a href="<?php echo BASE_URL; ?>/index.php#members" class="btn-yellow">Return to Directory</a>
-            </div>
-        <?php else: 
-            $initials = '';
-            $parts = explode(' ', preg_replace('/^(Ar\.|Arch\.|Architect)\s+/i', '', $member['name']));
-            foreach ($parts as $p) {
-                if (!empty($p)) $initials .= strtoupper($p[0]);
-            }
-            $initials = substr($initials, 0, 2) ?: 'AR';
-        ?>
+            <!-- CENTER CONTENT: MEMBER PROFILE -->
+            <main class="center-content">
+                
+                <div style="margin-bottom: 1.2rem;">
+                    <a href="<?php echo BASE_URL; ?>/index.php#members" class="btn-yellow" style="display:inline-flex; align-items:center; gap:8px;">
+                        &larr; Back to Chapter Directory
+                    </a>
+                </div>
 
-            <!-- HERO PROFILE HEADER -->
-            <div class="profile-hero">
-                <div class="profile-header-content">
-                    <div class="profile-avatar-block">
+                <?php if (!$member): ?>
+                    <section class="dark-card" style="text-align:center; padding: 4rem 2rem;">
+                        <div style="font-size: 3rem; margin-bottom: 12px;">🏛️</div>
+                        <h2 style="color:#fff; margin-bottom: 10px;">Member Profile Not Found</h2>
+                        <p style="color:var(--text-muted); max-width: 500px; margin: 0 auto 20px;">
+                            This member profile is either not published yet or is currently undergoing annual chapter dues verification.
+                        </p>
+                        <a href="<?php echo BASE_URL; ?>/index.php#members" class="btn-yellow">Return to Directory</a>
+                    </section>
+                <?php else: 
+                    $initials = '';
+                    $parts = explode(' ', preg_replace('/^(Ar\.|Arch\.|Architect)\s+/i', '', $member['name']));
+                    foreach ($parts as $p) {
+                        if (!empty($p)) $initials .= strtoupper($p[0]);
+                    }
+                    $initials = substr($initials, 0, 2) ?: 'AR';
+                ?>
+
+                    <!-- HERO MEMBER HEADER -->
+                    <div class="profile-hero-card">
                         <div class="profile-avatar-circle">
                             <?php echo htmlspecialchars($initials); ?>
                         </div>
-                        <div class="profile-title-group">
+                        <div class="profile-hero-info">
                             <h1><?php echo htmlspecialchars($member['name']); ?></h1>
                             <div class="role-tag"><?php echo htmlspecialchars($member['role_title'] ?: 'Architect'); ?></div>
                         </div>
                     </div>
-                </div>
-            </div>
 
-            <!-- PROFILE MAIN CONTENT GRID -->
-            <div class="profile-grid">
-                
-                <!-- LEFT COLUMN -->
-                <div>
                     <!-- PROFESSIONAL CREDENTIALS -->
-                    <div class="profile-card">
-                        <h2>🏛️ Professional Credentials</h2>
-                        <div class="info-list">
-                            <div class="info-item">
+                    <section class="dark-card">
+                        <div class="section-heading">
+                            <h2>🏛️ Professional Credentials</h2>
+                        </div>
+                        <div class="info-grid">
+                            <div class="info-cell">
                                 <label>PRC License Number</label>
                                 <span><?php echo htmlspecialchars($member['id_number'] ?: '—'); ?></span>
                             </div>
-                            <div class="info-item">
+                            <div class="info-cell">
                                 <label>Chapter Affiliation</label>
                                 <span>UAP Mindoro Chapter (121)</span>
                             </div>
-                            <div class="info-item">
+                            <div class="info-cell">
                                 <label>Architectural Specialty</label>
                                 <span><?php echo htmlspecialchars($member['specialty'] ?: 'General Practice'); ?></span>
                             </div>
-                            <div class="info-item">
+                            <div class="info-cell">
                                 <label>Primary Location / Base</label>
                                 <span><?php echo htmlspecialchars($member['location'] ?: 'Mindoro, Philippines'); ?></span>
                             </div>
                         </div>
-                    </div>
+                    </section>
 
                     <!-- ACHIEVEMENTS -->
-                    <div class="profile-card">
-                        <h2>🏆 Career Achievements & Practice</h2>
+                    <section class="dark-card">
+                        <div class="section-heading">
+                            <h2>🏆 Career Achievements & Practice</h2>
+                        </div>
                         <div class="content-box">
                             <?php echo nl2br(htmlspecialchars($member['achievements'] ?: 'No specific achievements submitted yet.')); ?>
                         </div>
-                    </div>
+                    </section>
 
-                    <!-- AWARDS & HONORS -->
-                    <div class="profile-card">
-                        <h2>🎖️ Honors, Distinctions & Awards</h2>
+                    <!-- AWARDS -->
+                    <section class="dark-card">
+                        <div class="section-heading">
+                            <h2>🎖️ Honors, Distinctions & Awards</h2>
+                        </div>
                         <div class="content-box">
                             <?php echo nl2br(htmlspecialchars($member['awards'] ?: 'No awards or distinctions listed.')); ?>
                         </div>
-                    </div>
-                </div>
+                    </section>
 
-                <!-- RIGHT COLUMN (SIDEBAR) -->
-                <div>
-                    <!-- CHAPTER VERIFICATION CARD -->
-                    <div class="profile-card qr-card">
-                        <h2>📱 Chapter Verification</h2>
-                        <p style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.5; margin: 0 0 12px 0;">
-                            Official registered architect verified under United Architects of the Philippines.
+                    <!-- CHAPTER VERIFICATION & QR -->
+                    <section class="dark-card" style="text-align: center;">
+                        <div class="section-heading" style="text-align: left;">
+                            <h2>📱 Chapter Verification</h2>
+                        </div>
+                        <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1rem;">
+                            Official registered architect verified under the United Architects of the Philippines – Mindoro Chapter.
                         </p>
                         
                         <?php if (!empty($member['qr_image_path'])): ?>
-                            <div class="qr-image-wrapper">
+                            <div class="qr-wrapper">
                                 <img src="<?php echo BASE_URL; ?>/<?php echo htmlspecialchars($member['qr_image_path']); ?>" alt="Architect QR Card">
                             </div>
-                            <span style="font-size: 0.8rem; color: var(--text-muted); display: block;">Scan to verify / contact</span>
+                            <p style="font-size: 0.8rem; color: var(--text-muted);">Scan to verify / contact</p>
                         <?php else: ?>
-                            <div style="background: #181818; padding: 24px 16px; border-radius: 10px; border: 1px dashed var(--border-dark); margin: 12px 0;">
-                                <span style="font-size: 2rem; display: block; margin-bottom: 6px;">🏛️</span>
-                                <span style="font-size: 0.85rem; color: var(--text-muted);">UAP Mindoro Registered Member</span>
+                            <div style="background: var(--bg-inner-card); border: 1px dashed var(--border-dark); border-radius: 8px; padding: 24px; max-width: 400px; margin: 0 auto;">
+                                <span style="font-size: 2.2rem; display: block; margin-bottom: 6px;">🏛️</span>
+                                <strong style="color: #ffffff; font-size: 0.95rem;">UAP Mindoro Chapter Registered Member</strong>
                             </div>
                         <?php endif; ?>
+                    </section>
 
-                        <div style="margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--border-dark);">
-                            <a href="<?php echo BASE_URL; ?>/index.php#members" class="btn-yellow" style="display: block; width: 100%; text-align: center; text-decoration: none;">
-                                View All Chapter Members
-                            </a>
+                <?php endif; ?>
+
+            </main>
+
+            <!-- RIGHT SIDEBAR: OFFICIAL PARTNERS -->
+            <aside class="sponsors-sidebar">
+                <h3>Official Partners</h3>
+                <?php 
+                $displayPartners = array_slice($sponsors, 3, 3);
+                if (empty($displayPartners)): 
+                ?>
+                    <div class="sponsor-box">No partners yet</div>
+                <?php else: ?>
+                    <?php foreach ($displayPartners as $partner): ?>
+                        <div class="sponsor-box" style="padding:6px;height:auto;">
+                            <?php if (!empty(trim((string)($partner['url'] ?? '')))): ?>
+                                <a href="<?php echo htmlspecialchars(trim((string)$partner['url'])); ?>" target="_blank" rel="noopener noreferrer" style="display:block;">
+                                    <img src="../<?php echo htmlspecialchars($partner['logo_path']); ?>" alt="<?php echo htmlspecialchars($partner['name']); ?>" style="max-width:100%;max-height:120px;object-fit:contain;display:block;cursor:pointer;">
+                                </a>
+                            <?php else: ?>
+                                <img src="../<?php echo htmlspecialchars($partner['logo_path']); ?>" alt="<?php echo htmlspecialchars($partner['name']); ?>" style="max-width:100%;max-height:120px;object-fit:contain;display:block;">
+                            <?php endif; ?>
                         </div>
-                    </div>
-                </div>
+                    <?php endforeach; ?>
+                <?php endif; ?>
+            </aside>
 
-            </div>
-
-        <?php endif; ?>
-
+        </div>
     </div>
 
     <!-- FOOTER -->
