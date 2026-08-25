@@ -5,9 +5,34 @@ require_admin();
 $error = '';
 $success = '';
 
+// Load default fee from site_settings
+$defaultFee = '500.00';
+try {
+    $sStmt = $pdo->prepare("SELECT setting_value FROM site_settings WHERE setting_key = 'website_directory_fee'");
+    $sStmt->execute();
+    $sRow = $sStmt->fetch();
+    if ($sRow && !empty($sRow['setting_value'])) {
+        $defaultFee = number_format((float)$sRow['setting_value'], 2, '.', '');
+    }
+} catch (Throwable $e) {}
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     require_csrf();
     $action = $_POST['action'] ?? '';
+
+    // Action: Save Default Website Directory Fee
+    if ($action === 'save_default_fee') {
+        $newDefault = (float)($_POST['default_fee'] ?? 0);
+        if ($newDefault <= 0) {
+            $error = 'Please enter a valid default fee amount greater than 0.';
+        } else {
+            $stmt = $pdo->prepare("INSERT INTO site_settings (setting_key, setting_value) VALUES ('website_directory_fee', ?) 
+                                   ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)");
+            $stmt->execute([number_format($newDefault, 2, '.', '')]);
+            $defaultFee = number_format($newDefault, 2, '.', '');
+            $success = 'Default website directory advertising fee updated to ₱' . number_format($newDefault, 2);
+        }
+    }
 
     // Action 1: Set Fee & Assign Due to Member
     if ($action === 'set_directory_fee') {
@@ -48,6 +73,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 
+    // Action: Update existing assigned fee amount
+    if ($action === 'update_assigned_fee') {
+        $appId = (int)($_POST['app_id'] ?? 0);
+        $memberDueId = (int)($_POST['member_due_id'] ?? 0);
+        $newAmount = (float)($_POST['new_amount'] ?? 0);
+
+        if ($newAmount <= 0) {
+            $error = 'Please enter a valid fee amount greater than 0.';
+        } else {
+            try {
+                $pdo->beginTransaction();
+                // Update directory application
+                $pdo->prepare("UPDATE directory_applications SET fee_amount = ? WHERE id = ?")->execute([$newAmount, $appId]);
+                
+                // Update member due custom amount
+                if ($memberDueId > 0) {
+                    $pdo->prepare("UPDATE member_dues SET custom_amount = ? WHERE id = ?")->execute([$newAmount, $memberDueId]);
+                }
+                $pdo->commit();
+                $success = 'Updated advertising fee to ₱' . number_format($newAmount, 2);
+            } catch (Throwable $e) {
+                if ($pdo->inTransaction()) $pdo->rollBack();
+                $error = 'Failed to update fee: ' . $e->getMessage();
+            }
+        }
+    }
+
     // Action 2: Directly Unlock / Mark Paid
     if ($action === 'manual_unlock') {
         $userId = (int)($_POST['user_id'] ?? 0);
@@ -76,9 +128,8 @@ $pendingApps = $pdo->query("SELECT da.*, u.name, u.id_number
     WHERE da.status = 'pending_fee'
     ORDER BY da.created_at DESC")->fetchAll();
 
-
 // 2. Fetch Applications Awaiting Payment / Verification
-$paymentApps = $pdo->query("SELECT da.*, u.name, u.id_number, md.status as payment_status, md.total_paid
+$paymentApps = $pdo->query("SELECT da.*, u.name, u.id_number, md.status as payment_status, md.total_paid, md.id as member_due_id_val
     FROM directory_applications da
     JOIN users u ON da.user_id = u.id
     LEFT JOIN member_dues md ON da.member_due_id = md.id
@@ -101,7 +152,7 @@ include __DIR__ . '/../includes/header.php';
   <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:14px;">
     <div>
       <h1 style="margin-bottom:4px;">Website Directory & Advertising Manager</h1>
-      <p class="muted">Review member applications, assign directory advertising fees, and oversee published profiles.</p>
+      <p class="muted">Set directory payment fees, review member applications, and manage verified website listings.</p>
     </div>
     <a href="<?php echo BASE_URL; ?>/index.php#members" target="_blank" class="btn btn-sm" style="background:transparent; border:1px solid var(--accent-primary, #f5b800); color:var(--accent-primary, #f5b800); font-weight:700;">
       🌐 View Live Public Directory
@@ -110,6 +161,25 @@ include __DIR__ . '/../includes/header.php';
 
   <?php if ($error): ?><div class="alert alert-error"><?php echo htmlspecialchars($error); ?></div><?php endif; ?>
   <?php if ($success): ?><div class="alert alert-success"><?php echo htmlspecialchars($success); ?></div><?php endif; ?>
+
+  <!-- DEFAULT FEE SETTINGS CARD -->
+  <div style="background:var(--bg-secondary, rgba(0,0,0,0.15)); border:1px solid var(--border-color, rgba(255,255,255,0.1)); border-radius:10px; padding:16px 20px; margin-top:16px;">
+    <form method="post" style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:14px;">
+      <?php echo csrf_field(); ?>
+      <input type="hidden" name="action" value="save_default_fee">
+      <div>
+        <strong style="color:var(--text-primary); font-size:14px; display:block;">⚙️ Default Directory Advertising Fee</strong>
+        <span class="muted" style="font-size:12px;">Standard amount automatically pre-filled when assigning fees to new applicants</span>
+      </div>
+      <div style="display:flex; align-items:center; gap:8px;">
+        <div style="display:flex; align-items:center; gap:4px;">
+          <span style="font-weight:800; color:var(--accent-primary, #f5b800); font-size:15px;">₱</span>
+          <input type="number" step="0.01" name="default_fee" value="<?php echo htmlspecialchars($defaultFee); ?>" required style="width:120px; padding:7px 10px; font-size:14px; font-weight:700;">
+        </div>
+        <button type="submit" class="btn btn-sm" style="padding:7px 16px; font-weight:700;">Save Default Fee</button>
+      </div>
+    </form>
+  </div>
 </div>
 
 <!-- ================= QUEUE 1: PENDING DIRECTORY APPLICATIONS ================= -->
@@ -125,17 +195,17 @@ include __DIR__ . '/../includes/header.php';
     <div style="text-align:center; padding:28px 12px; color:var(--text-secondary);">
       <span style="font-size:32px; display:block; margin-bottom:8px;">✨</span>
       <strong>No pending directory applications!</strong>
-      <p class="muted" style="font-size:12px; margin-top:4px;">When members apply to be featured on the website directory, they will appear here for fee assignment.</p>
+      <p class="muted" style="font-size:12px; margin-top:4px;">When members apply to be featured on the website directory, they will appear here so you can set their fee.</p>
     </div>
   <?php else: ?>
-    <div class="table-shell">
+    <div class="table-responsive">
       <table>
         <thead>
           <tr>
             <th>Applicant</th>
             <th>PRC ID No.</th>
             <th>Applied On</th>
-            <th>Set Advertising Fee & Due Date</th>
+            <th>Set Advertising Fee (₱) & Due Date</th>
             <th>Action</th>
           </tr>
         </thead>
@@ -159,7 +229,7 @@ include __DIR__ . '/../includes/header.php';
                   
                   <div style="display:flex; align-items:center; gap:4px;">
                     <span style="font-weight:700; color:var(--accent-primary, #f5b800);">₱</span>
-                    <input type="number" step="0.01" name="fee_amount" value="500.00" required placeholder="Fee amount" style="width:110px; padding:6px 10px; font-size:13px; font-weight:700;">
+                    <input type="number" step="0.01" name="fee_amount" value="<?php echo htmlspecialchars($defaultFee); ?>" required placeholder="Fee amount" style="width:110px; padding:6px 10px; font-size:13px; font-weight:700;">
                   </div>
 
                   <div style="display:flex; align-items:center; gap:4px;">
@@ -191,9 +261,9 @@ include __DIR__ . '/../includes/header.php';
   </div>
 
   <?php if (empty($paymentApps)): ?>
-    <p class="muted" style="font-size:13px;">No members currently in payment pending state.</p>
+    <p class="muted" style="font-size:13px;">No members currently awaiting directory payment.</p>
   <?php else: ?>
-    <div class="table-shell">
+    <div class="table-responsive">
       <table>
         <thead>
           <tr>
@@ -201,7 +271,7 @@ include __DIR__ . '/../includes/header.php';
             <th>PRC ID No.</th>
             <th>Assigned Fee</th>
             <th>Payment Status</th>
-            <th>Action</th>
+            <th>Actions / Fee Adjustment</th>
           </tr>
         </thead>
         <tbody>
@@ -209,7 +279,9 @@ include __DIR__ . '/../includes/header.php';
             <tr>
               <td><strong><?php echo htmlspecialchars($pa['name']); ?></strong></td>
               <td><code><?php echo htmlspecialchars($pa['id_number']); ?></code></td>
-              <td><strong style="color:var(--accent-primary, #f5b800);">₱<?php echo number_format($pa['fee_amount'], 2); ?></strong></td>
+              <td>
+                <strong style="color:var(--accent-primary, #f5b800); font-size:14px;">₱<?php echo number_format($pa['fee_amount'], 2); ?></strong>
+              </td>
               <td>
                 <?php if ($pa['payment_status'] === 'pending'): ?>
                   <span class="badge badge-pending">Payment Submitted (Pending Verification)</span>
@@ -218,17 +290,30 @@ include __DIR__ . '/../includes/header.php';
                 <?php endif; ?>
               </td>
               <td>
-                <form method="post" style="display:inline-block;"
-                      data-confirm="Manually unlock Website Directory feature for <?php echo htmlspecialchars($pa['name']); ?>?"
-                      data-confirm-title="Manual Feature Unlock"
-                      data-confirm-btn="Unlock Feature"
-                      data-confirm-class="btn-success"
-                      data-confirm-icon="🔓">
-                  <?php echo csrf_field(); ?>
-                  <input type="hidden" name="action" value="manual_unlock">
-                  <input type="hidden" name="user_id" value="<?php echo $pa['user_id']; ?>">
-                  <button type="submit" class="btn btn-sm" style="font-size:11px; padding:4px 8px;">Force Unlock</button>
-                </form>
+                <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+                  <!-- Change/Edit Fee Form -->
+                  <form method="post" style="display:flex; align-items:center; gap:4px;">
+                    <?php echo csrf_field(); ?>
+                    <input type="hidden" name="action" value="update_assigned_fee">
+                    <input type="hidden" name="app_id" value="<?php echo $pa['id']; ?>">
+                    <input type="hidden" name="member_due_id" value="<?php echo $pa['member_due_id_val'] ?? 0; ?>">
+                    <input type="number" step="0.01" name="new_amount" value="<?php echo htmlspecialchars($pa['fee_amount']); ?>" style="width:90px; padding:4px 6px; font-size:12px; font-weight:700;">
+                    <button type="submit" class="btn btn-sm" style="font-size:11px; padding:4px 8px;">Update Fee</button>
+                  </form>
+
+                  <!-- Force Unlock -->
+                  <form method="post" style="display:inline-block;"
+                        data-confirm="Manually unlock Website Directory feature for <?php echo htmlspecialchars($pa['name']); ?>?"
+                        data-confirm-title="Manual Feature Unlock"
+                        data-confirm-btn="Unlock Feature"
+                        data-confirm-class="btn-success"
+                        data-confirm-icon="🔓">
+                    <?php echo csrf_field(); ?>
+                    <input type="hidden" name="action" value="manual_unlock">
+                    <input type="hidden" name="user_id" value="<?php echo $pa['user_id']; ?>">
+                    <button type="submit" class="btn btn-sm btn-success" style="font-size:11px; padding:4px 8px;">Force Unlock</button>
+                  </form>
+                </div>
               </td>
             </tr>
           <?php endforeach; ?>
@@ -249,7 +334,7 @@ include __DIR__ . '/../includes/header.php';
   <?php if (empty($activeMembers)): ?>
     <p class="muted" style="font-size:13px;">No directory members have completed verification yet.</p>
   <?php else: ?>
-    <div class="table-shell">
+    <div class="table-responsive">
       <table>
         <thead>
           <tr>
