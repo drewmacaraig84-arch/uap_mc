@@ -9,7 +9,12 @@ $totalVerifiedCollections = (float)$pdo->query("SELECT COALESCE(SUM(amount_paid)
 // Pending counts
 $pendingPaymentsCount = (int)$pdo->query("SELECT COUNT(*) FROM payments WHERE status = 'pending'")->fetchColumn();
 $pendingMembersCount = (int)$pdo->query("SELECT COUNT(*) FROM users WHERE role = 'member' AND status = 'pending'")->fetchColumn();
-$totalActionItems = $pendingPaymentsCount + $pendingMembersCount;
+$pendingDirectoryAppsCount = 0;
+try {
+    $pendingDirectoryAppsCount = (int)$pdo->query("SELECT COUNT(*) FROM directory_applications WHERE status = 'pending_fee'")->fetchColumn();
+} catch (Throwable $e) {}
+$totalActionItems = $pendingPaymentsCount + $pendingMembersCount + $pendingDirectoryAppsCount;
+
 
 // Members breakdown
 $totalMembers = (int)$pdo->query("SELECT COUNT(*) FROM users WHERE role = 'member' AND status = 'approved'")->fetchColumn();
@@ -139,9 +144,13 @@ include __DIR__ . '/../includes/header.php';
   <a href="approvals.php" class="btn" style="text-align: center; text-decoration: none; padding: 12px; font-size: 13px; font-weight: 600; background: var(--bg-secondary); border: 1px solid var(--border-color); color: var(--text-primary);">
     👤 Member Approvals (<?php echo $pendingMembersCount; ?>)
   </a>
+  <a href="website_directory.php" class="btn" style="text-align: center; text-decoration: none; padding: 12px; font-size: 13px; font-weight: 600; background: var(--bg-secondary); border: 1px solid <?php echo $pendingDirectoryAppsCount > 0 ? '#f59e0b' : 'var(--border-color)'; ?>; color: var(--text-primary);">
+    📘 Directory Apps (<?php echo $pendingDirectoryAppsCount; ?>)
+  </a>
   <a href="dues.php" class="btn" style="text-align: center; text-decoration: none; padding: 12px; font-size: 13px; font-weight: 600; background: var(--bg-secondary); border: 1px solid var(--border-color); color: var(--text-primary);">
     ➕ Add New Due
   </a>
+
   <a href="good_members.php" class="btn" style="text-align: center; text-decoration: none; padding: 12px; font-size: 13px; font-weight: 600; background: var(--bg-secondary); border: 1px solid var(--border-color); color: var(--text-primary);">
     ⭐ Good Members
   </a>

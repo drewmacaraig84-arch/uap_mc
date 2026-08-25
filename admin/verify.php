@@ -58,6 +58,13 @@ try {
             $stmt->execute([$payment_id, $receipt_number]);
         }
 
+        // If this member due is for a directory application and is now paid, unlock the directory application
+        if ($new_status === 'paid') {
+            $appStmt = $pdo->prepare("UPDATE directory_applications SET status = 'paid' WHERE member_due_id = ?");
+            $appStmt->execute([$payment['member_due_id']]);
+        }
+
+
         $pdo->commit();
         if (function_exists('set_flash')) {
             set_flash('success', "Payment #{$payment_id} approved successfully and official receipt generated.");

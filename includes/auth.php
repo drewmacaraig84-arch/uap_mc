@@ -69,6 +69,34 @@ function is_good_member($pdo, $userId) {
     return $expiredCount === 0;
 }
 
+function get_directory_application($pdo, $userId) {
+    $userId = (int) $userId;
+    if ($userId <= 0) return null;
+    try {
+        $stmt = $pdo->prepare("SELECT da.*, md.status as payment_status, md.total_paid, md.id as member_due_id_val,
+                               COALESCE(md.custom_amount, d.amount) as due_amount
+                               FROM directory_applications da
+                               LEFT JOIN member_dues md ON da.member_due_id = md.id
+                               LEFT JOIN dues d ON md.due_id = d.id
+                               WHERE da.user_id = ? LIMIT 1");
+        $stmt->execute([$userId]);
+        return $stmt->fetch() ?: null;
+    } catch (Throwable $e) {
+        return null;
+    }
+}
+
+function has_unlocked_website_directory($pdo, $userId) {
+    $app = get_directory_application($pdo, $userId);
+    if (!$app) return false;
+    // Unlocked if application status is paid, or linked member due is paid
+    if ($app['status'] === 'paid' || ($app['payment_status'] ?? '') === 'paid') {
+        return true;
+    }
+    return false;
+}
+
+
 
 function get_site_logo($pdo) {
     static $cached = null;

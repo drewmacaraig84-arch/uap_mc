@@ -826,11 +826,10 @@ $page_title = $page_title ?? 'Dues System';
 
       <?php else: ?>
         <a class="nav-item<?php echo $nav_active(['dashboard.php', 'pay.php']); ?>" href="<?php echo BASE_URL; ?>/member/dashboard.php"><span class="nav-icon">💸</span><span>My Dues</span></a>
-        <?php if (function_exists('is_good_member') && is_good_member($pdo, current_user_id())): ?>
-          <a class="nav-item<?php echo $nav_active('website_directory.php'); ?>" href="<?php echo BASE_URL; ?>/member/website_directory.php"><span class="nav-icon">📘</span><span>Website Directory</span></a>
-        <?php endif; ?>
+        <a class="nav-item<?php echo $nav_active('website_directory.php'); ?>" href="<?php echo BASE_URL; ?>/member/website_directory.php"><span class="nav-icon">📘</span><span>Website Directory</span></a>
         <a class="nav-item<?php echo $nav_active('history.php'); ?>" href="<?php echo BASE_URL; ?>/member/history.php"><span class="nav-icon">🧾</span><span>Payment History</span></a>
       <?php endif; ?>
+
     <?php else: ?>
       <a class="nav-item<?php echo $nav_active('login.php'); ?>" href="<?php echo BASE_URL; ?>/auth/login.php"><span class="nav-icon">🔐</span><span>Login</span></a>
       <a class="nav-item<?php echo $nav_active('register.php'); ?>" href="<?php echo BASE_URL; ?>/auth/register.php"><span class="nav-icon">📝</span><span>Register</span></a>

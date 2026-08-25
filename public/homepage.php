@@ -44,12 +44,16 @@ try {
     if (!empty($publishedWebsiteMembers)) {
         $validMembers = [];
         foreach ($publishedWebsiteMembers as $wm) {
-            // If linked to a registered member, check if still in good standing (7-day grace period)
-            if (!empty($wm['user_id']) && function_exists('is_good_member')) {
-                if (!is_good_member($pdo, (int)$wm['user_id'])) {
+            // If linked to a registered member, check if directory feature is unlocked & in good standing
+            if (!empty($wm['user_id'])) {
+                if (function_exists('has_unlocked_website_directory') && !has_unlocked_website_directory($pdo, (int)$wm['user_id'])) {
+                    continue; // Exclude if directory feature is not unlocked via paid application
+                }
+                if (function_exists('is_good_member') && !is_good_member($pdo, (int)$wm['user_id'])) {
                     continue; // Exclude if grace period expired without payment
                 }
             }
+
             $validMembers[] = [
                 'name' => $wm['name'],
                 'role' => $wm['role_title'] ?: 'Architect',

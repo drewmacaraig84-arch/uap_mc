@@ -23,12 +23,15 @@ if ($memberId > 0) {
     $member = $stmt->fetch();
 }
 
-// 2. Check 7-day grace period / good standing for registered members
-if ($member && !empty($member['user_id']) && function_exists('is_good_member')) {
-    if (!is_good_member($pdo, (int)$member['user_id'])) {
+// 2. Check if unlocked via paid application & in good standing
+if ($member && !empty($member['user_id'])) {
+    if (function_exists('has_unlocked_website_directory') && !has_unlocked_website_directory($pdo, (int)$member['user_id'])) {
+        $member = null; // Do not show if not paid/unlocked
+    } elseif (function_exists('is_good_member') && !is_good_member($pdo, (int)$member['user_id'])) {
         $member = null; // Do not show if unpaid past grace period
     }
 }
+
 
 // 3. Fallback mock data if viewing default sample members
 if (!$member && ($prcNumber !== '' || $nameQuery !== '')) {
