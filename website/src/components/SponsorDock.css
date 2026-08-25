@@ -1,7 +1,94 @@
 /* ============================================================
-   PERSISTENT SPONSORS & PARTNERS RIGHT RAIL (1/8 Screen Width)
+   PERSISTENT SPONSORS & PARTNERS DOCK
+   Desktop: Sleek Right Rail (1/8 Width)
+   Mobile: Auto-Sliding Marquee Ticker with Expand/Collapse
    ============================================================ */
 
+/* --- COLLAPSED FLOATING PILL BUTTON --- */
+.sponsor-collapsed-pill {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  z-index: 860;
+  background: rgba(6, 10, 20, 0.94);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--c-border-gold);
+  border-radius: var(--r-full);
+  padding: 8px 14px;
+  box-shadow: 0 6px 25px rgba(0, 0, 0, 0.6), 0 0 16px rgba(245, 158, 11, 0.25);
+  cursor: pointer;
+  transition: all var(--t-med) var(--ease);
+  color: var(--c-text);
+  animation: sponsor-pill-float 3s ease-in-out infinite;
+}
+
+.sponsor-collapsed-pill:hover {
+  transform: translateY(-2px) scale(1.03);
+  border-color: var(--c-gold);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.7), 0 0 22px rgba(245, 158, 11, 0.4);
+}
+
+.sponsor-pill-inner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sponsor-pill-icon-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--c-gold);
+}
+
+.sponsor-pill-star {
+  color: var(--c-gold);
+  animation: spin-slow 12s linear infinite;
+}
+
+.sponsor-pill-text {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--c-gold);
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.sponsor-pill-badge {
+  background: var(--c-gold);
+  color: #000;
+  font-size: 0.65rem;
+  font-weight: 800;
+  padding: 1px 6px;
+  border-radius: 999px;
+  line-height: 1.2;
+}
+
+.sponsor-pill-arrow {
+  color: var(--c-text-2);
+  display: flex;
+  align-items: center;
+  transition: transform var(--t-fast);
+}
+
+.sponsor-collapsed-pill:hover .sponsor-pill-arrow {
+  transform: translateY(-2px);
+  color: var(--c-gold);
+}
+
+@keyframes sponsor-pill-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+
+@keyframes spin-slow {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* --- EXPANDED SPONSOR RAIL (DESKTOP DEFAULT) --- */
 .sponsor-rail {
   position: fixed;
   right: 0;
@@ -20,26 +107,35 @@
   border-radius: 14px 0 0 14px;
   box-shadow: -6px 0 25px rgba(0, 0, 0, 0.55), 0 0 18px rgba(245, 158, 11, 0.12);
   overflow: hidden;
-  transition: bottom 0.15s ease-out, transform var(--t-med) var(--ease);
+  transition: bottom 0.15s ease-out, transform var(--t-med) var(--ease), opacity var(--t-med);
+}
+
+.sponsor-rail.collapsed {
+  transform: translateX(105%);
+  opacity: 0;
+  pointer-events: none;
 }
 
 /* Header */
 .sponsor-rail-header {
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 5px;
-  padding: 8px 6px 6px;
+  justify-content: space-between;
+  gap: 4px;
+  padding: 8px 8px 6px;
   border-bottom: 1px solid var(--c-border);
   background: rgba(245, 158, 11, 0.08);
   flex-shrink: 0;
-  text-decoration: none;
-  transition: background var(--t-fast);
-  cursor: pointer;
 }
 
-.sponsor-rail-header:hover {
-  background: rgba(245, 158, 11, 0.16);
+.sponsor-rail-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  text-decoration: none;
+  color: inherit;
+  flex: 1;
+  min-width: 0;
 }
 
 .sponsor-rail-star {
@@ -55,8 +151,64 @@
   color: var(--c-gold);
   line-height: 1.15;
   white-space: normal;
-  text-align: center;
 }
+
+.sponsor-count-tag {
+  font-size: 0.6rem;
+  font-weight: 800;
+  background: rgba(245, 158, 11, 0.2);
+  color: var(--c-gold);
+  border: 1px solid rgba(245, 158, 11, 0.4);
+  padding: 0 4px;
+  border-radius: 999px;
+}
+
+.sponsor-rail-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.sponsor-view-all-link {
+  display: none;
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: var(--c-text-2);
+  padding: 2px 8px;
+  border-radius: var(--r-sm);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--c-border);
+  transition: all var(--t-fast);
+}
+
+.sponsor-view-all-link:hover {
+  color: var(--c-gold);
+  border-color: var(--c-border-gold);
+}
+
+.sponsor-toggle-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  color: var(--c-text-2);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid transparent;
+  transition: all var(--t-fast);
+  cursor: pointer;
+  padding: 0;
+}
+
+.sponsor-toggle-btn:hover {
+  color: var(--c-gold);
+  background: rgba(245, 158, 11, 0.15);
+  border-color: var(--c-border-gold);
+}
+
+.desktop-toggle-icon { display: flex; }
+.mobile-toggle-icon  { display: none; }
 
 /* Empty Link in Rail */
 .sponsor-rail-empty-link {
@@ -98,7 +250,7 @@
   line-height: 1.2;
 }
 
-/* Scrollable Sponsor List */
+/* Scrollable Sponsor List (Desktop) */
 .sponsor-rail-list {
   display: flex;
   flex-direction: column;
@@ -110,23 +262,12 @@
   max-height: 100%;
 }
 
-/* Custom Slim Scrollbar for Sponsors */
-.sponsor-rail-list::-webkit-scrollbar {
-  width: 3px;
-}
-.sponsor-rail-list::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.02);
-  border-radius: 2px;
-}
-.sponsor-rail-list::-webkit-scrollbar-thumb {
-  background: rgba(245, 158, 11, 0.4);
-  border-radius: 2px;
-}
-.sponsor-rail-list::-webkit-scrollbar-thumb:hover {
-  background: var(--c-gold);
-}
+.sponsor-rail-list::-webkit-scrollbar { width: 3px; }
+.sponsor-rail-list::-webkit-scrollbar-track { background: rgba(255, 255, 255, 0.02); border-radius: 2px; }
+.sponsor-rail-list::-webkit-scrollbar-thumb { background: rgba(245, 158, 11, 0.4); border-radius: 2px; }
+.sponsor-rail-list::-webkit-scrollbar-thumb:hover { background: var(--c-gold); }
 
-/* Individual Sponsor Card */
+/* Individual Sponsor Card (Desktop) */
 .sponsor-rail-card {
   display: flex;
   flex-direction: column;
@@ -201,50 +342,179 @@
   color: var(--c-gold);
 }
 
-/* ======================== RESPONSIVE ======================== */
+.desktop-only { display: flex; }
+.mobile-only  { display: none; }
+
+/* ============================================================
+   MOBILE RESPONSIVE: AUTO-SLIDING MARQUEE TICKER & COLLAPSIBLE
+   ============================================================ */
 @media (max-width: 900px) {
+  .desktop-only { display: none !important; }
+  .mobile-only  { display: flex !important; }
+  .desktop-toggle-icon { display: none; }
+  .mobile-toggle-icon  { display: flex; }
+
+  /* Expanded Floating Bottom Dock */
   .sponsor-rail {
     right: auto;
     left: 50%;
     top: auto !important;
-    bottom: 16px !important;
+    bottom: 12px !important;
     transform: translateX(-50%);
-    width: auto;
-    max-width: 90vw;
-    border-radius: var(--r-lg);
+    width: calc(100vw - 24px);
+    max-width: 580px;
+    border-radius: 16px;
     border: 1px solid var(--c-border-gold);
-    flex-direction: row;
-    align-items: center;
-    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.6);
+    flex-direction: column;
+    box-shadow: 0 10px 35px rgba(0, 0, 0, 0.75), 0 0 20px rgba(245, 158, 11, 0.15);
+    background: rgba(6, 10, 20, 0.95);
+    z-index: 850;
+  }
+
+  .sponsor-rail.collapsed {
+    transform: translateX(-50%) translateY(120%);
+    opacity: 0;
+    pointer-events: none;
   }
 
   .sponsor-rail-header {
-    border-bottom: none;
-    border-right: 1px solid var(--c-border);
-    padding: 8px 12px;
+    padding: 7px 12px;
+    background: rgba(245, 158, 11, 0.1);
   }
 
-  .sponsor-rail-list {
-    flex-direction: row;
-    overflow-x: auto;
-    overflow-y: hidden;
-    padding: 6px 10px;
-    max-height: none;
-    max-width: 65vw;
+  .sponsor-rail-title {
+    font-size: 0.72rem;
+    letter-spacing: 0.05em;
   }
 
-  .sponsor-rail-card {
-    flex-direction: row;
-    padding: 4px 8px;
+  .sponsor-view-all-link {
+    display: inline-block;
+  }
+
+  .sponsor-toggle-btn {
+    width: 24px;
+    height: 24px;
+  }
+
+  /* Auto-slide Ticker Container */
+  .sponsor-mobile-ticker-wrap {
+    width: 100%;
+    overflow: hidden;
+    padding: 8px 0 10px;
+    position: relative;
+    mask-image: linear-gradient(to right, transparent, black 16px, black calc(100% - 16px), transparent);
+    -webkit-mask-image: linear-gradient(to right, transparent, black 16px, black calc(100% - 16px), transparent);
+  }
+
+  /* Continuous Sliding Marquee Track */
+  .sponsor-mobile-marquee-track {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: max-content;
+    animation: marquee-slide 20s linear infinite;
+    will-change: transform;
+    cursor: grab;
+  }
+
+  .sponsor-mobile-marquee-track.paused,
+  .sponsor-mobile-marquee-track:hover,
+  .sponsor-mobile-marquee-track:active {
+    animation-play-state: paused;
+  }
+
+  @keyframes marquee-slide {
+    0% {
+      transform: translateX(0);
+    }
+    100% {
+      transform: translateX(-50%);
+    }
+  }
+
+  /* Individual Ticker Card */
+  .sponsor-ticker-card {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 5px 10px 5px 6px;
+    border-radius: var(--r-full);
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid var(--c-border);
+    text-decoration: none;
+    color: inherit;
+    flex-shrink: 0;
+    transition: transform var(--t-fast), border-color var(--t-fast), background var(--t-fast);
+  }
+
+  .sponsor-ticker-card:active,
+  .sponsor-ticker-card:hover {
+    background: rgba(245, 158, 11, 0.12);
+    border-color: var(--c-border-gold);
+    transform: scale(1.04);
+  }
+
+  .sponsor-ticker-img-wrap {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: #ffffff;
+    padding: 2px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+    overflow: hidden;
+    flex-shrink: 0;
+  }
+
+  .sponsor-ticker-img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+
+  .sponsor-ticker-placeholder {
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, #0f1629, #1a2744);
+    color: var(--c-gold);
+    font-weight: 800;
+    font-size: 0.7rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .sponsor-ticker-name {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--c-text);
+    white-space: nowrap;
+  }
+
+  /* Empty state on mobile */
+  .sponsor-mobile-empty {
+    padding: 6px 16px;
+    text-align: center;
+    width: 100%;
+  }
+
+  .sponsor-mobile-empty-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     gap: 6px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--c-gold);
+    text-decoration: none;
   }
 
-  .sponsor-rail-img-wrap {
-    width: 32px;
-    height: 32px;
-  }
-
-  .sponsor-rail-name {
-    display: none;
+  /* Collapsed Floating Pill on Mobile */
+  .sponsor-collapsed-pill {
+    right: 14px;
+    bottom: 14px;
+    padding: 8px 14px;
   }
 }

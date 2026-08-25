@@ -164,4 +164,36 @@
   .navbar-links { display: none; }
   .navbar-cta   { display: none; }
   .navbar-hamburger { display: flex; }
+  
+  .navbar-logo {
+    width: 36px;
+    height: 36px;
+  }
+
+  .navbar-brand-title {
+    font-size: 0.92rem;
+  }
+
+  .navbar-brand-sub {
+    font-size: 0.62rem;
+  }
+
+  .navbar-drawer {
+    max-height: calc(100dvh - var(--nav-h));
+    overflow-y: auto;
+    padding: var(--space-4);
+  }
+}
+
+@media (max-width: 380px) {
+  .navbar-brand {
+    gap: 8px;
+  }
+  .navbar-logo {
+    width: 32px;
+    height: 32px;
+  }
+  .navbar-brand-title {
+    font-size: 0.85rem;
+  }
 }

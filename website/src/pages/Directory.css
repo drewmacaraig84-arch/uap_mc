@@ -72,3 +72,26 @@
 
 .dir-empty-icon { font-size: 3rem; }
 .dir-empty h3 { font-size: 1.2rem; color: var(--c-white); }
+
+@media (max-width: 768px) {
+  .dir-search {
+    font-size: 16px; /* Prevents iOS auto-zoom */
+  }
+  .dir-spec-filters {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 8px;
+    margin-right: calc(-1 * var(--space-4));
+    padding-right: var(--space-4);
+    scrollbar-width: none;
+  }
+  .dir-spec-filters::-webkit-scrollbar {
+    display: none;
+  }
+  .spec-tag {
+    flex-shrink: 0;
+    font-size: 0.75rem;
+    padding: 5px 14px;
+  }
+}

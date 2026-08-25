@@ -196,6 +196,20 @@ export const IconChevronRight = (p) => (
   </Svg>
 );
 
+/* Chevron Down */
+export const IconChevronDown = (p) => (
+  <Svg {...p}>
+    <path d="m6 9 6 6 6-6" />
+  </Svg>
+);
+
+/* Chevron Up */
+export const IconChevronUp = (p) => (
+  <Svg {...p}>
+    <path d="m18 15-6-6-6 6" />
+  </Svg>
+);
+
 /* Close X */
 export const IconX = (p) => (
   <Svg {...p}>

@@ -171,7 +171,39 @@
 .gallery-thumb:hover .gallery-thumb-overlay { opacity: 1; }
 
 @media (max-width: 768px) {
-  .profile-hero { grid-template-columns: 1fr; }
-  .profile-photo-wrap { max-width: 220px; }
-  .profile-details-grid { grid-template-columns: 1fr; }
+  .profile-hero { 
+    grid-template-columns: 1fr; 
+    text-align: center;
+    padding: var(--space-5);
+  }
+  .profile-photo-wrap { 
+    max-width: 200px; 
+    margin: 0 auto;
+  }
+  .profile-info {
+    align-items: center;
+  }
+  .profile-badges,
+  .profile-meta {
+    justify-content: center;
+  }
+  .profile-details-grid { 
+    grid-template-columns: 1fr; 
+  }
+  .profile-gallery {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 480px) {
+  .profile-gallery {
+    grid-template-columns: 1fr;
+  }
+  .profile-dl {
+    grid-template-columns: 1fr;
+    gap: 4px 0;
+  }
+  .profile-dl dt {
+    margin-top: 6px;
+  }
 }

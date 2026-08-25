@@ -223,8 +223,31 @@
 
 /* Responsive */
 @media (max-width: 768px) {
+  .sponsors-hero {
+    padding-bottom: var(--space-4);
+  }
+  .sponsors-section {
+    padding: var(--space-4) 0 var(--space-8);
+  }
   .sponsors-grid,
   .benefits-grid {
     grid-template-columns: 1fr;
+    gap: var(--space-4);
+  }
+  .sponsor-card {
+    padding: var(--space-5);
+  }
+  .partner-cta-box {
+    padding: var(--space-6) var(--space-4);
+  }
+}
+
+@media (max-width: 480px) {
+  .partner-cta-box .flex-center {
+    flex-direction: column;
+    width: 100%;
+  }
+  .partner-cta-box .btn {
+    width: 100%;
   }
 }

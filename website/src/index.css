@@ -501,8 +501,24 @@ h4, h5, h6 { font-family: var(--f-body); font-weight: 700; }
 }
 
 @media (max-width: 768px) {
-  :root { --space-9: 64px; --space-10: 80px; }
+  :root { 
+    --space-8: 48px;
+    --space-9: 64px; 
+    --space-10: 80px; 
+  }
+  .page-container {
+    padding-top: calc(var(--nav-h) + var(--space-4));
+  }
   .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
-  .section { padding: var(--space-8) 0; }
+  .section { padding: var(--space-7) 0; }
+  .section-sm { padding: var(--space-5) 0; }
   .container, .container-wide { padding: 0 var(--space-4); }
+}
+
+@media (max-width: 480px) {
+  .container, .container-wide { padding: 0 var(--space-3); }
+  .btn {
+    padding: 10px 20px;
+    font-size: 0.85rem;
+  }
 }
