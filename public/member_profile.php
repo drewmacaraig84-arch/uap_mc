@@ -95,42 +95,163 @@ $pageTitle = $member ? htmlspecialchars($member['name']) . ' - Chapter Directory
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?php echo $pageTitle; ?></title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800;900&family=Open+Sans:wght@300;400;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="<?php echo BASE_URL; ?>/public/homepage.css">
     <style>
-        .profile-container {
-            max-width: 1000px;
-            margin: 40px auto 60px;
-            padding: 0 20px;
+        :root {
+            --bg-black: #080808;
+            --bg-card: #121212;
+            --bg-inner-card: #182232;
+            --accent-yellow: #f5b800;
+            --accent-yellow-hover: #d9a300;
+            --text-light: #f5f5f5;
+            --text-muted: #a0a0a0;
+            --border-dark: #262626;
+            --border-yellow-subtle: rgba(245, 184, 0, 0.3);
+            --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
         }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background-color: var(--bg-black);
+            color: var(--text-light);
+            font-family: var(--font-family);
+            line-height: 1.6;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        a { color: inherit; text-decoration: none; }
+
+        header {
+            background-color: #000000;
+            border-bottom: 3px solid var(--accent-yellow);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            width: 100%;
+        }
+
+        .header-container {
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.8rem 2rem;
+            gap: 1.2rem;
+        }
+
+        .brand-logo {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .brand-logo img {
+            height: 42px;
+            width: auto;
+            max-width: 50px;
+            object-fit: contain;
+            display: block;
+        }
+
+        .brand-title {
+            font-size: 1.05rem;
+            font-weight: 800;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            color: #ffffff;
+            white-space: nowrap;
+        }
+
+        .brand-title span {
+            color: var(--accent-yellow);
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 1.2rem;
+        }
+
+        nav ul {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 2rem;
+            list-style: none;
+            margin: 0;
+            padding: 0;
+        }
+
+        nav a {
+            font-size: 0.78rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: color 0.2s ease;
+        }
+
+        nav a:hover { color: var(--accent-yellow); }
+
+        .login-btn {
+            display: inline-block;
+            padding: 0.7rem 1.2rem;
+            background: var(--accent-yellow);
+            color: #000000;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            line-height: 1;
+            transition: background-color 0.2s ease;
+        }
+
+        .login-btn:hover {
+            background: var(--accent-yellow-hover);
+        }
+
+        .main-wrapper {
+            flex: 1 0 auto;
+            max-width: 1100px;
+            width: 100%;
+            margin: 0 auto;
+            padding: 32px 20px 60px;
+        }
+
         .back-nav {
             margin-bottom: 24px;
         }
+
         .back-link {
             display: inline-flex;
             align-items: center;
             gap: 8px;
-            color: var(--accent-yellow, #e5a91e);
+            color: var(--accent-yellow);
             text-decoration: none;
-            font-weight: 600;
+            font-weight: 700;
             font-size: 0.95rem;
             transition: transform 0.2s ease;
         }
+
         .back-link:hover {
             transform: translateX(-4px);
+            color: #ffffff;
         }
+
         .profile-hero {
-            background: linear-gradient(135deg, rgba(24, 36, 58, 0.95), rgba(15, 23, 42, 0.95));
-            border: 1px solid rgba(229, 169, 30, 0.25);
-            border-radius: 18px;
-            padding: 36px 32px;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+            background: linear-gradient(135deg, #141f32 0%, #0d1522 100%);
+            border: 1px solid rgba(245, 184, 0, 0.35);
+            border-radius: 16px;
+            padding: 32px 36px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
             position: relative;
             overflow: hidden;
             margin-bottom: 28px;
         }
+
         .profile-hero::before {
             content: '';
             position: absolute;
@@ -138,8 +259,9 @@ $pageTitle = $member ? htmlspecialchars($member['name']) . ' - Chapter Directory
             left: 0;
             right: 0;
             height: 4px;
-            background: linear-gradient(90deg, #e5a91e, #f59e0b, #10b981);
+            background: linear-gradient(90deg, #f5b800, #fbbf24, #10b981);
         }
+
         .profile-header-content {
             display: flex;
             align-items: center;
@@ -147,116 +269,138 @@ $pageTitle = $member ? htmlspecialchars($member['name']) . ' - Chapter Directory
             flex-wrap: wrap;
             gap: 20px;
         }
+
         .profile-avatar-block {
             display: flex;
             align-items: center;
             gap: 20px;
         }
+
         .profile-avatar-circle {
             width: 80px;
             height: 80px;
             border-radius: 50%;
-            background: linear-gradient(135deg, #e5a91e, #b45309);
-            color: #fff;
+            background: linear-gradient(135deg, #f5b800, #b45309);
+            color: #000000;
             display: flex;
             align-items: center;
             justify-content: center;
             font-size: 2rem;
-            font-weight: 800;
-            box-shadow: 0 8px 24px rgba(229, 169, 30, 0.3);
+            font-weight: 900;
+            box-shadow: 0 8px 24px rgba(245, 184, 0, 0.3);
             border: 2px solid rgba(255, 255, 255, 0.2);
             flex-shrink: 0;
         }
+
         .profile-title-group h1 {
             font-size: 2rem;
             font-weight: 800;
             color: #ffffff;
-            margin: 0 0 6px 0;
+            margin: 0 0 4px 0;
             line-height: 1.2;
         }
+
         .profile-title-group .role-tag {
-            color: var(--accent-yellow, #e5a91e);
+            color: var(--accent-yellow);
             font-size: 1.1rem;
-            font-weight: 600;
+            font-weight: 700;
         }
+
         .verified-badge {
             display: inline-flex;
             align-items: center;
             gap: 6px;
             background: rgba(16, 185, 129, 0.15);
             color: #10b981;
-            border: 1px solid rgba(16, 185, 129, 0.3);
-            padding: 6px 14px;
+            border: 1px solid rgba(16, 185, 129, 0.35);
+            padding: 8px 16px;
             border-radius: 999px;
             font-size: 0.85rem;
             font-weight: 700;
             letter-spacing: 0.5px;
         }
+
         .profile-grid {
             display: grid;
             grid-template-columns: 2fr 1fr;
             gap: 24px;
         }
-        @media (max-width: 800px) {
+
+        @media (max-width: 850px) {
             .profile-grid {
                 grid-template-columns: 1fr;
             }
+            .header-container {
+                padding: 0.8rem 1rem;
+            }
+            nav ul {
+                display: none;
+            }
         }
+
         .profile-card {
-            background: rgba(24, 36, 58, 0.7);
-            border: 1px solid rgba(255, 255, 255, 0.08);
+            background: var(--bg-card);
+            border: 1px solid var(--border-dark);
             border-radius: 14px;
-            padding: 28px;
-            backdrop-filter: blur(10px);
+            padding: 26px;
             margin-bottom: 24px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
         }
+
         .profile-card h2 {
-            font-size: 1.25rem;
+            font-size: 1.2rem;
             font-weight: 700;
-            color: var(--accent-yellow, #e5a91e);
+            color: var(--accent-yellow);
             margin: 0 0 16px 0;
             display: flex;
             align-items: center;
             gap: 10px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-            padding-bottom: 10px;
+            border-bottom: 1px solid var(--border-dark);
+            padding-bottom: 12px;
         }
+
         .info-list {
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 18px;
         }
-        @media (max-width: 500px) {
+
+        @media (max-width: 540px) {
             .info-list {
                 grid-template-columns: 1fr;
             }
         }
+
         .info-item label {
             display: block;
-            font-size: 0.8rem;
-            color: var(--text-muted, #94a3b8);
+            font-size: 0.78rem;
+            color: var(--text-muted);
             text-transform: uppercase;
             letter-spacing: 0.5px;
             margin-bottom: 4px;
-            font-weight: 600;
+            font-weight: 700;
         }
+
         .info-item span {
             font-size: 1.05rem;
-            color: #f1f5f9;
+            color: #ffffff;
             font-weight: 600;
         }
+
         .content-box {
-            color: #cbd5e1;
+            color: #d1d5db;
             font-size: 0.95rem;
             line-height: 1.7;
-            background: rgba(0, 0, 0, 0.2);
+            background: #181818;
             padding: 16px 18px;
             border-radius: 10px;
-            border-left: 3px solid var(--accent-yellow, #e5a91e);
+            border-left: 3px solid var(--accent-yellow);
         }
+
         .qr-card {
             text-align: center;
         }
+
         .qr-image-wrapper {
             background: #ffffff;
             padding: 14px;
@@ -265,33 +409,111 @@ $pageTitle = $member ? htmlspecialchars($member['name']) . ' - Chapter Directory
             box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
             margin: 14px 0;
         }
+
         .qr-image-wrapper img {
-            max-width: 160px;
-            max-height: 160px;
+            max-width: 180px;
+            max-height: 180px;
             object-fit: contain;
             display: block;
+        }
+
+        .btn-yellow {
+            display: inline-block;
+            background-color: var(--accent-yellow);
+            color: #000000;
+            padding: 0.8rem 1.6rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            border-radius: 4px;
+            transition: all 0.2s ease;
+            font-size: 0.85rem;
+        }
+
+        .btn-yellow:hover {
+            background-color: var(--accent-yellow-hover);
+        }
+
+        footer {
+            background-color: #000000;
+            border-top: 1px solid var(--border-dark);
+            padding: 3rem 2rem 1.5rem;
+            width: 100%;
+            margin-top: auto;
+        }
+
+        .footer-container {
+            max-width: 1100px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .footer-col h1 {
+            font-size: 1.1rem;
+            color: var(--accent-yellow);
+            margin-bottom: 1rem;
+        }
+
+        .footer-col h4 {
+            color: var(--text-light);
+            font-size: 0.95rem;
+            margin-bottom: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .contact-details p {
+            color: var(--text-muted);
+            font-size: 0.88rem;
+            margin-bottom: 0.8rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .contact-details strong { color: var(--text-light); }
+
+        .copyright {
+            text-align: center;
+            padding-top: 1.5rem;
+            border-top: 1px solid var(--border-dark);
+            color: var(--text-muted);
+            font-size: 0.85rem;
         }
     </style>
 </head>
 <body>
 
-    <!-- NAVBAR -->
-    <nav class="navbar">
-        <div class="nav-container">
-            <div class="logo">
-                <a href="<?php echo BASE_URL; ?>/index.php" style="display: flex; align-items: center; gap: 10px; text-decoration: none; color: #fff;">
-                    <img src="<?php echo BASE_URL; ?>/uploads/uap_logo.jpg" alt="UAP Logo">
-                    <span>UAP Mindoro</span>
+    <!-- STICKY HEADER NAVBAR -->
+    <header>
+        <div class="header-container">
+            <div class="brand-logo">
+                <a href="<?php echo BASE_URL; ?>/index.php" style="display:flex;align-items:center;gap:14px;text-decoration:none;">
+                    <img src="<?php echo BASE_URL; ?>/uploads/uap_logo.jpg" alt="UAP Mindoro Logo" onerror="this.style.display='none'">
+                    <div class="brand-title">UAP-<span>Mindoro Chapter</span></div>
                 </a>
             </div>
-            <div class="nav-actions">
-                <a href="<?php echo BASE_URL; ?>/index.php#members" class="btn-yellow">Member Directory</a>
-                <a href="<?php echo BASE_URL; ?>/auth/login.php" class="btn-portal">Portal Login</a>
+
+            <div class="header-actions">
+                <nav>
+                    <ul>
+                        <li><a href="<?php echo BASE_URL; ?>/index.php#home">Home</a></li>
+                        <li><a href="<?php echo BASE_URL; ?>/index.php#members">Members</a></li>
+                        <li><a href="<?php echo BASE_URL; ?>/index.php#about">About</a></li>
+                        <li><a href="<?php echo BASE_URL; ?>/index.php#news">News</a></li>
+                        <li><a href="<?php echo BASE_URL; ?>/index.php#contact">Contact</a></li>
+                    </ul>
+                </nav>
+                <a href="<?php echo BASE_URL; ?>/auth/login.php" class="login-btn">Portal Login</a>
             </div>
         </div>
-    </nav>
+    </header>
 
-    <div class="profile-container">
+    <!-- MAIN PROFILE VIEW CONTAINER -->
+    <div class="main-wrapper">
         
         <div class="back-nav">
             <a href="<?php echo BASE_URL; ?>/index.php#members" class="back-link">
@@ -342,7 +564,7 @@ $pageTitle = $member ? htmlspecialchars($member['name']) . ' - Chapter Directory
                 
                 <!-- LEFT COLUMN -->
                 <div>
-                    <!-- PROFESSIONAL OVERVIEW -->
+                    <!-- PROFESSIONAL CREDENTIALS -->
                     <div class="profile-card">
                         <h2>🏛️ Professional Credentials</h2>
                         <div class="info-list">
@@ -397,13 +619,13 @@ $pageTitle = $member ? htmlspecialchars($member['name']) . ' - Chapter Directory
                             </div>
                             <span style="font-size: 0.8rem; color: var(--text-muted); display: block;">Scan to verify / contact</span>
                         <?php else: ?>
-                            <div style="background: rgba(0,0,0,0.2); padding: 24px 16px; border-radius: 10px; border: 1px dashed rgba(255,255,255,0.15); margin: 12px 0;">
+                            <div style="background: #181818; padding: 24px 16px; border-radius: 10px; border: 1px dashed var(--border-dark); margin: 12px 0;">
                                 <span style="font-size: 2rem; display: block; margin-bottom: 6px;">🏛️</span>
                                 <span style="font-size: 0.85rem; color: var(--text-muted);">UAP Mindoro Registered Member</span>
                             </div>
                         <?php endif; ?>
 
-                        <div style="margin-top: 20px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.08);">
+                        <div style="margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--border-dark);">
                             <a href="<?php echo BASE_URL; ?>/index.php#members" class="btn-yellow" style="display: block; width: 100%; text-align: center; text-decoration: none;">
                                 View All Chapter Members
                             </a>
@@ -418,7 +640,7 @@ $pageTitle = $member ? htmlspecialchars($member['name']) . ' - Chapter Directory
     </div>
 
     <!-- FOOTER -->
-    <footer id="contact" style="margin-top: 60px;">
+    <footer id="contact">
         <div class="footer-container">
             <div class="footer-col">
                 <h1>UAP Mindoro Chapter</h1>
