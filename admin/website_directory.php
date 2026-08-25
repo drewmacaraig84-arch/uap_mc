@@ -70,11 +70,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 // 1. Fetch Pending Applications (Awaiting Fee)
-$pendingApps = $pdo->query("SELECT da.*, u.name, u.id_number, u.email
+$pendingApps = $pdo->query("SELECT da.*, u.name, u.id_number
     FROM directory_applications da
     JOIN users u ON da.user_id = u.id
     WHERE da.status = 'pending_fee'
     ORDER BY da.created_at DESC")->fetchAll();
+
 
 // 2. Fetch Applications Awaiting Payment / Verification
 $paymentApps = $pdo->query("SELECT da.*, u.name, u.id_number, md.status as payment_status, md.total_paid
