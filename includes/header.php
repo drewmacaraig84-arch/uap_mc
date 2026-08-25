@@ -760,33 +760,39 @@ $page_title = $page_title ?? 'Dues System';
   </div>
   <button class="menu-toggle" type="button" aria-label="Toggle navigation" onclick="toggleMobileMenu()">☰</button>
   <div class="nav-links" id="mobileNavLinks">
+    <?php
+      $current_script = basename($_SERVER['SCRIPT_NAME'] ?? '');
+      $nav_active = function($pages) use ($current_script) {
+          $pages = (array)$pages;
+          return in_array($current_script, $pages, true) ? ' active' : '';
+      };
+    ?>
     <?php if (isset($_SESSION['user_id'])): ?>
       <?php if ($_SESSION['role'] === 'admin'): ?>
-        <a class="nav-item active" href="<?php echo BASE_URL; ?>/admin/dashboard.php"><span class="nav-icon">🏠</span><span>Dashboard</span></a>
-        <a class="nav-item" href="<?php echo BASE_URL; ?>/admin/dashboard.php"><span class="nav-icon">💳</span><span>Payments</span></a>
-        <a class="nav-item" href="<?php echo BASE_URL; ?>/admin/approvals.php"><span class="nav-icon">✅</span><span>Approvals</span></a>
-        <a class="nav-item" href="<?php echo BASE_URL; ?>/admin/members.php"><span class="nav-icon">👥</span><span>Members</span></a>
-        <a class="nav-item" href="<?php echo BASE_URL; ?>/admin/good_members.php"><span class="nav-icon">✅</span><span>Good Members</span></a>
-        <a class="nav-item" href="<?php echo BASE_URL; ?>/admin/website_directory.php"><span class="nav-icon">📘</span><span>Website Directory</span></a>
-        <a class="nav-item" href="<?php echo BASE_URL; ?>/admin/account_manager.php"><span class="nav-icon">🛠️</span><span>Edit Accounts</span></a>
-        <a class="nav-item" href="<?php echo BASE_URL; ?>/admin/dues.php"><span class="nav-icon">📋</span><span>Dues</span></a>
-        <a class="nav-item" href="<?php echo BASE_URL; ?>/admin/qr_codes.php"><span class="nav-icon">📷</span><span>QR Codes</span></a>
-        <a class="nav-item" href="<?php echo BASE_URL; ?>/admin/reports.php"><span class="nav-icon">📊</span><span>Reports</span></a>
-        <a class="nav-item" href="<?php echo BASE_URL; ?>/admin/settings.php"><span class="nav-icon">⚙️</span><span>Settings</span></a>
+        <a class="nav-item<?php echo $nav_active('dashboard.php'); ?>" href="<?php echo BASE_URL; ?>/admin/dashboard.php"><span class="nav-icon">💳</span><span>Pending Payments</span></a>
+        <a class="nav-item<?php echo $nav_active('approvals.php'); ?>" href="<?php echo BASE_URL; ?>/admin/approvals.php"><span class="nav-icon">✅</span><span>Approvals</span></a>
+        <a class="nav-item<?php echo $nav_active('members.php'); ?>" href="<?php echo BASE_URL; ?>/admin/members.php"><span class="nav-icon">👥</span><span>Members</span></a>
+        <a class="nav-item<?php echo $nav_active('good_members.php'); ?>" href="<?php echo BASE_URL; ?>/admin/good_members.php"><span class="nav-icon">⭐</span><span>Good Members</span></a>
+        <a class="nav-item<?php echo $nav_active('website_directory.php'); ?>" href="<?php echo BASE_URL; ?>/admin/website_directory.php"><span class="nav-icon">📘</span><span>Website Directory</span></a>
+        <a class="nav-item<?php echo $nav_active('account_manager.php'); ?>" href="<?php echo BASE_URL; ?>/admin/account_manager.php"><span class="nav-icon">🛠️</span><span>Edit Accounts</span></a>
+        <a class="nav-item<?php echo $nav_active('dues.php'); ?>" href="<?php echo BASE_URL; ?>/admin/dues.php"><span class="nav-icon">📋</span><span>Dues</span></a>
+        <a class="nav-item<?php echo $nav_active('qr_codes.php'); ?>" href="<?php echo BASE_URL; ?>/admin/qr_codes.php"><span class="nav-icon">📷</span><span>QR Codes</span></a>
+        <a class="nav-item<?php echo $nav_active('reports.php'); ?>" href="<?php echo BASE_URL; ?>/admin/reports.php"><span class="nav-icon">📊</span><span>Reports</span></a>
+        <a class="nav-item<?php echo $nav_active(['settings.php', 'change_password.php']); ?>" href="<?php echo BASE_URL; ?>/admin/settings.php"><span class="nav-icon">⚙️</span><span>Settings</span></a>
       <?php else: ?>
-        <a class="nav-item active" href="<?php echo BASE_URL; ?>/member/dashboard.php"><span class="nav-icon">🏠</span><span>Dashboard</span></a>
-        <a class="nav-item" href="<?php echo BASE_URL; ?>/member/dashboard.php"><span class="nav-icon">💸</span><span>My Dues</span></a>
+        <a class="nav-item<?php echo $nav_active(['dashboard.php', 'pay.php']); ?>" href="<?php echo BASE_URL; ?>/member/dashboard.php"><span class="nav-icon">💸</span><span>My Dues</span></a>
         <?php if (function_exists('is_good_member') && is_good_member($pdo, current_user_id())): ?>
-          <a class="nav-item" href="<?php echo BASE_URL; ?>/member/website_directory.php"><span class="nav-icon">📘</span><span>Website Directory</span></a>
+          <a class="nav-item<?php echo $nav_active('website_directory.php'); ?>" href="<?php echo BASE_URL; ?>/member/website_directory.php"><span class="nav-icon">📘</span><span>Website Directory</span></a>
         <?php endif; ?>
-        <a class="nav-item" href="<?php echo BASE_URL; ?>/member/history.php"><span class="nav-icon">🧾</span><span>Payment History</span></a>
+        <a class="nav-item<?php echo $nav_active('history.php'); ?>" href="<?php echo BASE_URL; ?>/member/history.php"><span class="nav-icon">🧾</span><span>Payment History</span></a>
       <?php endif; ?>
     <?php else: ?>
-      <a class="nav-item active" href="<?php echo BASE_URL; ?>/auth/login.php"><span class="nav-icon">🔐</span><span>Login</span></a>
-      <a class="nav-item" href="<?php echo BASE_URL; ?>/auth/register.php"><span class="nav-icon">📝</span><span>Register</span></a>
+      <a class="nav-item<?php echo $nav_active('login.php'); ?>" href="<?php echo BASE_URL; ?>/auth/login.php"><span class="nav-icon">🔐</span><span>Login</span></a>
+      <a class="nav-item<?php echo $nav_active('register.php'); ?>" href="<?php echo BASE_URL; ?>/auth/register.php"><span class="nav-icon">📝</span><span>Register</span></a>
     <?php endif; ?>
   </div>
 </nav>
+
 <?php endif; ?>
 <?php if (isset($_SESSION['user_id'])): ?>
 <header class="topbar">
