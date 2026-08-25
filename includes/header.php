@@ -799,7 +799,8 @@ $page_title = $page_title ?? 'Dues System';
     ?>
     <?php if (isset($_SESSION['user_id'])): ?>
       <?php if ($_SESSION['role'] === 'admin'): ?>
-        <a class="nav-item<?php echo $nav_active('dashboard.php'); ?>" href="<?php echo BASE_URL; ?>/admin/dashboard.php"><span class="nav-icon">💳</span><span>Pending Payments</span></a>
+        <a class="nav-item<?php echo $nav_active('dashboard.php'); ?>" href="<?php echo BASE_URL; ?>/admin/dashboard.php"><span class="nav-icon">🏠</span><span>Dashboard</span></a>
+        <a class="nav-item<?php echo $nav_active('payments.php'); ?>" href="<?php echo BASE_URL; ?>/admin/payments.php"><span class="nav-icon">💳</span><span>Payments</span></a>
         <a class="nav-item<?php echo $nav_active('approvals.php'); ?>" href="<?php echo BASE_URL; ?>/admin/approvals.php"><span class="nav-icon">✅</span><span>Approvals</span></a>
         <a class="nav-item<?php echo $nav_active('members.php'); ?>" href="<?php echo BASE_URL; ?>/admin/members.php"><span class="nav-icon">👥</span><span>Members</span></a>
         <a class="nav-item<?php echo $nav_active('good_members.php'); ?>" href="<?php echo BASE_URL; ?>/admin/good_members.php"><span class="nav-icon">⭐</span><span>Good Members</span></a>
@@ -809,6 +810,7 @@ $page_title = $page_title ?? 'Dues System';
         <a class="nav-item<?php echo $nav_active('qr_codes.php'); ?>" href="<?php echo BASE_URL; ?>/admin/qr_codes.php"><span class="nav-icon">📷</span><span>QR Codes</span></a>
         <a class="nav-item<?php echo $nav_active('reports.php'); ?>" href="<?php echo BASE_URL; ?>/admin/reports.php"><span class="nav-icon">📊</span><span>Reports</span></a>
         <a class="nav-item<?php echo $nav_active(['settings.php', 'change_password.php']); ?>" href="<?php echo BASE_URL; ?>/admin/settings.php"><span class="nav-icon">⚙️</span><span>Settings</span></a>
+
       <?php else: ?>
         <a class="nav-item<?php echo $nav_active(['dashboard.php', 'pay.php']); ?>" href="<?php echo BASE_URL; ?>/member/dashboard.php"><span class="nav-icon">💸</span><span>My Dues</span></a>
         <?php if (function_exists('is_good_member') && is_good_member($pdo, current_user_id())): ?>
