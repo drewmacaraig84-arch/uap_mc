@@ -691,26 +691,19 @@ $newsItems = [
                                         <td><?php echo htmlspecialchars($member['prc']); ?></td>
                                         <td><?php echo htmlspecialchars($member['location']); ?></td>
                                         <td>
-                                            <button
-                                                class="badge-status view-member-btn"
-                                                type="button"
-                                                data-name="<?php echo htmlspecialchars($member['name'], ENT_QUOTES, 'UTF-8'); ?>"
-                                                data-role="<?php echo htmlspecialchars($member['role'] ?? 'Architect', ENT_QUOTES, 'UTF-8'); ?>"
-                                                data-specialty="<?php echo htmlspecialchars($member['specialty'] ?? 'Professional Architect', ENT_QUOTES, 'UTF-8'); ?>"
-                                                data-prc="<?php echo htmlspecialchars($member['prc'] ?? '—', ENT_QUOTES, 'UTF-8'); ?>"
-                                                data-location="<?php echo htmlspecialchars($member['location'] ?? 'Mindoro', ENT_QUOTES, 'UTF-8'); ?>"
-                                                data-achievements="<?php echo htmlspecialchars($member['achievements'] ?? 'No achievements listed.', ENT_QUOTES, 'UTF-8'); ?>"
-                                                data-awards="<?php echo htmlspecialchars($member['awards'] ?? 'No awards listed.', ENT_QUOTES, 'UTF-8'); ?>"
-                                                data-qr="<?php echo htmlspecialchars($member['qr_image_path'] ?? '', ENT_QUOTES, 'UTF-8'); ?>"
-                                                style="cursor:pointer;"
+                                            <a 
+                                                href="<?php echo BASE_URL; ?>/public/member_profile.php?prc=<?php echo urlencode($member['prc'] ?? ''); ?>&name=<?php echo urlencode($member['name'] ?? ''); ?>" 
+                                                class="badge-status" 
+                                                style="text-decoration:none; display:inline-block; font-weight:600; cursor:pointer;"
                                             >
-                                                View
-                                            </button>
+                                                View Profile &rarr;
+                                            </a>
                                         </td>
                                     </tr>
                                 <?php endforeach; ?>
                             </tbody>
                         </table>
+
                     </div>
                 </section>
 
@@ -772,52 +765,6 @@ $newsItems = [
         </div>
     </div>
 
-    <div id="memberModal" class="member-modal" aria-hidden="true">
-        <div class="member-modal-content" role="dialog" aria-modal="true" aria-labelledby="memberModalTitle">
-            <button type="button" class="member-close" aria-label="Close">&times;</button>
-            <div class="member-modal-header">
-                <h3 id="memberModalTitle" style="margin:0; font-size:1.8rem; color:#f5f5f5;">Member Details</h3>
-            </div>
-
-            <div class="member-modal-grid">
-                <div>
-                    <span class="member-detail-label">Architect Name</span>
-                    <div class="member-detail-value" id="memberDetailName"></div>
-                </div>
-                <div>
-                    <span class="member-detail-label">Role / Title</span>
-                    <div class="member-detail-value" id="memberDetailRole"></div>
-                </div>
-                <div>
-                    <span class="member-detail-label">Architectural Specialty</span>
-                    <div class="member-detail-value" id="memberDetailSpecialty"></div>
-                </div>
-                <div>
-                    <span class="member-detail-label">PRC No.</span>
-                    <div class="member-detail-value" id="memberDetailPrc"></div>
-                </div>
-                <div>
-                    <span class="member-detail-label">Location</span>
-                    <div class="member-detail-value" id="memberDetailLocation"></div>
-                </div>
-                <div>
-                    <span class="member-detail-label">QR</span>
-                    <div class="member-qr-box" id="memberDetailQr">QR image placeholder</div>
-                </div>
-            </div>
-
-            <div class="member-detail-section" style="margin-bottom: 14px;">
-                <span class="member-detail-label">Achievements</span>
-                <div class="member-detail-value" id="memberDetailAchievements"></div>
-            </div>
-
-            <div class="member-detail-section">
-                <span class="member-detail-label">Awards</span>
-                <div class="member-detail-value" id="memberDetailAwards"></div>
-            </div>
-        </div>
-    </div>
-
     <footer id="contact">
         <div class="footer-container">
             <div class="footer-col">
@@ -852,62 +799,6 @@ $newsItems = [
             &copy; <?php echo date('Y'); ?> United Architects of the Philippines - Mindoro Chapter. All rights reserved.
         </div>
     </footer>
-
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            const modal = document.getElementById('memberModal');
-            const closeButton = document.querySelector('.member-close');
-            const buttons = document.querySelectorAll('.view-member-btn');
-
-            buttons.forEach(function (button) {
-                button.addEventListener('click', function () {
-                    const name = button.dataset.name || 'Member';
-                    const role = button.dataset.role || 'Architect';
-                    const specialty = button.dataset.specialty || 'Professional Architect';
-                    const prc = button.dataset.prc || '—';
-                    const location = button.dataset.location || 'Mindoro';
-                    const achievements = button.dataset.achievements || 'No achievements listed.';
-                    const awards = button.dataset.awards || 'No awards listed.';
-                    const qr = button.dataset.qr || '';
-
-                    document.getElementById('memberModalTitle').textContent = name;
-                    document.getElementById('memberDetailName').textContent = name;
-                    document.getElementById('memberDetailRole').textContent = role;
-                    document.getElementById('memberDetailSpecialty').textContent = specialty;
-                    document.getElementById('memberDetailPrc').textContent = prc;
-                    document.getElementById('memberDetailLocation').textContent = location;
-                    document.getElementById('memberDetailAchievements').textContent = achievements;
-                    document.getElementById('memberDetailAwards').textContent = awards;
-
-                    const qrBox = document.getElementById('memberDetailQr');
-                    if (qr) {
-                        qrBox.innerHTML = '<img src="../' + qr + '" alt="' + name + ' QR Code" style="max-width:120px; max-height:120px; object-fit:contain;">';
-                    } else {
-                        qrBox.textContent = 'QR image placeholder';
-                    }
-
-                    modal.classList.add('visible');
-                    modal.setAttribute('aria-hidden', 'false');
-                });
-            });
-
-            function closeModal() {
-                modal.classList.remove('visible');
-                modal.setAttribute('aria-hidden', 'true');
-            }
-
-            closeButton.addEventListener('click', closeModal);
-            modal.addEventListener('click', function (event) {
-                if (event.target === modal) {
-                    closeModal();
-                }
-            });
-            document.addEventListener('keydown', function (event) {
-                if (event.key === 'Escape' && modal.classList.contains('visible')) {
-                    closeModal();
-                }
-            });
-        });
-    </script>
 </body>
 </html>
+
