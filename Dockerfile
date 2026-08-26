@@ -32,7 +32,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     unzip \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
     && docker-php-ext-install -j$(nproc) pdo pdo_mysql mysqli gd zip \
-    && a2enmod rewrite headers \
+    && a2dismod mpm_prefork mpm_worker mpm_event 2>/dev/null || true \
+    && a2enmod mpm_prefork rewrite headers \
     && rm -rf /var/lib/apt/lists/*
 
 # Configure Apache VirtualHost with AllowOverride All and ServerName
@@ -64,3 +65,4 @@ EXPOSE 80
 
 # Run entrypoint script for dynamic Railway port binding & database setup
 ENTRYPOINT ["/var/www/html/docker-entrypoint.sh"]
+
