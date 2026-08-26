@@ -1,10 +1,26 @@
 <?php
 require_once __DIR__ . '/config.php';
 
+function ensure_user_profile_photo_column($pdo) {
+    static $checked = false;
+    if ($checked || !$pdo) return;
+    $checked = true;
+    try {
+        $col = $pdo->query("SHOW COLUMNS FROM users LIKE 'profile_photo'")->fetch();
+        if (!$col) {
+            $pdo->exec("ALTER TABLE users ADD COLUMN profile_photo VARCHAR(255) NULL AFTER status");
+        }
+    } catch (Throwable $e) {}
+}
+
 function require_login() {
+    global $pdo;
     if (!isset($_SESSION['user_id'])) {
         header('Location: ' . BASE_URL . '/auth/login.php');
         exit;
+    }
+    if (isset($pdo)) {
+        ensure_user_profile_photo_column($pdo);
     }
 }
 
