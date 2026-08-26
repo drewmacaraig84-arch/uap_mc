@@ -5,6 +5,7 @@ CREATE TABLE IF NOT EXISTS users (
     password VARCHAR(255) NOT NULL,
     role ENUM('member','admin') NOT NULL DEFAULT 'member',
     status ENUM('pending','approved','rejected') NOT NULL DEFAULT 'pending',
+    profile_photo VARCHAR(255) NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 

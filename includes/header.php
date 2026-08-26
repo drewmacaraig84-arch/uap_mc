@@ -59,6 +59,25 @@ require_once __DIR__ . '/icons.php';
     if (strlen($user_initials) < 2) {
         $user_initials = strtoupper(substr($user_name, 0, 2));
     }
+
+    // Fetch user profile photo
+    $user_id_current = (int)($_SESSION['user_id'] ?? 0);
+    $user_photo_path = null;
+    if ($user_id_current > 0 && isset($pdo)) {
+        try {
+            $uStmt = $pdo->prepare("SELECT profile_photo FROM users WHERE id = ?");
+            $uStmt->execute([$user_id_current]);
+            $user_photo_path = $uStmt->fetchColumn();
+
+            // Fallback for members: if users.profile_photo is empty, check website_members.photo_path
+            if (!$user_photo_path) {
+                $wmStmt = $pdo->prepare("SELECT photo_path FROM website_members WHERE user_id = ?");
+                $wmStmt->execute([$user_id_current]);
+                $user_photo_path = $wmStmt->fetchColumn();
+            }
+        } catch (Throwable $e) {}
+    }
+    $user_avatar_url = $user_photo_path ? (str_starts_with($user_photo_path, 'http') ? $user_photo_path : BASE_URL . '/' . ltrim($user_photo_path, '/')) : null;
   ?>
 
   <!-- SIDEBAR NAVIGATION -->
@@ -226,7 +245,14 @@ require_once __DIR__ . '/icons.php';
 
       <!-- User Profile Dropdown -->
       <div class="user-chip" id="userMenuTrigger">
-        <div class="user-avatar"><?php echo htmlspecialchars($user_initials); ?></div>
+        <div class="user-avatar">
+          <?php if ($user_avatar_url): ?>
+            <img src="<?php echo htmlspecialchars($user_avatar_url); ?>" alt="<?php echo htmlspecialchars($user_name); ?>" class="user-avatar-img" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+            <span style="display:none;"><?php echo htmlspecialchars($user_initials); ?></span>
+          <?php else: ?>
+            <?php echo htmlspecialchars($user_initials); ?>
+          <?php endif; ?>
+        </div>
         <div class="user-info">
           <span class="user-name"><?php echo htmlspecialchars($user_name); ?></span>
           <span class="user-role"><?php echo htmlspecialchars($user_role); ?></span>
@@ -234,6 +260,12 @@ require_once __DIR__ . '/icons.php';
         <?php echo icon('arrow_right', '', 12); ?>
 
         <div class="user-menu">
+          <a href="<?php echo BASE_URL . ($user_role === 'admin' ? '/admin/profile.php' : '/member/profile.php'); ?>">
+            <?php echo icon('user', '', 16); ?>
+            <span>My Profile</span>
+          </a>
+          <div class="user-menu-divider"></div>
+
           <?php if ($user_role === 'admin'): ?>
             <a href="<?php echo BASE_URL; ?>/admin/settings.php">
               <?php echo icon('settings', '', 16); ?>

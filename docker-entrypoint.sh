@@ -20,7 +20,7 @@ if [ ! -f /var/www/html/includes/config.php ] && [ -f /var/www/html/includes/con
 fi
 
 # Ensure storage directories exist and have proper permissions
-mkdir -p /var/www/html/uploads /var/www/html/receipts
+mkdir -p /var/www/html/uploads/avatars /var/www/html/uploads/members /var/www/html/uploads/sponsors /var/www/html/uploads/receipts /var/www/html/receipts
 chown -R www-data:www-data /var/www/html/uploads /var/www/html/receipts 2>/dev/null || true
 chmod -R 775 /var/www/html/uploads /var/www/html/receipts 2>/dev/null || true
 

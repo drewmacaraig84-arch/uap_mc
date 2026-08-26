@@ -59,15 +59,28 @@ When the Docker container starts up, `docker-entrypoint.sh` automatically execut
 
 ---
 
-### Step 5: (Recommended) Add a Persistent Volume for Uploads
+### Step 5: (Critical) Add a Persistent Volume for Image Uploads
 
-To ensure uploaded payment proofs, member receipts, and photos persist across redeployments:
-1. In your Railway Web Service, go to **"Settings"** → **"Volumes"** (or click **"+ Create"** → **"Volume"**).
-2. Set the Mount Path to:
+In Railway, containers use ephemeral storage by default (any uploaded files are wiped whenever Railway redeploys or restarts your service). **Attaching a Persistent Volume preserves all member profile photos, showcase images, receipts, and logos permanently.**
+
+#### How to Add the Volume in Railway:
+1. Open your Railway Project dashboard and click on your **Web Service** container.
+2. Navigate to the **"Volumes"** tab (or click the **"+ Create"** button in your canvas and select **"Volume"**).
+3. Click **"Add Volume"** and set the **Mount Path** to:
    ```
    /var/www/html/uploads
    ```
-3. This guarantees all existing and future uploaded proofs and receipts are never lost.
+4. Set your desired disk size (e.g. `1 GB` to `5 GB` — you can always expand it later).
+5. Click **"Save"** or **"Attach Volume"**.
+
+#### What gets preserved inside `/var/www/html/uploads`:
+- `/var/www/html/uploads/avatars/` — Admin & Member profile pictures.
+- `/var/www/html/uploads/members/` — Architect Directory project showcase photos.
+- `/var/www/html/uploads/sponsors/` — Sponsor & Partner corporate logos.
+- `/var/www/html/uploads/receipts/` — Member payment receipts and GCash/Maya transfer proofs.
+
+> [!TIP]
+> The container's startup script (`docker-entrypoint.sh`) automatically creates all these subdirectories and configures Linux permissions (`chown www-data:www-data`, `chmod 775`) on every boot, so volume mounts work out of the box without any manual Linux configuration!
 
 ---
 

@@ -4,7 +4,10 @@ $id = (int)($_GET['id'] ?? 0);
 if ($id <= 0) { http_response_code(400); echo json_encode(['error' => 'Invalid ID']); exit; }
 
 try {
-    $stmt = $pdo->prepare("SELECT wm.*, u.id as user_id FROM website_members wm LEFT JOIN users u ON wm.user_id = u.id WHERE wm.id = ? AND wm.is_published = 1");
+    $stmt = $pdo->prepare("SELECT wm.*, COALESCE(wm.photo_path, u.profile_photo) as photo_path, u.id as user_id 
+                          FROM website_members wm 
+                          LEFT JOIN users u ON wm.user_id = u.id 
+                          WHERE wm.id = ? AND wm.is_published = 1");
     $stmt->execute([$id]);
     $member = $stmt->fetch();
     if (!$member) { http_response_code(404); echo json_encode(['error' => 'Not found']); exit; }

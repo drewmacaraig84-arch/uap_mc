@@ -7,7 +7,11 @@ try {
         return '/' . ltrim($path, '/');
     };
 
-    $members = $pdo->query("SELECT id, name, id_number, role_title, specialty, location, achievements, awards, photo_path FROM website_members WHERE is_published = 1 ORDER BY name ASC")->fetchAll();
+    $members = $pdo->query("SELECT wm.id, wm.name, wm.id_number, wm.role_title, wm.specialty, wm.location, wm.achievements, wm.awards, COALESCE(wm.photo_path, u.profile_photo) as photo_path 
+                           FROM website_members wm 
+                           LEFT JOIN users u ON wm.user_id = u.id 
+                           WHERE wm.is_published = 1 
+                           ORDER BY wm.name ASC")->fetchAll();
     foreach ($members as &$m) {
         $m['photo_url'] = $toUrl($m['photo_path']);
         unset($m['photo_path']);

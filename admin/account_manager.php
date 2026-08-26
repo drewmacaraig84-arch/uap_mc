@@ -20,6 +20,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $name = trim($_POST['name'] ?? '');
         $id_number = trim($_POST['id_number'] ?? '');
         $status = $_POST['status'] ?? 'pending';
+        $removePhoto = !empty($_POST['remove_photo']);
 
         if (!$name || !$id_number) {
             $error = 'Name and PRC ID No. are required.';
@@ -29,9 +30,54 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if ($check->fetch()) {
                 $error = 'That PRC ID No. is already used by another account.';
             } else {
-                $stmt = $pdo->prepare("UPDATE users SET name = ?, id_number = ?, status = ? WHERE id = ?");
-                $stmt->execute([$name, $id_number, $status, $user_id]);
-                $success = 'Account details updated successfully.';
+                $photoPath = $target['profile_photo'];
+
+                // Handle Photo Removal
+                if ($removePhoto && !empty($photoPath)) {
+                    $fileOnDisk = __DIR__ . '/../' . ltrim($photoPath, '/');
+                    if (file_exists($fileOnDisk) && !is_dir($fileOnDisk)) {
+                        @unlink($fileOnDisk);
+                    }
+                    $photoPath = null;
+                    $pdo->prepare("UPDATE website_members SET photo_path = NULL WHERE user_id = ?")->execute([$user_id]);
+                }
+
+                // Handle Photo Upload
+                if (!empty($_FILES['member_photo']['name']) && $_FILES['member_photo']['error'] === UPLOAD_ERR_OK) {
+                    $allowedExts = ['jpg', 'jpeg', 'png', 'webp'];
+                    $fileTmp = $_FILES['member_photo']['tmp_name'];
+                    $fileSize = $_FILES['member_photo']['size'];
+                    $ext = strtolower(pathinfo($_FILES['member_photo']['name'], PATHINFO_EXTENSION));
+
+                    if (!in_array($ext, $allowedExts)) {
+                        $error = 'Invalid photo format. Please upload JPG, PNG, or WebP.';
+                    } elseif ($fileSize > 5 * 1024 * 1024) {
+                        $error = 'Photo file size exceeds 5MB limit.';
+                    } else {
+                        $uploadDir = __DIR__ . '/../uploads/avatars/';
+                        if (!is_dir($uploadDir)) {
+                            mkdir($uploadDir, 0755, true);
+                        }
+
+                        $uniqueFilename = 'avatar_member_' . $user_id . '_' . time() . '_' . bin2hex(random_bytes(3)) . '.' . $ext;
+                        $targetPath = $uploadDir . $uniqueFilename;
+
+                        if (move_uploaded_file($fileTmp, $targetPath)) {
+                            $photoPath = 'uploads/avatars/' . $uniqueFilename;
+                            $pdo->prepare("UPDATE website_members SET photo_path = ? WHERE user_id = ?")->execute([$photoPath, $user_id]);
+                        }
+                    }
+                }
+
+                if (empty($error)) {
+                    $stmt = $pdo->prepare("UPDATE users SET name = ?, id_number = ?, status = ?, profile_photo = ? WHERE id = ?");
+                    $stmt->execute([$name, $id_number, $status, $photoPath, $user_id]);
+
+                    // Sync name with website_members
+                    $pdo->prepare("UPDATE website_members SET name = ? WHERE user_id = ?")->execute([$name, $user_id]);
+
+                    $success = 'Account details and profile photo updated successfully.';
+                }
             }
         }
     } elseif ($action === 'reset_password') {
@@ -50,11 +96,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 // Search
 $search = trim($_GET['search'] ?? '');
 if ($search) {
-    $stmt = $pdo->prepare("SELECT * FROM users WHERE role = 'member' AND (name LIKE ? OR id_number LIKE ?) ORDER BY name ASC");
+    $stmt = $pdo->prepare("SELECT u.*, wm.photo_path as wm_photo_path, wm.role_title, wm.specialty 
+                          FROM users u 
+                          LEFT JOIN website_members wm ON wm.user_id = u.id 
+                          WHERE u.role = 'member' AND (u.name LIKE ? OR u.id_number LIKE ?) 
+                          ORDER BY u.name ASC");
     $like = "%$search%";
     $stmt->execute([$like, $like]);
 } else {
-    $stmt = $pdo->query("SELECT * FROM users WHERE role = 'member' ORDER BY name ASC");
+    $stmt = $pdo->query("SELECT u.*, wm.photo_path as wm_photo_path, wm.role_title, wm.specialty 
+                        FROM users u 
+                        LEFT JOIN website_members wm ON wm.user_id = u.id 
+                        WHERE u.role = 'member' 
+                        ORDER BY u.name ASC");
 }
 $members = $stmt->fetchAll();
 
@@ -66,7 +120,7 @@ include __DIR__ . '/../includes/header.php';
   <div>
     <p class="eyebrow">USER ADMINISTRATION</p>
     <h1>Member Account Manager</h1>
-    <p class="page-subtitle">Edit member credentials, change registration status, or reset credentials.</p>
+    <p class="page-subtitle">Edit member credentials, update profile pictures, change registration status, or reset passwords.</p>
   </div>
   <div class="hero-badge">
     <?php echo icon('account_manager', '', 14); ?> <span><?php echo count($members); ?> Accounts</span>
@@ -122,17 +176,31 @@ include __DIR__ . '/../includes/header.php';
 
 <div style="display: flex; flex-direction: column; gap: 18px;">
   <?php foreach ($members as $m): ?>
+    <?php
+      $photo = $m['profile_photo'] ?: $m['wm_photo_path'];
+      $photoUrl = $photo ? (str_starts_with($photo, 'http') ? $photo : BASE_URL . '/' . ltrim($photo, '/')) : null;
+      $initials = strtoupper(substr($m['name'], 0, 1) . substr(strrchr($m['name'], ' ') ?: $m['name'], 1, 1));
+    ?>
     <div class="card" style="margin: 0;">
       <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; flex-wrap: wrap; gap: 10px;">
-        <div style="display: flex; align-items: center; gap: 10px;">
-          <div style="width: 36px; height: 36px; border-radius: 8px; background: rgba(59,130,246,0.12); color: #3b82f6; display: flex; align-items: center; justify-content: center;">
-            <?php echo icon('user', '', 18); ?>
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <div class="table-avatar-wrap">
+            <?php if ($photoUrl): ?>
+              <img src="<?php echo htmlspecialchars($photoUrl); ?>" alt="<?php echo htmlspecialchars($m['name']); ?>" class="table-avatar-img">
+            <?php else: ?>
+              <?php echo htmlspecialchars($initials); ?>
+            <?php endif; ?>
           </div>
           <div>
-            <h2 style="font-size: 16px; margin: 0; display: inline-flex; align-items: center; gap: 8px;">
+            <h2 style="font-size: 16px; margin: 0; display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap;">
               <span><?php echo htmlspecialchars($m['name']); ?></span>
-              <span class="muted" style="font-size: 13px; font-weight: 500;">(<?php echo htmlspecialchars($m['id_number']); ?>)</span>
+              <span class="muted" style="font-size: 13px; font-weight: 500;">(PRC: <?php echo htmlspecialchars($m['id_number']); ?>)</span>
             </h2>
+            <?php if (!empty($m['specialty'])): ?>
+              <div style="font-size: 12px; color: var(--accent-primary); margin-top: 2px;">
+                <?php echo htmlspecialchars($m['specialty']); ?>
+              </div>
+            <?php endif; ?>
           </div>
         </div>
         <span class="badge-pill badge-<?php echo $m['status'] === 'approved' ? 'paid' : ($m['status'] === 'pending' ? 'pending' : 'unpaid'); ?>">
@@ -141,8 +209,8 @@ include __DIR__ . '/../includes/header.php';
       </div>
 
       <div class="grid-2" style="gap: 20px;">
-        <!-- Edit info + status -->
-        <form method="post" style="background: var(--bg-secondary); padding: 16px; border-radius: 12px; border: 1px solid var(--border-color);">
+        <!-- Edit info + status + photo -->
+        <form method="post" enctype="multipart/form-data" style="background: var(--bg-secondary); padding: 16px; border-radius: 12px; border: 1px solid var(--border-color);">
           <?php echo csrf_field(); ?>
           <input type="hidden" name="user_id" value="<?php echo $m['id']; ?>">
           <input type="hidden" name="action" value="update_info">
@@ -155,13 +223,23 @@ include __DIR__ . '/../includes/header.php';
             <label>PRC ID No.</label>
             <input name="id_number" value="<?php echo htmlspecialchars($m['id_number']); ?>" required>
           </div>
-          <div class="field" style="margin-bottom: 14px;">
+          <div class="field" style="margin-bottom: 10px;">
             <label>Account Status</label>
             <select name="status">
               <option value="pending" <?php echo $m['status'] === 'pending' ? 'selected' : ''; ?>>Pending</option>
               <option value="approved" <?php echo $m['status'] === 'approved' ? 'selected' : ''; ?>>Approved</option>
               <option value="rejected" <?php echo $m['status'] === 'rejected' ? 'selected' : ''; ?>>Rejected</option>
             </select>
+          </div>
+          <div class="field" style="margin-bottom: 14px;">
+            <label>Update Profile Picture</label>
+            <input type="file" name="member_photo" accept="image/png, image/jpeg, image/webp" style="padding: 6px;">
+            <?php if ($photoUrl): ?>
+              <label style="display: inline-flex; align-items: center; gap: 4px; font-size: 12px; color: #ef4444; margin-top: 6px; cursor: pointer;">
+                <input type="checkbox" name="remove_photo" value="1">
+                <span>Remove current photo</span>
+              </label>
+            <?php endif; ?>
           </div>
           <button class="btn btn-sm" type="submit" style="display: inline-flex; align-items: center; gap: 4px;">
             <?php echo icon('check', '', 12); ?> <span>Save Details</span>
