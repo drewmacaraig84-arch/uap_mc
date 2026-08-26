@@ -30,7 +30,7 @@ export default function Footer() {
               { to: '/directory', label: 'Architect Directory' },
               { to: '/about', label: 'About the Chapter' },
               { to: '/news', label: 'News & Updates' },
-              { to: '/sponsors', label: 'Sponsors & Partners' },
+              { to: '/partners', label: 'Featured Partners' },
               { to: '/contact', label: 'Contact' },
             ].map(({ to, label }) => (
               <li key={to}><Link to={to} className="footer-link">{label}</Link></li>

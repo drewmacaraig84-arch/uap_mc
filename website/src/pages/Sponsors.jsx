@@ -34,7 +34,7 @@ export default function Sponsors() {
         <div className="container">
           <p className="eyebrow reveal">Corporate &amp; Industry Collaboration</p>
           <h1 className="display-1 reveal-pop">
-            Sponsors &amp; <span className="text-gold">Partners</span>
+            Featured <span className="text-gold">Partners</span>
           </h1>
           <div className="section-divider reveal" style={{ margin: '20px auto 24px' }} />
           <p className="body-lg muted reveal" style={{ maxWidth: 640, margin: '0 auto' }}>

@@ -40,6 +40,7 @@ export default function App() {
           <Route path="/profile/:id" element={<Profile />} />
           <Route path="/about"      element={<About />} />
           <Route path="/news"       element={<News />} />
+          <Route path="/partners"   element={<Sponsors />} />
           <Route path="/sponsors"   element={<Sponsors />} />
           <Route path="/contact"    element={<Contact />} />
         </Routes>

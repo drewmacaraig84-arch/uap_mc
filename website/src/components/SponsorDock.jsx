@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { useApi } from '../hooks/useApi';
-import { IconStar, IconHandshake, IconChevronDown, IconChevronUp, IconChevronRight, IconChevronLeft } from './Icons';
+import { IconStar, IconHandshake, IconChevronDown, IconChevronUp } from './Icons';
 import './SponsorDock.css';
 
 export default function SponsorDock() {
@@ -55,14 +55,14 @@ export default function SponsorDock() {
           type="button"
           className="sponsor-collapsed-pill mobile-only reveal-pop"
           onClick={() => setIsCollapsed(false)}
-          aria-label="Expand Sponsors & Partners"
-          title="Show Sponsors & Partners"
+          aria-label="Expand Featured Partners"
+          title="Show Featured Partners"
         >
           <div className="sponsor-pill-inner">
             <span className="sponsor-pill-icon-wrap">
               <IconStar size={13} className="sponsor-pill-star" />
             </span>
-            <span className="sponsor-pill-text">Sponsors &amp; Partners</span>
+            <span className="sponsor-pill-text">Featured Partners</span>
             {rawItems.length > 0 && (
               <span className="sponsor-pill-badge">{rawItems.length}</span>
             )}
@@ -76,21 +76,21 @@ export default function SponsorDock() {
       {/* EXPANDED SPONSOR DOCK / RAIL */}
       <aside
         className={`sponsor-rail${isCollapsed ? ' mobile-collapsed' : ''}`}
-        aria-label="Chapter Sponsors & Partners"
+        aria-label="Featured Partners"
         style={{ bottom: `${bottomOffset}px` }}
       >
         {/* Dock Header */}
         <div className="sponsor-rail-header">
-          <Link to="/sponsors" className="sponsor-rail-title-wrap" title="View all Sponsors & Partners">
+          <Link to="/partners" className="sponsor-rail-title-wrap" title="View all Featured Partners">
             <IconStar size={13} className="sponsor-rail-star" />
-            <span className="sponsor-rail-title">Sponsors &amp; Partners</span>
+            <span className="sponsor-rail-title">Featured Partners</span>
             {rawItems.length > 0 && (
               <span className="sponsor-count-tag">{rawItems.length}</span>
             )}
           </Link>
 
           <div className="sponsor-rail-actions">
-            <Link to="/sponsors" className="sponsor-view-all-link mobile-only">
+            <Link to="/partners" className="sponsor-view-all-link mobile-only">
               View All
             </Link>
             {/* Collapse toggle button strictly for mobile view */}
@@ -98,7 +98,7 @@ export default function SponsorDock() {
               type="button"
               className="sponsor-toggle-btn mobile-only"
               onClick={() => setIsCollapsed(true)}
-              aria-label="Minimize Sponsors"
+              aria-label="Minimize Partners"
               title="Minimize"
             >
               <IconChevronDown size={14} />
@@ -112,7 +112,7 @@ export default function SponsorDock() {
             rawItems.map((sponsor) => (
               <Link
                 key={`desk-${sponsor.id}`}
-                to={`/sponsors#sponsor-${sponsor.id}`}
+                to={`/partners#sponsor-${sponsor.id}`}
                 className="sponsor-rail-card"
                 title={`View ${sponsor.name} profile`}
               >
@@ -129,7 +129,7 @@ export default function SponsorDock() {
               </Link>
             ))
           ) : (
-            <Link to="/sponsors" className="sponsor-rail-empty-link" title="Partner with UAP Mindoro Chapter">
+            <Link to="/partners" className="sponsor-rail-empty-link" title="Partner with UAP Mindoro Chapter">
               <div className="sponsor-rail-empty-icon">
                 <IconHandshake size={20} />
               </div>
@@ -154,7 +154,7 @@ export default function SponsorDock() {
               {marqueeItems.map((sponsor, idx) => (
                 <Link
                   key={`mob-${sponsor.id}-${idx}`}
-                  to={`/sponsors#sponsor-${sponsor.id}`}
+                  to={`/partners#sponsor-${sponsor.id}`}
                   className="sponsor-ticker-card"
                   title={`View ${sponsor.name}`}
                 >
@@ -173,9 +173,9 @@ export default function SponsorDock() {
             </div>
           ) : (
             <div className="sponsor-mobile-empty">
-              <Link to="/sponsors" className="sponsor-mobile-empty-link">
+              <Link to="/partners" className="sponsor-mobile-empty-link">
                 <IconHandshake size={16} />
-                <span>Partner with UAP Mindoro &bull; Inquire for Sponsorship</span>
+                <span>Partner with UAP Mindoro &bull; Inquire for Partnership</span>
               </Link>
             </div>
           )}
