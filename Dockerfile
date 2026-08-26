@@ -37,10 +37,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && a2enmod mpm_prefork 2>/dev/null || true \
     && rm -rf /var/lib/apt/lists/*
 
-# Configure Apache VirtualHost with AllowOverride All and ServerName
+# Configure Apache VirtualHost with AllowOverride All, ServerName, and DirectoryIndex index.html
 RUN echo "ServerName localhost" >> /etc/apache2/apache2.conf \
+    && echo "DirectoryIndex index.html index.php" >> /etc/apache2/apache2.conf \
     && sed -ri -e 's!/var/www/html!/var/www/html!g' /etc/apache2/sites-available/*.conf \
-    && printf '<Directory /var/www/html>\n    Options -Indexes +FollowSymLinks\n    AllowOverride All\n    Require all granted\n</Directory>\n' > /etc/apache2/conf-available/override.conf \
+    && printf '<Directory /var/www/html>\n    Options -Indexes +FollowSymLinks\n    AllowOverride All\n    Require all granted\n    DirectoryIndex index.html index.php\n</Directory>\n' > /etc/apache2/conf-available/override.conf \
     && a2enconf override
 
 WORKDIR /var/www/html

@@ -1,4 +1,8 @@
-# Apache Rewrite Rules for UAP Mindoro Chapter (PHP Portal + React SPA)
+# Apache Configuration for UAP Mindoro Chapter (React SPA Website + PHP Admin Portal)
+
+# Ensure index.html (React Website) is the primary default index
+DirectoryIndex index.html index.php
+
 <IfModule mod_rewrite.c>
     RewriteEngine On
     RewriteBase /
@@ -6,16 +10,22 @@
     # Route /api/* to website/api/*
     RewriteRule ^api/(.*)$ website/api/$1 [QSA,L]
 
-    # Serve existing files and directories directly
+    # Clean URLs for auth routes (/auth/login -> /auth/login.php, /login -> /auth/login.php)
+    RewriteRule ^auth/login/?$ auth/login.php [QSA,L]
+    RewriteRule ^auth/register/?$ auth/register.php [QSA,L]
+    RewriteRule ^login/?$ auth/login.php [QSA,L]
+    RewriteRule ^register/?$ auth/register.php [QSA,L]
+
+    # Pass through PHP backend routes and static directories
+    RewriteCond %{REQUEST_URI} ^/(admin|member|auth|includes|uploads|public|database)/ [NC]
+    RewriteRule ^ - [L]
+
+    # Serve existing files and directories directly (assets/*.js, assets/*.css, images, etc.)
     RewriteCond %{REQUEST_FILENAME} -f [OR]
     RewriteCond %{REQUEST_FILENAME} -d
     RewriteRule ^ - [L]
 
-    # Pass through PHP backend routes
-    RewriteCond %{REQUEST_URI} ^/(admin|member|auth|includes|uploads|public|database)/ [NC]
-    RewriteRule ^ - [L]
-
-    # Single Page Application (SPA) fallback for React routes
+    # Single Page Application (SPA) fallback for React routes (/, /about, /directory, /news, /sponsors, /contact, etc.)
     RewriteRule ^.*$ index.html [L]
 </IfModule>
 
