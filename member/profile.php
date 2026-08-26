@@ -34,7 +34,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (empty($name)) {
             $error = 'Full Name is required.';
         } else {
-            $photoPath = $user['profile_photo'];
+            $photoPath = $user['profile_photo'] ?? null;
 
             // Handle Photo Removal
             if ($removePhoto && !empty($photoPath)) {
@@ -137,7 +137,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 $page_title = 'My Profile • UAP Mindoro Chapter';
 include __DIR__ . '/../includes/header.php';
 
-$currentPhoto = $user['profile_photo'] ?: ($wmRecord['photo_path'] ?? null);
+$currentPhoto = ($user['profile_photo'] ?? null) ?: ($wmRecord['photo_path'] ?? null);
 $avatarUrl = $currentPhoto ? BASE_URL . '/' . ltrim($currentPhoto, '/') : null;
 $initials = strtoupper(substr($user['name'], 0, 1) . substr(strrchr($user['name'], ' ') ?: $user['name'], 1, 1));
 ?>

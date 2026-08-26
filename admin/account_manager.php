@@ -30,7 +30,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if ($check->fetch()) {
                 $error = 'That PRC ID No. is already used by another account.';
             } else {
-                $photoPath = $target['profile_photo'];
+                $photoPath = $target['profile_photo'] ?? null;
 
                 // Handle Photo Removal
                 if ($removePhoto && !empty($photoPath)) {
@@ -177,7 +177,7 @@ include __DIR__ . '/../includes/header.php';
 <div style="display: flex; flex-direction: column; gap: 18px;">
   <?php foreach ($members as $m): ?>
     <?php
-      $photo = $m['profile_photo'] ?: $m['wm_photo_path'];
+      $photo = ($m['profile_photo'] ?? null) ?: ($m['wm_photo_path'] ?? null);
       $photoUrl = $photo ? (str_starts_with($photo, 'http') ? $photo : BASE_URL . '/' . ltrim($photo, '/')) : null;
       $initials = strtoupper(substr($m['name'], 0, 1) . substr(strrchr($m['name'], ' ') ?: $m['name'], 1, 1));
     ?>

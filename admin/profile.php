@@ -34,7 +34,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if ($chk->fetch()) {
                 $error = 'That Username / ID number is already in use by another account.';
             } else {
-                $photoPath = $user['profile_photo'];
+                $photoPath = $user['profile_photo'] ?? null;
 
                 // Handle Photo Removal
                 if ($removePhoto && !empty($photoPath)) {

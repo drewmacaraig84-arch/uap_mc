@@ -87,6 +87,18 @@ function run_sql_files(PDO $pdo, string $folder, string $label): void {
 }
 
 run_sql_files($pdo, __DIR__ . '/migrations', 'migration');
+
+// Explicit check for users.profile_photo column across all MySQL versions
+try {
+    $colCheck = $pdo->query("SHOW COLUMNS FROM users LIKE 'profile_photo'")->fetch();
+    if (!$colCheck) {
+        $pdo->exec("ALTER TABLE users ADD COLUMN profile_photo VARCHAR(255) NULL AFTER status");
+        echo "Added column 'profile_photo' to 'users' table.\n";
+    }
+} catch (Throwable $e) {
+    echo "Notice: " . $e->getMessage() . "\n";
+}
+
 run_sql_files($pdo, __DIR__ . '/seeds', 'seed');
 
 echo "Project database setup complete.\n";
