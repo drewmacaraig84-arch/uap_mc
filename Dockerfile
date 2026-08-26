@@ -33,17 +33,14 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
     && docker-php-ext-install -j$(nproc) pdo pdo_mysql mysqli gd zip \
     && a2enmod rewrite headers \
+    && a2dismod mpm_event mpm_worker 2>/dev/null || true \
+    && a2enmod mpm_prefork 2>/dev/null || true \
     && rm -rf /var/lib/apt/lists/*
 
 # Configure Apache VirtualHost with AllowOverride All and ServerName
 RUN echo "ServerName localhost" >> /etc/apache2/apache2.conf \
     && sed -ri -e 's!/var/www/html!/var/www/html!g' /etc/apache2/sites-available/*.conf \
-    && sed -ri -e 's!/var/www/!/var/www/html!g' /etc/apache2/apache2.conf \
-    && echo "<Directory /var/www/html>\n\
-    Options -Indexes +FollowSymLinks\n\
-    AllowOverride All\n\
-    Require all granted\n\
-</Directory>" > /etc/apache2/conf-available/override.conf \
+    && printf '<Directory /var/www/html>\n    Options -Indexes +FollowSymLinks\n    AllowOverride All\n    Require all granted\n</Directory>\n' > /etc/apache2/conf-available/override.conf \
     && a2enconf override
 
 WORKDIR /var/www/html
@@ -54,10 +51,13 @@ COPY . /var/www/html/
 # Copy compiled React frontend assets over the web root (index.html, assets, logo)
 COPY --from=frontend-builder /app/website/dist/ /var/www/html/
 
-# Ensure entrypoint script is executable and uploads folder is writable
-RUN chmod +x /var/www/html/docker-entrypoint.sh \
-    && mkdir -p /var/www/html/uploads \
-    && chown -R www-data:www-data /var/www/html/uploads
+# Ensure includes/config.php exists and setup permissions
+RUN if [ ! -f /var/www/html/includes/config.php ] && [ -f /var/www/html/includes/config.example.php ]; then \
+        cp /var/www/html/includes/config.example.php /var/www/html/includes/config.php; \
+    fi \
+    && chmod +x /var/www/html/docker-entrypoint.sh \
+    && mkdir -p /var/www/html/uploads /var/www/html/receipts \
+    && chown -R www-data:www-data /var/www/html/uploads /var/www/html/receipts
 
 # Expose default HTTP port
 EXPOSE 80

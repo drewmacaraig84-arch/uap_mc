@@ -1,5 +1,10 @@
 <?php
-require_once __DIR__ . '/../includes/config.php';
+$configFile = __DIR__ . '/../includes/config.php';
+$configExample = __DIR__ . '/../includes/config.example.php';
+if (!file_exists($configFile) && file_exists($configExample)) {
+    copy($configExample, $configFile);
+}
+require_once $configFile;
 
 $migrationDir = __DIR__ . '/migrations';
 $files = glob($migrationDir . '/*.sql');
