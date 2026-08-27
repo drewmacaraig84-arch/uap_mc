@@ -342,6 +342,46 @@ function is_local() {
 }
 
 /**
+ * Returns absolute public URL scheme and host (e.g. https://uapmc-production.up.railway.app)
+ * Used for generating scannable QR codes and full public link URLs.
+ */
+function get_public_base_url() {
+    // 1. Check APP_BASE_URL or BASE_URL_OVERRIDE
+    if (defined('BASE_URL_OVERRIDE') && !empty(BASE_URL_OVERRIDE) && str_starts_with(BASE_URL_OVERRIDE, 'http')) {
+        return rtrim(BASE_URL_OVERRIDE, '/');
+    }
+    $appUrl = getenv('APP_BASE_URL');
+    if (!empty($appUrl) && str_starts_with($appUrl, 'http')) {
+        return rtrim($appUrl, '/');
+    }
+    
+    // 2. Check HTTP Host from active web request
+    if (!empty($_SERVER['HTTP_HOST'])) {
+        $proto = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https') || (isset($_SERVER['SERVER_PORT']) && $_SERVER['SERVER_PORT'] == 443) ? 'https://' : 'http://';
+        $host = $_SERVER['HTTP_HOST'];
+        $base = defined('BASE_URL') ? BASE_URL : '';
+        return rtrim($proto . $host . $base, '/');
+    }
+
+    // 3. Check Railway / Cloud public domain env vars
+    $railwayDomain = getenv('RAILWAY_PUBLIC_DOMAIN');
+    if (!empty($railwayDomain)) {
+        return 'https://' . rtrim($railwayDomain, '/');
+    }
+    $railwayStatic = getenv('RAILWAY_STATIC_URL');
+    if (!empty($railwayStatic)) {
+        return 'https://' . rtrim($railwayStatic, '/');
+    }
+    
+    // 4. Default hosted fallback for UAP Mindoro production
+    if (defined('IS_HOSTED') && IS_HOSTED) {
+        return 'https://uapmc-production.up.railway.app';
+    }
+    
+    return 'http://localhost/UAP-MINDORO/uap_mc';
+}
+
+/**
  * Resolves a media file path on disk, checking multiple fallback locations.
  */
 function resolve_media_filesystem_path($relativePath) {

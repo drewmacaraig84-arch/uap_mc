@@ -8,8 +8,8 @@ if ($id <= 0) {
     die("Invalid directory profile ID.");
 }
 
-$stmt = $pdo->prepare("SELECT * FROM website_members WHERE id = ?");
-$stmt->execute([$id]);
+$stmt = $pdo->prepare("SELECT * FROM website_members WHERE id = ? OR user_id = ?");
+$stmt->execute([$id, $id]);
 $wm = $stmt->fetch();
 
 if (!$wm) {

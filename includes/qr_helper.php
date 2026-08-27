@@ -151,8 +151,9 @@ function generate_member_directory_qr(PDO $pdo, $websiteMemberId, $forceRegenera
         return $relativePath;
     }
 
-    // Public Profile URL
-    $profileUrl = rtrim(BASE_URL, '/') . '/profile/' . $websiteMemberId;
+    // Public Profile URL with full scheme & domain
+    $publicBase = function_exists('get_public_base_url') ? get_public_base_url() : 'https://uapmc-production.up.railway.app';
+    $profileUrl = rtrim($publicBase, '/') . '/profile/' . $websiteMemberId;
 
     $pngData = ChapterQRCode::generatePng($profileUrl, 500);
     if ($pngData) {

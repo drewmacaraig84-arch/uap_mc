@@ -79,9 +79,13 @@ function run_sql_files(PDO $pdo, string $folder, string $label): void {
             $pdo->exec($sql);
             echo "Ran {$label}: " . basename($file) . "\n";
         } catch (PDOException $e) {
-            echo "{$label} failed: " . basename($file) . "\n";
-            echo $e->getMessage() . "\n";
-            exit(1);
+            if ($e->getCode() === '42S21' || str_contains($e->getMessage(), 'Duplicate column') || str_contains($e->getMessage(), 'already exists')) {
+                echo "Already applied {$label}: " . basename($file) . "\n";
+            } else {
+                echo "{$label} failed: " . basename($file) . "\n";
+                echo $e->getMessage() . "\n";
+                exit(1);
+            }
         }
     }
 }

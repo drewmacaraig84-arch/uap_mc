@@ -9,8 +9,8 @@ try {
     $stmt = $pdo->prepare("SELECT wm.*, COALESCE(NULLIF(u.profile_photo, ''), NULLIF(wm.photo_path, '')) as photo_path, u.id as user_id 
                           FROM website_members wm 
                           LEFT JOIN users u ON wm.user_id = u.id 
-                          WHERE wm.id = ? AND wm.is_published = 1");
-    $stmt->execute([$id]);
+                          WHERE (wm.id = ? OR wm.user_id = ?) AND wm.is_published = 1");
+    $stmt->execute([$id, $id]);
     $member = $stmt->fetch();
     if (!$member) { http_response_code(404); echo json_encode(['error' => 'Not found']); exit; }
 
