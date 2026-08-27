@@ -248,36 +248,6 @@ if (!empty($profile['projects_json'])) {
     if (is_array($decodedProjects)) $projects = $decodedProjects;
 }
 
-// Fallback from legacy gallery if projects is empty
-if (empty($projects)) {
-    $gallery = [];
-    if (!empty($profile['gallery_json'])) {
-        $decoded = json_decode($profile['gallery_json'], true);
-        if (is_array($decoded)) $gallery = $decoded;
-    } elseif (!empty($profile['photo_path'])) {
-        $gallery[] = [
-            'path' => $profile['photo_path'],
-            'description' => $profile['photo_description'] ?? ''
-        ];
-    }
-    if (!empty($gallery)) {
-        $legacyPhotos = array_map(function($g) { return $g['path'] ?? ''; }, $gallery);
-        $legacyPhotos = array_values(array_filter($legacyPhotos));
-        if (!empty($legacyPhotos)) {
-            $projects[] = [
-                'id' => 'proj_1',
-                'title' => !empty($gallery[0]['description']) ? $gallery[0]['description'] : ($profile['name'] . ' Architectural Project'),
-                'category' => !empty($profile['specialty']) ? strtoupper(explode(',', $profile['specialty'])[0]) : 'RESIDENTIAL',
-                'location' => $profile['location'] ?? 'Mindoro',
-                'description' => $profile['achievements'] ?? '',
-                'project_team' => $profile['name'] ?? '',
-                'cover_photo' => $legacyPhotos[0],
-                'photos' => array_slice($legacyPhotos, 0, 5)
-            ];
-        }
-    }
-}
-
 $page_title = 'Website Directory Profile';
 include __DIR__ . '/../includes/header.php';
 ?>
@@ -523,20 +493,16 @@ include __DIR__ . '/../includes/header.php';
         </div>
 
         <?php 
-          // If no projects exist, initialize with 1 empty template item
-          $renderProjects = !empty($projects) ? $projects : [
-            [
-              'id' => 'proj_init_1',
-              'title' => '',
-              'category' => 'RESIDENTIAL',
-              'location' => $profile['location'] ?? 'Mindoro',
-              'description' => '',
-              'project_team' => $profile['name'] ?? '',
-              'cover_photo' => '',
-              'photos' => []
-            ]
-          ];
+          $renderProjects = !empty($projects) ? $projects : [];
         ?>
+
+        <div id="noProjectsNotice" style="<?php echo empty($renderProjects) ? 'display:block;' : 'display:none;'; ?> padding: 28px 20px; text-align: center; background: var(--field-bg, rgba(0,0,0,0.18)); border: 1px dashed var(--border-color, rgba(255,255,255,0.15)); border-radius: 12px; margin-bottom: 16px;">
+          <div style="width: 44px; height: 44px; border-radius: 50%; background: rgba(245,158,11,0.12); color: var(--accent-primary, #f5b800); display: inline-flex; align-items: center; justify-content: center; margin-bottom: 10px;">
+            <?php echo icon('camera', '', 20); ?>
+          </div>
+          <strong style="display:block; font-size:14px; color:var(--text-primary); margin-bottom:4px;">No completed works added yet</strong>
+          <p class="muted" style="font-size:12.5px; margin:0 auto; max-width:480px;">Click the <strong>"+ Add Completed Work / Project"</strong> button below to manually showcase your architectural projects with custom cover photos, narratives, and collaborators.</p>
+        </div>
 
         <div id="projectsContainer" style="display: flex; flex-direction: column; gap: 20px; width: 100%;">
           <?php foreach ($renderProjects as $pIdx => $proj): ?>
@@ -678,12 +644,22 @@ include __DIR__ . '/../includes/header.php';
         if (card) {
           card.remove();
         }
+        var container = document.getElementById('projectsContainer');
+        var notice = document.getElementById('noProjectsNotice');
+        if (container && notice) {
+          if (container.querySelectorAll('.project-card-item').length === 0) {
+            notice.style.display = 'block';
+          }
+        }
       };
 
       var btnAdd = document.getElementById('btnAddProject');
       if (btnAdd) {
         btnAdd.addEventListener('click', function(e) {
           e.preventDefault();
+          var notice = document.getElementById('noProjectsNotice');
+          if (notice) notice.style.display = 'none';
+
           projectCount++;
           var timestamp = Date.now();
           var pIdx = 'new_' + timestamp;

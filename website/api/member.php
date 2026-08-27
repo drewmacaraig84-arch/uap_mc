@@ -52,8 +52,6 @@ try {
             }
             $gallery = $decoded;
         }
-    } elseif ($member['photo_url']) {
-        $gallery = [['url' => $member['photo_url'], 'description' => $member['photo_description'] ?? '']];
     }
     $member['gallery'] = $gallery;
 
@@ -78,24 +76,6 @@ try {
                 $p['photos'] = $photoUrls;
             }
             $projects = $decodedProjects;
-        }
-    }
-
-    // Fallback: If projects is empty but legacy gallery exists, convert into a Completed Work
-    if (empty($projects) && !empty($gallery)) {
-        $legacyPhotos = array_map(function($g) { return $g['url'] ?? ''; }, $gallery);
-        $legacyPhotos = array_values(array_filter($legacyPhotos));
-        if (!empty($legacyPhotos)) {
-            $projects[] = [
-                'id' => 'proj_1',
-                'title' => !empty($gallery[0]['description']) ? $gallery[0]['description'] : ($member['name'] . ' Showcase Project'),
-                'category' => !empty($member['specialty']) ? strtoupper(explode(',', $member['specialty'])[0]) : 'RESIDENTIAL',
-                'location' => $member['location'] ?? 'Mindoro',
-                'description' => $member['achievements'] ?? 'Architectural design, space planning, and development project.',
-                'project_team' => $member['name'],
-                'cover_url' => $legacyPhotos[0],
-                'photos' => array_slice($legacyPhotos, 0, 5)
-            ];
         }
     }
     $member['projects'] = $projects;

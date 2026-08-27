@@ -167,7 +167,7 @@ export default function Profile() {
         </div>
 
         {/* COMPLETED WORKS */}
-        {((m.projects && m.projects.length > 0) || (m.gallery && m.gallery.length > 0)) && (
+        {m.projects && m.projects.length > 0 && (
           <div className="profile-completed-works-section reveal-pop">
             <div className="completed-works-header">
               <p className="eyebrow" style={{ letterSpacing: '0.14em', textTransform: 'uppercase', marginBottom: 4 }}>Portfolio &amp; Architectural Practice</p>
@@ -177,15 +177,8 @@ export default function Profile() {
             </div>
             
             <div className="completed-works-grid reveal-stagger">
-              {(m.projects && m.projects.length > 0 ? m.projects : m.gallery.map((g, idx) => ({
-                id: `proj_${idx + 1}`,
-                title: g.description || `${m.name} Architectural Work`,
-                category: 'RESIDENTIAL',
-                location: m.location,
-                cover_url: g.url,
-                photos: [g.url]
-              }))).map((proj, pIdx) => {
-                const cover = proj.cover_url || proj.photos?.[0] || m.photo_url;
+              {m.projects.map((proj, pIdx) => {
+                const cover = proj.cover_url || proj.photos?.[0];
                 const projId = proj.id || `proj_${pIdx + 1}`;
                 return (
                   <Link
