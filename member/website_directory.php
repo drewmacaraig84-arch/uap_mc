@@ -196,6 +196,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'save_
             $projectsJson
         ]);
 
+        // Automatically generate public QR code for this website directory member
+        if (file_exists(__DIR__ . '/../includes/qr_helper.php')) {
+            require_once __DIR__ . '/../includes/qr_helper.php';
+            $fStmt = $pdo->prepare("SELECT id FROM website_members WHERE user_id = ?");
+            $fStmt->execute([$userId]);
+            $wmId = (int)$fStmt->fetchColumn();
+            if ($wmId > 0 && function_exists('generate_member_directory_qr')) {
+                generate_member_directory_qr($pdo, $wmId, true);
+            }
+        }
+
         $success = 'Your website directory profile & completed works portfolio have been published!';
     }
 }

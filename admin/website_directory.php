@@ -121,6 +121,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $pdo->prepare("UPDATE website_members SET is_published = 1 WHERE user_id = ?")->execute([$userId]);
             }
 
+            // Auto-generate QR code for unlocked member
+            if (file_exists(__DIR__ . '/../includes/qr_helper.php')) {
+                require_once __DIR__ . '/../includes/qr_helper.php';
+                $fStmt = $pdo->prepare("SELECT id FROM website_members WHERE user_id = ?");
+                $fStmt->execute([$userId]);
+                $wmId = (int)$fStmt->fetchColumn();
+                if ($wmId > 0 && function_exists('generate_member_directory_qr')) {
+                    generate_member_directory_qr($pdo, $wmId, true);
+                }
+            }
+
             $success = 'Directory feature manually unlocked for member.';
         }
     }

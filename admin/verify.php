@@ -82,6 +82,17 @@ try {
                 } else {
                     $pdo->prepare("UPDATE website_members SET is_published = 1 WHERE user_id = ?")->execute([$daUser]);
                 }
+
+                // Auto-generate QR code for newly unlocked directory member
+                if (file_exists(__DIR__ . '/../includes/qr_helper.php')) {
+                    require_once __DIR__ . '/../includes/qr_helper.php';
+                    $fStmt = $pdo->prepare("SELECT id FROM website_members WHERE user_id = ?");
+                    $fStmt->execute([$daUser]);
+                    $wmId = (int)$fStmt->fetchColumn();
+                    if ($wmId > 0 && function_exists('generate_member_directory_qr')) {
+                        generate_member_directory_qr($pdo, $wmId, true);
+                    }
+                }
             }
         }
 
