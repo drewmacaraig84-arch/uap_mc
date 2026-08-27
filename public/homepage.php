@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/../includes/config.php';
 require_once __DIR__ . '/../includes/auth.php';
+require_once __DIR__ . '/../includes/icons.php';
 
 $pageTitle = 'UAP - Mindoro Chapter | United Architects of the Philippines';
 
@@ -649,7 +650,9 @@ $newsItems = [
                     </div>
                     <?php if (empty($members)): ?>
                         <div style="text-align:center; padding: 3rem 1.5rem; color:var(--text-muted);">
-                            <span style="font-size:2.4rem; display:block; margin-bottom:8px;">🏛️</span>
+                            <div style="width: 56px; height: 56px; border-radius: 14px; background: rgba(245,158,11,0.12); color: var(--accent-yellow, #f5b800); display: inline-flex; align-items: center; justify-content: center; margin-bottom: 12px;">
+                                <?php echo icon('landmark', '', 32); ?>
+                            </div>
                             <strong style="color:#ffffff; font-size:1.1rem; display:block; margin-bottom:6px;">No Chapter Directory Members Yet</strong>
                             <p style="font-size:0.88rem; max-width:480px; margin:0 auto; line-height:1.6;">
                                 The chapter directory is updated as members apply, verify annual dues, and unlock their featured website profile.
@@ -768,10 +771,10 @@ $newsItems = [
             <div class="footer-col">
                 <h4>Contact Us</h4>
                 <div class="contact-details">
-                    <p>📍 <strong>Address:</strong> Calapan City, Oriental Mindoro, Philippines</p>
-                    <p>📧 <strong>Email:</strong> uapmindorochapter@gmail.com</p>
-                    <p>📞 <strong>Phone:</strong> +63 917 123 4567</p>
-                    <p>🌐 <strong>Facebook:</strong> <a href="https://www.facebook.com/UAPMindoroChapter/" target="_blank" style="color: var(--accent-yellow);">facebook.com/UAPMindoroChapter</a></p>
+                    <p style="display:flex; align-items:center; gap:8px;"><?php echo icon('map_pin', '', 14); ?> <span><strong>Address:</strong> Calapan City, Oriental Mindoro, Philippines</span></p>
+                    <p style="display:flex; align-items:center; gap:8px;"><?php echo icon('mail', '', 14); ?> <span><strong>Email:</strong> uapmindorochapter@gmail.com</span></p>
+                    <p style="display:flex; align-items:center; gap:8px;"><?php echo icon('phone', '', 14); ?> <span><strong>Phone:</strong> +63 917 123 4567</span></p>
+                    <p style="display:flex; align-items:center; gap:8px;"><?php echo icon('facebook', '', 14); ?> <span><strong>Facebook:</strong> <a href="https://www.facebook.com/UAPMindoroChapter/" target="_blank" style="color: var(--accent-yellow);">facebook.com/UAPMindoroChapter</a></span></p>
                 </div>
             </div>
 

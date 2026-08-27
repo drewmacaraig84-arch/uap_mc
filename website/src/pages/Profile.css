@@ -126,49 +126,128 @@
 .profile-dl dt { color: var(--c-text-3); font-weight: 600; white-space: nowrap; }
 .profile-dl dd { color: var(--c-text); }
 
-/* Gallery */
-.profile-gallery-section { margin-top: var(--space-5); }
+/* Completed Works Section (Matching Image 3) */
+.profile-completed-works-section {
+  margin-top: var(--space-8, 48px);
+  padding-top: var(--space-6, 32px);
+  border-top: 1px solid var(--c-border, rgba(255, 255, 255, 0.08));
+}
 
-.profile-gallery {
+.completed-works-header {
+  margin-bottom: var(--space-5, 24px);
+}
+
+.completed-works-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: var(--space-3);
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: var(--space-6, 28px);
 }
 
-.gallery-thumb {
-  position: relative;
-  aspect-ratio: 4/3;
-  border-radius: var(--r-md);
+.completed-work-card {
+  display: block;
+  text-decoration: none;
+  border-radius: var(--r-xl, 16px);
   overflow: hidden;
-  border: 1px solid var(--c-border);
-  cursor: pointer;
-  background: var(--c-bg-3);
-  transition: transform var(--t-med) var(--ease), box-shadow var(--t-med);
+  background: var(--c-bg-2, #0c1122);
+  border: 1px solid var(--c-border, rgba(255, 255, 255, 0.1));
+  padding: 0;
+  transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1), border-color 0.3s ease, box-shadow 0.35s ease;
+  position: relative;
 }
 
-.gallery-thumb:hover { transform: scale(1.03); box-shadow: var(--shadow-gold); }
+.completed-work-card:hover {
+  transform: translateY(-6px);
+  border-color: var(--c-border-gold, #f59e0b);
+  box-shadow: 0 16px 36px -10px rgba(0, 0, 0, 0.7), 0 0 20px rgba(245, 158, 11, 0.2);
+}
 
-.gallery-thumb img {
+.completed-work-photo-wrap {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 11;
+  overflow: hidden;
+  background: #000;
+}
+
+.completed-work-photo-wrap img {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  transition: transform var(--t-slow) var(--ease);
+  display: block;
+  transition: transform 0.6s cubic-bezier(0.25, 1, 0.5, 1);
 }
 
-.gallery-thumb:hover img { transform: scale(1.08); }
+.completed-work-card:hover .completed-work-photo-wrap img {
+  transform: scale(1.08);
+}
 
-.gallery-thumb-overlay {
+/* Hover Overlay matching Image 3 */
+.completed-work-hover-overlay {
   position: absolute;
   inset: 0;
-  background: rgba(0,0,0,0.5);
+  background: linear-gradient(180deg, rgba(6, 9, 19, 0.2) 0%, rgba(6, 9, 19, 0.85) 60%, rgba(6, 9, 19, 0.98) 100%);
   display: flex;
-  align-items: center;
-  justify-content: center;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: 24px;
   opacity: 0;
-  transition: opacity var(--t-med);
+  transition: opacity 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+  backdrop-filter: blur(2px);
 }
 
-.gallery-thumb:hover .gallery-thumb-overlay { opacity: 1; }
+.completed-work-card:hover .completed-work-hover-overlay {
+  opacity: 1;
+}
+
+.completed-work-hover-content {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  transform: translateY(12px);
+  transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.completed-work-card:hover .completed-work-hover-content {
+  transform: translateY(0);
+}
+
+.completed-work-hover-cat {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--c-gold, #f59e0b);
+}
+
+.completed-work-hover-title {
+  font-family: var(--f-display, 'Cinzel', Georgia, serif);
+  font-size: 1.15rem;
+  font-weight: 700;
+  line-height: 1.25;
+  color: #fff;
+  margin: 0;
+  letter-spacing: 0.02em;
+}
+
+.completed-work-hover-loc {
+  font-size: 0.78rem;
+  color: var(--c-text-2, #94a3b8);
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.completed-work-hover-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--c-gold, #f59e0b);
+  margin-top: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
 
 @media (max-width: 768px) {
   .profile-hero { 
@@ -190,15 +269,19 @@
   .profile-details-grid { 
     grid-template-columns: 1fr; 
   }
-  .profile-gallery {
-    grid-template-columns: repeat(2, 1fr);
+  .completed-works-grid {
+    grid-template-columns: 1fr;
+  }
+  .completed-work-hover-overlay {
+    opacity: 1;
+    background: linear-gradient(180deg, transparent 40%, rgba(6, 9, 19, 0.9) 100%);
+  }
+  .completed-work-hover-content {
+    transform: translateY(0);
   }
 }
 
 @media (max-width: 480px) {
-  .profile-gallery {
-    grid-template-columns: 1fr;
-  }
   .profile-dl {
     grid-template-columns: 1fr;
     gap: 4px 0;

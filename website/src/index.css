@@ -481,16 +481,17 @@ h4, h5, h6 { font-family: var(--f-body); font-weight: 700; }
   flex: 1;
 }
 
-/* ======================== SPONSOR RAIL CLEARANCE ======================== */
+/* ======================== SPONSOR RAIL CLEARANCE (DESKTOP 1/4 SCREEN) ======================== */
 @media (min-width: 901px) {
   :root {
-    --sponsor-rail-w: 138px;
+    --sponsor-rail-w: clamp(260px, 25vw, 440px);
   }
 
-  /* Main page content area has exact clearance so content stays close without overlapping */
+  /* Main page content area, page container, and footer have exact clearance so content stays clean without overlapping */
   main,
-  .page-container {
-    padding-right: var(--sponsor-rail-w);
+  .page-container,
+  .footer {
+    padding-right: var(--sponsor-rail-w) !important;
     box-sizing: border-box;
   }
 }

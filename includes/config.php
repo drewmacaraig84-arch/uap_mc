@@ -322,7 +322,91 @@ if ($baseUrl === '/' || $baseUrl === '\\' || $baseUrl === '.' || empty($baseUrl)
 
 define('BASE_URL', defined('BASE_URL_OVERRIDE') ? BASE_URL_OVERRIDE : $baseUrl);
 
+// ==============================================================================
+// HOSTED VS LOCAL ENVIRONMENT HANDLER & MEDIA URL RESOLVER
+// ==============================================================================
+if (!defined('IS_HOSTED')) {
+    $isRailway = !empty(getenv('RAILWAY_ENVIRONMENT')) || !empty(getenv('RAILWAY_PROJECT_ID')) || !empty(getenv('RAILWAY_STATIC_URL'));
+    $isDocker  = file_exists('/.dockerenv') || file_exists('/run/.containerenv');
+    $isCloud   = (isset($_SERVER['HTTP_HOST']) && (str_contains($_SERVER['HTTP_HOST'], 'railway.app') || str_contains($_SERVER['HTTP_HOST'], 'render.com') || str_contains($_SERVER['HTTP_HOST'], 'fly.dev')));
+    define('IS_HOSTED', $isRailway || $isDocker || $isCloud);
+    define('IS_LOCAL', !IS_HOSTED);
+}
+
+function is_hosted() {
+    return defined('IS_HOSTED') && IS_HOSTED;
+}
+
+function is_local() {
+    return !is_hosted();
+}
+
+/**
+ * Resolves a media file path on disk, checking multiple fallback locations.
+ */
+function resolve_media_filesystem_path($relativePath) {
+    if (empty($relativePath)) return null;
+    $cleanPath = ltrim(str_replace('\\', '/', $relativePath), '/');
+    $root = dirname(__DIR__);
+    
+    if (file_exists($root . '/' . $cleanPath)) {
+        return $root . '/' . $cleanPath;
+    }
+    
+    $filename = basename($cleanPath);
+    $candidates = [
+        $root . '/uploads/' . $filename,
+        $root . '/uploads/qr_codes/' . $filename,
+        $root . '/uploads/avatars/' . $filename,
+        $root . '/uploads/members/' . $filename,
+        $root . '/uploads/sponsors/' . $filename,
+        $root . '/uploads/proofs/' . $filename,
+        $root . '/public/' . $filename,
+    ];
+    
+    foreach ($candidates as $cand) {
+        if (file_exists($cand)) {
+            return $cand;
+        }
+    }
+    return null;
+}
+
+/**
+ * Generates the correct web URL for any media asset (QR code, avatar, proof, logo, sponsor).
+ * Automatically prepends BASE_URL, checks alternate directories if needed, and applies fallback.
+ */
+function media_url($path, $fallback = '') {
+    if (empty($path)) {
+        return $fallback ? (str_starts_with($fallback, 'http') ? $fallback : BASE_URL . '/' . ltrim($fallback, '/')) : '';
+    }
+    if (str_starts_with($path, 'http://') || str_starts_with($path, 'https://') || str_starts_with($path, 'data:')) {
+        return $path;
+    }
+    
+    $cleanPath = ltrim(str_replace('\\', '/', $path), '/');
+    $root = dirname(__DIR__);
+    
+    if (file_exists($root . '/' . $cleanPath)) {
+        return BASE_URL . '/' . $cleanPath;
+    }
+    
+    $fsPath = resolve_media_filesystem_path($cleanPath);
+    if ($fsPath) {
+        $cleanRoot = str_replace('\\', '/', $root);
+        $cleanFs = str_replace('\\', '/', $fsPath);
+        $foundRel = ltrim(str_replace($cleanRoot, '', $cleanFs), '/');
+        return BASE_URL . '/' . $foundRel;
+    }
+    
+    if ($fallback && !file_exists($root . '/' . $cleanPath)) {
+        return str_starts_with($fallback, 'http') ? $fallback : BASE_URL . '/' . ltrim($fallback, '/');
+    }
+    return BASE_URL . '/' . $cleanPath;
+}
+
 require_once __DIR__ . '/csrf.php';
 require_once __DIR__ . '/flash.php';
 require_once __DIR__ . '/dues_service.php';
+
 

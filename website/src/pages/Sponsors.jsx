@@ -1,18 +1,21 @@
-import { useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useApi } from '../hooks/useApi';
 import {
   IconStar,
+  IconSparkles,
   IconHandshake,
   IconExternalLink,
   IconBuilding,
   IconVerified,
   IconDraftingCompass,
+  IconGrid
 } from '../components/Icons';
 import './Sponsors.css';
 
 export default function Sponsors() {
   const { data: sponsors, loading, error } = useApi('/api/sponsors.php');
+  const [activeTier, setActiveTier] = useState('all');
   const location = useLocation();
 
   // Scroll to targeted sponsor if hash provided
@@ -27,6 +30,15 @@ export default function Sponsors() {
 
   const items = sponsors && Array.isArray(sponsors) ? sponsors : [];
 
+  const platinumCount = items.filter((s) => s.is_platinum === 1).length;
+  const standardCount = items.length - platinumCount;
+
+  const filteredItems = items.filter((s) => {
+    if (activeTier === 'platinum') return s.is_platinum === 1;
+    if (activeTier === 'standard') return !s.is_platinum;
+    return true;
+  });
+
   return (
     <main className="page-container sponsors-page">
       {/* Header */}
@@ -37,10 +49,41 @@ export default function Sponsors() {
             Featured <span className="text-gold">Partners</span>
           </h1>
           <div className="section-divider reveal" style={{ margin: '20px auto 24px' }} />
-          <p className="body-lg muted reveal" style={{ maxWidth: 640, margin: '0 auto' }}>
+          <p className="body-lg muted reveal" style={{ maxWidth: 680, margin: '0 auto' }}>
             Empowering architectural innovation in Mindoro through strong collaborations
-            with industry-leading material manufacturers, suppliers, and professional organizations.
+            with industry-leading material manufacturers, suppliers, and allied professional organizations.
           </p>
+
+          {/* Filter Bar */}
+          {!loading && items.length > 0 && (
+            <div className="sponsors-filter-bar reveal" style={{ marginTop: 28 }}>
+              <button
+                type="button"
+                className={`filter-pill-btn ${activeTier === 'all' ? 'active' : ''}`}
+                onClick={() => setActiveTier('all')}
+              >
+                <span>All Partners</span>
+                <span className="filter-pill-count">{items.length}</span>
+              </button>
+              <button
+                type="button"
+                className={`filter-pill-btn platinum-filter ${activeTier === 'platinum' ? 'active' : ''}`}
+                onClick={() => setActiveTier('platinum')}
+              >
+                <IconSparkles size={13} className="platinum-star" />
+                <span>Platinum Partners</span>
+                <span className="filter-pill-count">{platinumCount}</span>
+              </button>
+              <button
+                type="button"
+                className={`filter-pill-btn ${activeTier === 'standard' ? 'active' : ''}`}
+                onClick={() => setActiveTier('standard')}
+              >
+                <span>Industry Partners</span>
+                <span className="filter-pill-count">{standardCount}</span>
+              </button>
+            </div>
+          )}
         </div>
       </section>
 
@@ -57,71 +100,102 @@ export default function Sponsors() {
                 <div key={i} className="skeleton" style={{ height: 280, borderRadius: 'var(--r-lg)' }} />
               ))}
             </div>
-          ) : items.length > 0 ? (
+          ) : filteredItems.length > 0 ? (
             <div className="grid-3 sponsors-grid reveal-stagger">
-              {items.map((sponsor) => (
-                <div
-                  key={sponsor.id}
-                  id={`sponsor-${sponsor.id}`}
-                  className="sponsor-card"
-                >
-                  <div className="sponsor-card-top">
-                    <div className="sponsor-card-img-wrap">
-                      {sponsor.logo_url ? (
-                        <img src={sponsor.logo_url} alt={sponsor.name} className="sponsor-card-img" />
+              {filteredItems.map((sponsor) => {
+                const isPlatinum = sponsor.is_platinum === 1;
+                const productCount = sponsor.products ? sponsor.products.length : 0;
+
+                return (
+                  <div
+                    key={sponsor.id}
+                    id={`sponsor-${sponsor.id}`}
+                    className={`sponsor-card ${isPlatinum ? 'platinum-card' : ''}`}
+                  >
+                    <div className="sponsor-card-top">
+                      <div className="sponsor-card-img-wrap">
+                        {sponsor.logo_url ? (
+                          <img src={sponsor.logo_url} alt={sponsor.name} className="sponsor-card-img" />
+                        ) : (
+                          <div className="sponsor-card-placeholder">
+                            {sponsor.name.slice(0, 2).toUpperCase()}
+                          </div>
+                        )}
+                      </div>
+                      
+                      {isPlatinum ? (
+                        <span className="sponsor-tier-badge platinum-badge">
+                          <IconSparkles size={12} />
+                          Platinum Partner
+                        </span>
                       ) : (
-                        <div className="sponsor-card-placeholder">
-                          {sponsor.name.slice(0, 2).toUpperCase()}
+                        <span className="sponsor-tier-badge">
+                          <IconStar size={12} />
+                          Chapter Partner
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="sponsor-card-body">
+                      <h3 className="sponsor-card-title">{sponsor.name}</h3>
+                      <p className="sponsor-card-desc">
+                        {sponsor.description ||
+                          'Official industry partner collaborating with UAP Mindoro Chapter to promote excellence and quality construction.'}
+                      </p>
+
+                      {isPlatinum && productCount > 0 && (
+                        <div className="platinum-products-pill">
+                          <IconGrid size={13} />
+                          <span>{productCount} Featured Product{productCount > 1 ? 's' : ''}</span>
                         </div>
                       )}
                     </div>
-                    <span className="sponsor-tier-badge">
-                      <IconStar size={12} />
-                      Chapter Partner
-                    </span>
-                  </div>
 
-                  <div className="sponsor-card-body">
-                    <h3 className="sponsor-card-title">{sponsor.name}</h3>
-                    <p className="sponsor-card-desc">
-                      {sponsor.description ||
-                        'Official industry partner collaborating with UAP Mindoro Chapter to promote excellence and quality construction.'}
-                    </p>
-                  </div>
+                    <div className="sponsor-card-footer">
+                      <div className="sponsor-btn-group">
+                        <Link
+                          to={`/partners/${sponsor.id}`}
+                          className={`btn ${isPlatinum ? 'btn-gold' : 'btn-outline'} sponsor-btn-details`}
+                        >
+                          <span>{isPlatinum ? 'View Details & Showcase' : 'View Details'}</span>
+                          <span style={{ fontSize: '14px' }}>&rarr;</span>
+                        </Link>
 
-                  <div className="sponsor-card-footer">
-                    {sponsor.url ? (
-                      <a
-                        href={sponsor.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="btn btn-outline sponsor-btn"
-                      >
-                        Visit Website
-                        <IconExternalLink size={14} />
-                      </a>
-                    ) : (
-                      <Link to="/contact" className="btn btn-ghost sponsor-btn">
-                        Inquire via Secretariat
-                      </Link>
-                    )}
+                        {sponsor.url && (
+                          <a
+                            href={sponsor.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="btn btn-ghost sponsor-btn-link"
+                            title={`Visit official ${sponsor.name} website`}
+                          >
+                            <IconExternalLink size={15} />
+                          </a>
+                        )}
+                      </div>
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           ) : (
             <div className="sponsors-empty reveal-pop text-center">
               <div className="sponsors-empty-icon">
                 <IconHandshake size={56} />
               </div>
-              <h2 className="heading-1">Partner with UAP Mindoro Chapter</h2>
+              <h2 className="heading-1">No Partners in this Category</h2>
               <p className="muted" style={{ maxWidth: 520, margin: '14px auto 28px' }}>
-                We are actively welcoming building material manufacturers, suppliers, and allied industry
-                leaders for Fiscal Year 2026–2027 sponsorship and partnership programs.
+                {activeTier === 'platinum'
+                  ? 'No Platinum Partners registered yet.'
+                  : 'No industry partners found in this filter view.'}
               </p>
-              <Link to="/contact" className="btn btn-gold">
-                Inquire for Corporate Sponsorship
-              </Link>
+              <button
+                type="button"
+                onClick={() => setActiveTier('all')}
+                className="btn btn-gold"
+              >
+                Show All Partners
+              </button>
             </div>
           )}
         </div>

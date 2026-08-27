@@ -178,7 +178,7 @@ document.addEventListener('DOMContentLoaded', function() {
     <div style="padding:24px;">
       <div style="display:flex;align-items:center;gap:14px;margin-bottom:14px;">
         <div id="uapConfirmIcon" style="width:42px;height:42px;border-radius:10px;display:flex;align-items:center;justify-content:center;background:rgba(245,158,11,0.15);color:var(--accent-primary);flex-shrink:0;">
-          <?php echo function_exists('icon') ? icon('alert', '', 20) : '⚠️'; ?>
+          <?php echo function_exists('icon') ? icon('alert', '', 20) : '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>'; ?>
         </div>
         <h3 id="uapConfirmTitle" style="margin:0;font-size:17px;font-weight:700;color:var(--text-primary);">Confirm Action</h3>
       </div>

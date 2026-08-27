@@ -1,5 +1,7 @@
 <?php
 require_once __DIR__ . '/config.php';
+require_once __DIR__ . '/../../includes/auth.php';
+
 try {
     $toUrl = function($path) {
         if (!$path) return null;
@@ -7,14 +9,23 @@ try {
         return '/' . ltrim($path, '/');
     };
 
-    $members = $pdo->query("SELECT wm.id, wm.name, wm.id_number, wm.role_title, wm.specialty, wm.location, wm.achievements, wm.awards, COALESCE(wm.photo_path, u.profile_photo) as photo_path 
+    $rows = $pdo->query("SELECT wm.id, wm.name, wm.id_number, wm.role_title, wm.specialty, wm.location, wm.company_name, wm.link_url, wm.link_type, wm.achievements, wm.awards, wm.user_id, COALESCE(NULLIF(u.profile_photo, ''), NULLIF(wm.photo_path, '')) as photo_path 
                            FROM website_members wm 
                            LEFT JOIN users u ON wm.user_id = u.id 
                            WHERE wm.is_published = 1 
                            ORDER BY wm.name ASC")->fetchAll();
-    foreach ($members as &$m) {
+    
+    $members = [];
+    foreach ($rows as $m) {
+        if (!empty($m['user_id']) && function_exists('is_good_member') && !is_good_member($pdo, (int)$m['user_id'])) {
+            continue; // Exclude if good standing is revoked or overdue
+        }
         $m['photo_url'] = $toUrl($m['photo_path']);
         unset($m['photo_path']);
+        if (!empty($m['link_url']) && function_exists('detect_social_link_type')) {
+            $m['link_type'] = detect_social_link_type($m['link_url'], $m['link_type'] ?? 'auto');
+        }
+        $members[] = $m;
     }
     echo json_encode($members);
 } catch (Exception $e) {

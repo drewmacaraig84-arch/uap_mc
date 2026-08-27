@@ -3,9 +3,9 @@ import { Link } from 'react-router-dom';
 import { useApi } from '../hooks/useApi';
 import ArchitectCard from '../components/ArchitectCard';
 import NewsCard from '../components/NewsCard';
+import AutoCarousel from '../components/AutoCarousel';
 import { IconBuilding, IconLeaf, IconHandshake } from '../components/Icons';
 import './Home.css';
-
 
 const HeroCanvas = lazy(() => import('../components/HeroCanvas'));
 
@@ -21,8 +21,8 @@ export default function Home() {
   const { data: members, loading: mLoad } = useApi('/api/members.php');
   const { data: news, loading: nLoad } = useApi('/api/news.php');
 
-  const featured = members?.slice(0, 3) || [];
-  const latestNews = news?.slice(0, 3) || [];
+  const featured = members || [];
+  const latestNews = news || [];
 
   return (
     <main>
@@ -144,16 +144,21 @@ export default function Home() {
               {[1,2,3].map(i => <div key={i} className="skeleton" style={{ height: 340, borderRadius: 'var(--r-lg)' }} />)}
             </div>
           ) : featured.length > 0 ? (
-            <div className="grid-3 featured-grid reveal-stagger">
-              {featured.map(m => <ArchitectCard key={m.id} member={m} />)}
-            </div>
+            <AutoCarousel
+              items={featured}
+              renderItem={(m) => <ArchitectCard member={m} />}
+              cardMinWidth={280}
+              gap={24}
+              autoSlideInterval={3000}
+              emptyText="No architects in the directory yet. Check back soon."
+            />
           ) : (
             <div className="empty-state reveal-pop">
               <p className="muted">No architects in the directory yet. Check back soon.</p>
             </div>
           )}
 
-          <div className="text-center reveal-pop" style={{ marginTop: '40px' }}>
+          <div className="text-center reveal-pop" style={{ marginTop: '24px' }}>
             <Link to="/directory" className="btn btn-ghost">
               View All Architects →
             </Link>
@@ -177,9 +182,14 @@ export default function Home() {
               {[1,2,3].map(i => <div key={i} className="skeleton" style={{ height: 200, borderRadius: 'var(--r-lg)' }} />)}
             </div>
           ) : latestNews.length > 0 ? (
-            <div className="grid-3 reveal-stagger">
-              {latestNews.map(n => <NewsCard key={n.id} item={n} />)}
-            </div>
+            <AutoCarousel
+              items={latestNews}
+              renderItem={(n) => <NewsCard item={n} />}
+              cardMinWidth={320}
+              gap={24}
+              autoSlideInterval={3000}
+              emptyText="No announcements at this time."
+            />
           ) : (
             <div className="empty-state reveal-pop">
               <p className="muted">No announcements at this time.</p>

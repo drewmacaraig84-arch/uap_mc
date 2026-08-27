@@ -80,12 +80,100 @@
   font-weight: 500;
 }
 
-.arch-card-location {
+.arch-card-company {
   display: flex;
   align-items: center;
+  gap: 6px;
+  font-size: 0.82rem;
+  color: var(--c-text-1, #f1f5f9);
+  font-weight: 500;
+  margin-top: 1px;
+}
+
+.arch-card-company svg {
+  color: var(--c-gold, #f5b800);
+  flex-shrink: 0;
+}
+
+.arch-card-link-row {
+  display: flex;
+  align-items: center;
+  margin-top: 2px;
+}
+
+.arch-card-social-pill {
+  display: inline-flex;
+  align-items: center;
   gap: 5px;
-  font-size: 0.8rem;
-  color: var(--c-text-2);
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-size: 0.74rem;
+  font-weight: 600;
+  text-decoration: none;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: var(--c-text-2, #94a3b8);
+  transition: all var(--t-fast, 0.15s) ease;
+  width: fit-content;
+}
+
+.arch-card-social-pill:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.2);
+}
+
+.arch-social-facebook {
+  color: #60a5fa;
+  background: rgba(24, 119, 242, 0.12);
+  border-color: rgba(24, 119, 242, 0.3);
+}
+.arch-social-facebook:hover {
+  background: rgba(24, 119, 242, 0.22);
+}
+
+.arch-social-instagram {
+  color: #f472b6;
+  background: rgba(225, 48, 108, 0.12);
+  border-color: rgba(225, 48, 108, 0.3);
+}
+.arch-social-instagram:hover {
+  background: rgba(225, 48, 108, 0.22);
+}
+
+.arch-social-linkedin {
+  color: #38bdf8;
+  background: rgba(10, 102, 194, 0.12);
+  border-color: rgba(10, 102, 194, 0.3);
+}
+.arch-social-linkedin:hover {
+  background: rgba(10, 102, 194, 0.22);
+}
+
+.arch-social-youtube {
+  color: #f87171;
+  background: rgba(255, 0, 0, 0.12);
+  border-color: rgba(255, 0, 0, 0.3);
+}
+.arch-social-youtube:hover {
+  background: rgba(255, 0, 0, 0.22);
+}
+
+.arch-social-telegram {
+  color: #38bdf8;
+  background: rgba(34, 158, 217, 0.12);
+  border-color: rgba(34, 158, 217, 0.3);
+}
+.arch-social-telegram:hover {
+  background: rgba(34, 158, 217, 0.22);
+}
+
+.arch-social-website {
+  color: var(--c-gold, #f5b800);
+  background: rgba(245, 184, 0, 0.12);
+  border-color: rgba(245, 184, 0, 0.3);
+}
+.arch-social-website:hover {
+  background: rgba(245, 184, 0, 0.22);
 }
 
 .arch-card-footer {

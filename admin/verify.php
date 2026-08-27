@@ -62,6 +62,27 @@ try {
         if ($new_status === 'paid') {
             $appStmt = $pdo->prepare("UPDATE directory_applications SET status = 'paid' WHERE member_due_id = ?");
             $appStmt->execute([$payment['member_due_id']]);
+
+            // Also ensure website_members record exists and is published using profile photo
+            $daStmt = $pdo->prepare("SELECT user_id FROM directory_applications WHERE member_due_id = ?");
+            $daStmt->execute([$payment['member_due_id']]);
+            $daUser = $daStmt->fetchColumn();
+            if ($daUser) {
+                $wmCheck = $pdo->prepare("SELECT id FROM website_members WHERE user_id = ?");
+                $wmCheck->execute([$daUser]);
+                if (!$wmCheck->fetch()) {
+                    $uData = $pdo->prepare("SELECT name, id_number, profile_photo FROM users WHERE id = ?");
+                    $uData->execute([$daUser]);
+                    $u = $uData->fetch();
+                    if ($u) {
+                        $pdo->prepare("INSERT INTO website_members (user_id, name, id_number, role_title, specialty, location, photo_path, is_published) 
+                                       VALUES (?, ?, ?, 'Architect', 'General Practice', 'Mindoro', ?, 1)")
+                            ->execute([$daUser, $u['name'], $u['id_number'], $u['profile_photo'] ?: null]);
+                    }
+                } else {
+                    $pdo->prepare("UPDATE website_members SET is_published = 1 WHERE user_id = ?")->execute([$daUser]);
+                }
+            }
         }
 
 

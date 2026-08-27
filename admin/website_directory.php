@@ -104,6 +104,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($userId > 0) {
             $stmt = $pdo->prepare("UPDATE directory_applications SET status = 'paid' WHERE user_id = ?");
             $stmt->execute([$userId]);
+
+            // Auto-initialize website_members with profile photo if no row exists yet
+            $wmCheck = $pdo->prepare("SELECT id FROM website_members WHERE user_id = ?");
+            $wmCheck->execute([$userId]);
+            if (!$wmCheck->fetch()) {
+                $uData = $pdo->prepare("SELECT name, id_number, profile_photo FROM users WHERE id = ?");
+                $uData->execute([$userId]);
+                $u = $uData->fetch();
+                if ($u) {
+                    $pdo->prepare("INSERT INTO website_members (user_id, name, id_number, role_title, specialty, location, photo_path, is_published) 
+                                   VALUES (?, ?, ?, 'Architect', 'General Practice', 'Mindoro', ?, 1)")
+                        ->execute([$userId, $u['name'], $u['id_number'], $u['profile_photo'] ?: null]);
+                }
+            } else {
+                $pdo->prepare("UPDATE website_members SET is_published = 1 WHERE user_id = ?")->execute([$userId]);
+            }
+
             $success = 'Directory feature manually unlocked for member.';
         }
     }
@@ -135,7 +152,7 @@ $paymentApps = $pdo->query("SELECT da.*, u.name, u.id_number, md.status as payme
     ORDER BY da.updated_at DESC")->fetchAll();
 
 // 3. Fetch Active Paid Directory Members
-$activeMembers = $pdo->query("SELECT da.*, u.name, u.id_number, wm.role_title, wm.specialty, wm.photo_path, wm.gallery_json, wm.updated_at as profile_updated
+$activeMembers = $pdo->query("SELECT da.*, u.name, u.id_number, wm.role_title, wm.specialty, wm.company_name, wm.link_url, wm.link_type, wm.photo_path, wm.gallery_json, wm.updated_at as profile_updated
     FROM directory_applications da
     JOIN users u ON da.user_id = u.id
     LEFT JOIN website_members wm ON wm.user_id = u.id
@@ -365,9 +382,9 @@ include __DIR__ . '/../includes/header.php';
           <tr>
             <th>Member</th>
             <th>PRC ID No.</th>
-            <th>Role / Title</th>
-            <th>Specialty</th>
-            <th>Portfolio Showcase</th>
+            <th>Company / Firm</th>
+            <th>Role &amp; Specialty</th>
+            <th>Portfolio Showcase &amp; Link</th>
             <th style="text-align: right;">Actions</th>
           </tr>
         </thead>
@@ -380,16 +397,38 @@ include __DIR__ . '/../includes/header.php';
             } elseif (!empty($am['photo_path'])) {
                 $photoCount = 1;
             }
+            $linkIcon = !empty($am['link_url']) && function_exists('detect_social_link_type') 
+              ? detect_social_link_type($am['link_url'], $am['link_type'] ?? 'auto') 
+              : 'globe';
           ?>
             <tr>
               <td><strong style="color: var(--text-primary);"><?php echo htmlspecialchars($am['name']); ?></strong></td>
               <td><code><?php echo htmlspecialchars($am['id_number']); ?></code></td>
-              <td><?php echo htmlspecialchars($am['role_title'] ?: 'Architect'); ?></td>
-              <td><?php echo htmlspecialchars($am['specialty'] ?: 'General Practice'); ?></td>
               <td>
-                <span class="badge-pill badge-paid" style="font-size:11px; display: inline-flex; align-items: center; gap: 4px;">
-                  <?php echo icon('image', '', 12); ?> <?php echo $photoCount; ?> Photo<?php echo $photoCount !== 1 ? 's' : ''; ?>
-                </span>
+                <?php if (!empty($am['company_name'])): ?>
+                  <span style="display:inline-flex; align-items:center; gap:5px; font-weight:600; color:var(--text-primary); font-size:13px;">
+                    <?php echo icon('briefcase', '', 13); ?> <?php echo htmlspecialchars($am['company_name']); ?>
+                  </span>
+                <?php else: ?>
+                  <span class="muted" style="font-size:12px;">None specified</span>
+                <?php endif; ?>
+              </td>
+              <td>
+                <div style="font-size:13px; font-weight:600; color:var(--accent-primary);"><?php echo htmlspecialchars($am['role_title'] ?: 'Architect'); ?></div>
+                <div class="muted" style="font-size:11.5px;"><?php echo htmlspecialchars($am['specialty'] ?: 'General Practice'); ?></div>
+              </td>
+              <td>
+                <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+                  <span class="badge-pill badge-paid" style="font-size:11px; display: inline-flex; align-items: center; gap: 4px;">
+                    <?php echo icon('image', '', 12); ?> <?php echo $photoCount; ?> Photo<?php echo $photoCount !== 1 ? 's' : ''; ?>
+                  </span>
+                  <?php if (!empty($am['link_url'])): ?>
+                    <a href="<?php echo htmlspecialchars($am['link_url']); ?>" target="_blank" rel="noopener noreferrer" class="badge-pill" style="font-size:11px; text-decoration:none; background:rgba(59,130,246,0.12); color:#60a5fa; display:inline-flex; align-items:center; gap:4px;">
+                      <?php echo icon($linkIcon === 'website' ? 'globe' : $linkIcon, '', 11); ?>
+                      <span><?php echo ucfirst($linkIcon); ?></span>
+                    </a>
+                  <?php endif; ?>
+                </div>
               </td>
               <td style="text-align: right;">
                 <a href="<?php echo BASE_URL; ?>/public/member_profile.php?prc=<?php echo urlencode($am['id_number']); ?>" target="_blank" class="btn btn-sm btn-secondary" style="font-size:11px; padding:4px 10px; display: inline-flex; align-items: center; gap: 4px;">

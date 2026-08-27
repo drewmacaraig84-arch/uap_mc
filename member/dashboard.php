@@ -29,16 +29,38 @@ include __DIR__ . '/../includes/header.php';
   </div>
   <div class="hero-badge">
     <?php
-      $isGoodMember = function_exists('is_good_member') ? is_good_member($pdo, current_user_id()) : true;
-      echo $isGoodMember ? (icon('good_members', '', 14) . ' <span>Good Standing</span>') : (icon('clock', '', 14) . ' <span>Pending Settlement</span>');
+      $standing = function_exists('get_member_standing_details') ? get_member_standing_details($pdo, current_user_id()) : ['is_good' => true, 'is_revoked' => false];
+      if ($standing['is_revoked']) {
+          echo icon('alert', '', 14) . ' <span style="color: #ef4444;">Standing Revoked</span>';
+      } elseif ($standing['is_good']) {
+          echo icon('good_members', '', 14) . ' <span>Good Standing</span>';
+      } else {
+          echo icon('clock', '', 14) . ' <span>Pending Settlement</span>';
+      }
     ?>
   </div>
 </div>
 
-<?php if ($isGoodMember): ?>
+<?php if ($standing['is_revoked']): ?>
+  <div class="alert alert-error" style="margin-top: 12px; display: flex; align-items: flex-start; gap: 10px; border-left: 4px solid #ef4444;">
+    <div style="margin-top: 2px; flex-shrink: 0; color: #ef4444;"><?php echo icon('alert', '', 20); ?></div>
+    <div>
+      <strong style="display: block; font-size: 14px; margin-bottom: 2px; color: #ef4444;">Chapter Good Standing Status Revoked</strong>
+      <div style="font-size: 13px; color: var(--text-secondary); line-height: 1.5;">
+        Your Good Standing status has been placed on administrative hold by Chapter Administration.
+        <?php if (!empty($standing['reason'])): ?>
+          <div style="margin-top: 4px; padding: 6px 10px; background: rgba(239,68,68,0.08); border-radius: 6px; border: 1px solid rgba(239,68,68,0.2);">
+            <strong>Stated Reason:</strong> <?php echo htmlspecialchars($standing['reason']); ?>
+          </div>
+        <?php endif; ?>
+        <p style="margin: 6px 0 0 0;">Please contact the Chapter Secretariat or Board of Officers if you believe this is an error.</p>
+      </div>
+    </div>
+  </div>
+<?php elseif ($standing['is_good']): ?>
   <div class="alert alert-success" style="margin-top: 12px; display: flex; align-items: center; gap: 8px;">
     <?php echo icon('check', '', 18); ?>
-    <span><strong>Member in Good Standing</strong> &mdash; Your dues are fully settled for the active chapter period.</span>
+    <span><strong>Member in Good Standing</strong> &mdash; Your chapter standing is certified and dues obligations are cleared.</span>
   </div>
 <?php endif; ?>
 

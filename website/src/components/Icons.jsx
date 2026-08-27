@@ -245,6 +245,64 @@ export const IconExternalLink = (p) => (
   </Svg>
 );
 
+/* Briefcase / Company / Firm */
+export const IconBriefcase = (p) => (
+  <Svg {...p}>
+    <rect width="20" height="14" x="2" y="7" rx="2" ry="2" />
+    <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" />
+  </Svg>
+);
+
+/* Facebook */
+export const IconFacebook = (p) => (
+  <Svg {...p}>
+    <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z" />
+  </Svg>
+);
+
+/* Instagram */
+export const IconInstagram = (p) => (
+  <Svg {...p}>
+    <rect width="20" height="20" x="2" y="2" rx="5" ry="5" />
+    <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
+    <line x1="17.5" x2="17.51" y1="6.5" y2="6.5" />
+  </Svg>
+);
+
+/* LinkedIn */
+export const IconLinkedin = (p) => (
+  <Svg {...p}>
+    <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z" />
+    <rect width="4" height="12" x="2" y="9" />
+    <circle cx="4" cy="4" r="2" />
+  </Svg>
+);
+
+/* YouTube */
+export const IconYoutube = (p) => (
+  <Svg {...p}>
+    <path d="M22.54 6.42a2.78 2.78 0 0 0-1.94-2C18.88 4 12 4 12 4s-6.88 0-8.6.46a2.78 2.78 0 0 0-1.94 2A29 29 0 0 0 1 11.75a29 29 0 0 0 .46 5.33A2.78 2.78 0 0 0 3.4 19c1.72.46 8.6.46 8.6.46s6.88 0 8.6-.46a2.78 2.78 0 0 0 1.94-2 29 29 0 0 0 .46-5.25 29 29 0 0 0-.46-5.33z" />
+    <polygon points="9.75 15.02 15.5 11.75 9.75 8.48 9.75 15.02" />
+  </Svg>
+);
+
+/* Telegram */
+export const IconTelegram = (p) => (
+  <Svg {...p}>
+    <line x1="22" y1="2" x2="11" y2="13" />
+    <polygon points="22 2 15 22 11 13 2 9 22 2" />
+  </Svg>
+);
+
+/* Globe / Website */
+export const IconGlobe = (p) => (
+  <Svg {...p}>
+    <circle cx="12" cy="12" r="10" />
+    <line x1="2" y1="12" x2="22" y2="12" />
+    <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+  </Svg>
+);
+
 /* Empty state / Search fallback */
 export const IconEmptyDirectory = (p) => (
   <Svg size={48} {...p}>
@@ -257,3 +315,56 @@ export const IconEmptyDirectory = (p) => (
     <path d="M13 13h2" />
   </Svg>
 );
+
+/* Sparkles / Platinum Tier */
+export const IconSparkles = (p) => (
+  <Svg {...p}>
+    <path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3L12 3Z" />
+    <path d="M19 3v4" />
+    <path d="M21 5h-4" />
+  </Svg>
+);
+
+/* Grid / Products */
+export const IconGrid = (p) => (
+  <Svg {...p}>
+    <rect width="7" height="7" x="3" y="3" rx="1" />
+    <rect width="7" height="7" x="14" y="3" rx="1" />
+    <rect width="7" height="7" x="14" y="14" rx="1" />
+    <rect width="7" height="7" x="3" y="14" rx="1" />
+  </Svg>
+);
+
+/**
+ * Smart helper to detect social link type, label, and appropriate SVG Icon
+ */
+export function getSocialLinkInfo(linkUrl, explicitType) {
+  if (!linkUrl) return null;
+  let type = (explicitType || 'auto').toLowerCase();
+  const url = linkUrl.trim();
+
+  if (type === 'auto') {
+    const u = url.toLowerCase();
+    if (u.includes('facebook.com') || u.includes('fb.com') || u.includes('fb.me')) type = 'facebook';
+    else if (u.includes('instagram.com') || u.includes('instagr.am')) type = 'instagram';
+    else if (u.includes('linkedin.com')) type = 'linkedin';
+    else if (u.includes('youtube.com') || u.includes('youtu.be')) type = 'youtube';
+    else if (u.includes('t.me') || u.includes('telegram.me') || u.includes('telegram.org')) type = 'telegram';
+    else type = 'website';
+  }
+
+  const map = {
+    facebook: { type: 'facebook', label: 'Facebook', Icon: IconFacebook, color: '#1877f2' },
+    instagram: { type: 'instagram', label: 'Instagram', Icon: IconInstagram, color: '#e1306c' },
+    linkedin: { type: 'linkedin', label: 'LinkedIn', Icon: IconLinkedin, color: '#0a66c2' },
+    youtube: { type: 'youtube', label: 'YouTube', Icon: IconYoutube, color: '#ff0000' },
+    telegram: { type: 'telegram', label: 'Telegram', Icon: IconTelegram, color: '#229ed9' },
+    website: { type: 'website', label: 'Website', Icon: IconGlobe, color: 'var(--c-gold)' },
+  };
+
+  const info = map[type] || map.website;
+  return {
+    ...info,
+    url: /^https?:\/\//i.test(url) ? url : `https://${url.replace(/^\/+/, '')}`,
+  };
+}

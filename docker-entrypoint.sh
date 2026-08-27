@@ -1,4 +1,4 @@
-#!/bin/bash
+    #!/bin/bash
 set -e
 
 # Configure dynamic port from Railway ($PORT) or fallback to 80
@@ -20,9 +20,27 @@ if [ ! -f /var/www/html/includes/config.php ] && [ -f /var/www/html/includes/con
 fi
 
 # Ensure storage directories exist and have proper permissions
-mkdir -p /var/www/html/uploads/avatars /var/www/html/uploads/members /var/www/html/uploads/sponsors /var/www/html/uploads/receipts /var/www/html/receipts
-chown -R www-data:www-data /var/www/html/uploads /var/www/html/receipts 2>/dev/null || true
-chmod -R 775 /var/www/html/uploads /var/www/html/receipts 2>/dev/null || true
+mkdir -p /var/www/html/uploads/qr_codes /var/www/html/uploads/avatars /var/www/html/uploads/members /var/www/html/uploads/sponsors /var/www/html/uploads/proofs /var/www/html/uploads/receipts /var/www/html/receipts /var/www/html/public
+
+# If Railway mounted an empty or fresh volume, restore default seed assets (QR codes, logos, sample avatars)
+if [ -d /var/www/html/seed_assets/uploads ]; then
+    echo "Restoring and syncing default media assets into uploads volume..."
+    cp -rn /var/www/html/seed_assets/uploads/* /var/www/html/uploads/ 2>/dev/null || true
+fi
+
+# Ensure default logo is present in public/ and uploads/
+if [ -f /var/www/html/seed_assets/public/logo.jpg ] && [ ! -f /var/www/html/public/logo.jpg ]; then
+    cp /var/www/html/seed_assets/public/logo.jpg /var/www/html/public/logo.jpg 2>/dev/null || true
+fi
+
+# Ensure QR codes exist in both uploads/ and uploads/qr_codes/
+if [ -d /var/www/html/uploads/qr_codes ]; then
+    cp -rn /var/www/html/uploads/qr_codes/* /var/www/html/uploads/ 2>/dev/null || true
+    cp -rn /var/www/html/uploads/qr_* /var/www/html/uploads/qr_codes/ 2>/dev/null || true
+fi
+
+chown -R www-data:www-data /var/www/html/uploads /var/www/html/receipts /var/www/html/public 2>/dev/null || true
+chmod -R 775 /var/www/html/uploads /var/www/html/receipts /var/www/html/public 2>/dev/null || true
 
 # Run database setup & migrations if database is reachable
 echo "Running database initialization and migrations..."

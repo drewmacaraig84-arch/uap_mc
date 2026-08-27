@@ -20,6 +20,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $name = trim($_POST['name'] ?? '');
         $id_number = trim($_POST['id_number'] ?? '');
         $status = $_POST['status'] ?? 'pending';
+        $goodStandingOverride = $_POST['good_standing_override'] ?? 'auto';
+        if (!in_array($goodStandingOverride, ['auto', 'revoked', 'granted'], true)) {
+            $goodStandingOverride = 'auto';
+        }
+        $goodStandingReason = trim($_POST['good_standing_reason'] ?? '');
         $removePhoto = !empty($_POST['remove_photo']);
 
         if (!$name || !$id_number) {
@@ -70,13 +75,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
 
                 if (empty($error)) {
-                    $stmt = $pdo->prepare("UPDATE users SET name = ?, id_number = ?, status = ?, profile_photo = ? WHERE id = ?");
-                    $stmt->execute([$name, $id_number, $status, $photoPath, $user_id]);
+                    ensure_user_profile_photo_column($pdo);
+                    $stmt = $pdo->prepare("UPDATE users SET name = ?, id_number = ?, status = ?, profile_photo = ?, good_standing_override = ?, good_standing_reason = ?, good_standing_updated_at = NOW() WHERE id = ?");
+                    $stmt->execute([$name, $id_number, $status, $photoPath, $goodStandingOverride, $goodStandingReason !== '' ? $goodStandingReason : null, $user_id]);
 
-                    // Sync name with website_members
-                    $pdo->prepare("UPDATE website_members SET name = ? WHERE user_id = ?")->execute([$name, $user_id]);
+                    // Sync name and company/link with website_members
+                    $companyName = trim($_POST['company_name'] ?? '');
+                    $linkUrl = trim($_POST['link_url'] ?? '');
+                    $linkType = trim($_POST['link_type'] ?? 'auto');
+                    if ($linkUrl !== '' && !preg_match('#^https?://#i', $linkUrl)) {
+                        $linkUrl = 'https://' . ltrim($linkUrl, '/');
+                    }
 
-                    $success = 'Account details and profile photo updated successfully.';
+                    $wmCheck = $pdo->prepare("SELECT id FROM website_members WHERE user_id = ?");
+                    $wmCheck->execute([$user_id]);
+                    if ($wmCheck->fetch()) {
+                        $pdo->prepare("UPDATE website_members SET name = ?, company_name = ?, link_url = ?, link_type = ? WHERE user_id = ?")
+                            ->execute([$name, $companyName !== '' ? $companyName : null, $linkUrl !== '' ? $linkUrl : null, $linkType, $user_id]);
+                    }
+
+                    $success = 'Account details, profile photo, and directory settings updated successfully.';
                 }
             }
         }
@@ -96,15 +114,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 // Search
 $search = trim($_GET['search'] ?? '');
 if ($search) {
-    $stmt = $pdo->prepare("SELECT u.*, wm.photo_path as wm_photo_path, wm.role_title, wm.specialty 
+    $stmt = $pdo->prepare("SELECT u.*, wm.photo_path as wm_photo_path, wm.role_title, wm.specialty, wm.company_name, wm.link_url, wm.link_type 
                           FROM users u 
                           LEFT JOIN website_members wm ON wm.user_id = u.id 
-                          WHERE u.role = 'member' AND (u.name LIKE ? OR u.id_number LIKE ?) 
+                          WHERE u.role = 'member' AND (u.name LIKE ? OR u.id_number LIKE ? OR wm.company_name LIKE ?) 
                           ORDER BY u.name ASC");
     $like = "%$search%";
-    $stmt->execute([$like, $like]);
+    $stmt->execute([$like, $like, $like]);
 } else {
-    $stmt = $pdo->query("SELECT u.*, wm.photo_path as wm_photo_path, wm.role_title, wm.specialty 
+    $stmt = $pdo->query("SELECT u.*, wm.photo_path as wm_photo_path, wm.role_title, wm.specialty, wm.company_name, wm.link_url, wm.link_type 
                         FROM users u 
                         LEFT JOIN website_members wm ON wm.user_id = u.id 
                         WHERE u.role = 'member' 
@@ -203,13 +221,23 @@ include __DIR__ . '/../includes/header.php';
             <?php endif; ?>
           </div>
         </div>
-        <span class="badge-pill badge-<?php echo $m['status'] === 'approved' ? 'paid' : ($m['status'] === 'pending' ? 'pending' : 'unpaid'); ?>">
-          <?php echo ucfirst($m['status']); ?>
-        </span>
+        <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+          <?php
+            $standing = get_member_standing_details($pdo, $m['id']);
+            if ($standing['is_revoked']) {
+                echo '<span class="badge-pill badge-unpaid" style="font-size: 11px;" title="' . htmlspecialchars($standing['reason'] ?? '') . '">' . icon('alert', '', 10) . ' Standing Revoked</span>';
+            } elseif ($standing['is_good']) {
+                echo '<span class="badge-pill badge-paid" style="font-size: 11px;">' . icon('good_members', '', 10) . ' Good Standing</span>';
+            }
+          ?>
+          <span class="badge-pill badge-<?php echo $m['status'] === 'approved' ? 'paid' : ($m['status'] === 'pending' ? 'pending' : 'unpaid'); ?>">
+            <?php echo ucfirst($m['status']); ?>
+          </span>
+        </div>
       </div>
 
       <div class="grid-2" style="gap: 20px;">
-        <!-- Edit info + status + photo -->
+        <!-- Edit info + status + photo + good standing -->
         <form method="post" enctype="multipart/form-data" style="background: var(--bg-secondary); padding: 16px; border-radius: 12px; border: 1px solid var(--border-color);">
           <?php echo csrf_field(); ?>
           <input type="hidden" name="user_id" value="<?php echo $m['id']; ?>">
@@ -223,12 +251,49 @@ include __DIR__ . '/../includes/header.php';
             <label>PRC ID No.</label>
             <input name="id_number" value="<?php echo htmlspecialchars($m['id_number']); ?>" required>
           </div>
+          <div class="grid-2" style="gap: 10px; margin-bottom: 10px;">
+            <div class="field">
+              <label>Account Status</label>
+              <select name="status">
+                <option value="pending" <?php echo $m['status'] === 'pending' ? 'selected' : ''; ?>>Pending</option>
+                <option value="approved" <?php echo $m['status'] === 'approved' ? 'selected' : ''; ?>>Approved</option>
+                <option value="rejected" <?php echo $m['status'] === 'rejected' ? 'selected' : ''; ?>>Rejected</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>Good Standing Mode</label>
+              <select name="good_standing_override">
+                <option value="auto" <?php echo ($m['good_standing_override'] ?? 'auto') === 'auto' ? 'selected' : ''; ?>>Automatic (Dues-Based)</option>
+                <option value="revoked" <?php echo ($m['good_standing_override'] ?? '') === 'revoked' ? 'selected' : ''; ?>>Revoked / On Hold</option>
+                <option value="granted" <?php echo ($m['good_standing_override'] ?? '') === 'granted' ? 'selected' : ''; ?>>Granted / Exemption</option>
+              </select>
+            </div>
+          </div>
           <div class="field" style="margin-bottom: 10px;">
-            <label>Account Status</label>
-            <select name="status">
-              <option value="pending" <?php echo $m['status'] === 'pending' ? 'selected' : ''; ?>>Pending</option>
-              <option value="approved" <?php echo $m['status'] === 'approved' ? 'selected' : ''; ?>>Approved</option>
-              <option value="rejected" <?php echo $m['status'] === 'rejected' ? 'selected' : ''; ?>>Rejected</option>
+            <label>Standing Reason / Admin Note</label>
+            <input name="good_standing_reason" value="<?php echo htmlspecialchars($m['good_standing_reason'] ?? ''); ?>" placeholder="Optional reason (e.g. Disciplinary hold, Ethics review)...">
+          </div>
+          <div class="grid-2" style="gap: 10px; margin-bottom: 10px;">
+            <div class="field">
+              <label>Company / Firm Name</label>
+              <input name="company_name" value="<?php echo htmlspecialchars($m['company_name'] ?? ''); ?>" placeholder="e.g. Ting & Associates Architects">
+            </div>
+            <div class="field">
+              <label>Website / Social Link</label>
+              <input name="link_url" value="<?php echo htmlspecialchars($m['link_url'] ?? ''); ?>" placeholder="https://facebook.com/..., https://yourfirm.com">
+            </div>
+          </div>
+          <div class="field" style="margin-bottom: 10px;">
+            <label>Link Platform / Icon Type</label>
+            <?php $curType = $m['link_type'] ?? 'auto'; ?>
+            <select name="link_type">
+              <option value="auto" <?php echo $curType === 'auto' ? 'selected' : ''; ?>>Auto-Detect Icon from URL</option>
+              <option value="facebook" <?php echo $curType === 'facebook' ? 'selected' : ''; ?>>Facebook</option>
+              <option value="instagram" <?php echo $curType === 'instagram' ? 'selected' : ''; ?>>Instagram</option>
+              <option value="linkedin" <?php echo $curType === 'linkedin' ? 'selected' : ''; ?>>LinkedIn</option>
+              <option value="youtube" <?php echo $curType === 'youtube' ? 'selected' : ''; ?>>YouTube</option>
+              <option value="telegram" <?php echo $curType === 'telegram' ? 'selected' : ''; ?>>Telegram</option>
+              <option value="website" <?php echo $curType === 'website' ? 'selected' : ''; ?>>Official Website / Portfolio</option>
             </select>
           </div>
           <div class="field" style="margin-bottom: 14px;">

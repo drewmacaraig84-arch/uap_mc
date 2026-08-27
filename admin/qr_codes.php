@@ -27,9 +27,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $error = 'Only valid JPG, PNG, or WebP images are allowed.';
         } else {
             $filename = 'qr_' . $method . '_' . time() . '_' . bin2hex(random_bytes(3)) . '.' . $ext;
-            $dest = __DIR__ . '/../uploads/' . $filename;
-            if (move_uploaded_file($_FILES['qr_image']['tmp_name'], $dest)) {
-                $path = 'uploads/' . $filename;
+            $qrDir = __DIR__ . '/../uploads/qr_codes';
+            $rootUploads = __DIR__ . '/../uploads';
+
+            if (!is_dir($qrDir)) @mkdir($qrDir, 0775, true);
+            if (!is_dir($rootUploads)) @mkdir($rootUploads, 0775, true);
+
+            $destQr = $qrDir . '/' . $filename;
+            $destRoot = $rootUploads . '/' . $filename;
+
+            if (move_uploaded_file($_FILES['qr_image']['tmp_name'], $destQr)) {
+                @copy($destQr, $destRoot);
+                $path = 'uploads/qr_codes/' . $filename;
 
                 $stmt = $pdo->prepare("
                     INSERT INTO qr_codes (method, image_path) VALUES (?, ?)
@@ -97,9 +106,12 @@ include __DIR__ . '/../includes/header.php';
       </div>
 
       <div style="margin: 14px 0; padding: 16px; background: var(--bg-secondary); border-radius: 12px; border: 1px solid var(--border-color); display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 220px;">
-        <?php if (isset($existing[$method])): ?>
+        <?php 
+          $qrUrl = isset($existing[$method]) ? media_url($existing[$method]['image_path']) : null;
+          if ($qrUrl): 
+        ?>
           <div style="background: #fff; padding: 8px; border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); margin-bottom: 12px;">
-            <img src="../<?php echo htmlspecialchars($existing[$method]['image_path']); ?>" alt="<?php echo $info['title']; ?>" style="max-width: 180px; max-height: 180px; display: block; object-fit: contain;">
+            <img src="<?php echo htmlspecialchars($qrUrl); ?>" alt="<?php echo $info['title']; ?>" style="max-width: 180px; max-height: 180px; display: block; object-fit: contain;" onerror="this.onerror=null; this.src='<?php echo BASE_URL; ?>/uploads/<?php echo basename($existing[$method]['image_path']); ?>';">
           </div>
           <span class="muted" style="font-size: 11.5px; display: inline-flex; align-items: center; gap: 4px;">
             <?php echo icon('clock', '', 11); ?> Updated: <?php echo htmlspecialchars(date('M d, Y h:i A', strtotime($existing[$method]['updated_at']))); ?>

@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/includes/auth.php';
+require_once __DIR__ . '/includes/icons.php';
 require_login();
 
 $payment_id = (int)($_GET['payment_id'] ?? 0);
@@ -211,7 +212,9 @@ $backUrl = $_SESSION['role'] === 'admin' ? BASE_URL . '/admin/reports.php' : BAS
 </div>
 
 <div class="action-buttons">
-  <button class="btn btn-print" onclick="window.print()">🖨️ Print Receipt</button>
+  <button class="btn btn-print" onclick="window.print()" style="display:inline-flex; align-items:center; justify-content:center; gap:6px;">
+    <?php echo icon('printer', '', 16); ?> <span>Print Receipt</span>
+  </button>
   <a href="<?php echo htmlspecialchars($backUrl); ?>" class="btn btn-back">← Back</a>
 </div>
 

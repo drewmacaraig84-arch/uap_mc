@@ -189,18 +189,25 @@ $initials = strtoupper(substr($user['name'], 0, 1) . substr(strrchr($user['name'
 
     <!-- Status Badges -->
     <div style="display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; margin-bottom: 18px;">
-      <?php if ($isGoodStanding): ?>
+      <?php
+        $standing = function_exists('get_member_standing_details') ? get_member_standing_details($pdo, $userId) : ['is_good' => $isGoodStanding, 'is_revoked' => false];
+        if ($standing['is_revoked']):
+      ?>
+        <span class="badge" style="background: rgba(239,68,68,0.15); color: #ef4444; border: 1px solid #ef4444;" title="<?php echo htmlspecialchars($standing['reason'] ?? 'Standing Revoked'); ?>">
+          <?php echo icon('alert', '', 12); ?> Standing Revoked
+        </span>
+      <?php elseif ($standing['is_good']): ?>
         <span class="badge" style="background: rgba(16,185,129,0.15); color: #10b981; border: 1px solid #10b981;">
           <?php echo icon('shield_check', '', 12); ?> Good Standing
         </span>
       <?php else: ?>
-        <span class="badge" style="background: rgba(239,68,68,0.15); color: #ef4444; border: 1px solid #ef4444;">
-          <?php echo icon('alert', '', 12); ?> Dues Pending
+        <span class="badge" style="background: rgba(245,158,11,0.15); color: var(--accent-primary); border: 1px solid var(--accent-primary);">
+          <?php echo icon('clock', '', 12); ?> Dues Pending
         </span>
       <?php endif; ?>
 
       <?php if (!empty($wmRecord['is_published'])): ?>
-        <span class="badge" style="background: rgba(245,158,11,0.15); color: var(--accent-primary); border: 1px solid var(--accent-primary);">
+        <span class="badge" style="background: rgba(59,130,246,0.15); color: #3b82f6; border: 1px solid #3b82f6;">
           <?php echo icon('website_directory', '', 12); ?> Directory Published
         </span>
       <?php endif; ?>
@@ -221,9 +228,31 @@ $initials = strtoupper(substr($user['name'], 0, 1) . substr(strrchr($user['name'
         <strong style="color: var(--text-primary);"><?php echo date('M Y', strtotime($user['created_at'])); ?></strong>
       </div>
       <?php if (!empty($wmRecord['specialty'])): ?>
-        <div style="display: flex; justify-content: space-between;">
+        <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
           <span>Specialty:</span>
           <strong style="color: var(--text-primary);"><?php echo htmlspecialchars($wmRecord['specialty']); ?></strong>
+        </div>
+      <?php endif; ?>
+      <?php if (!empty($wmRecord['company_name'])): ?>
+        <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+          <span>Company / Firm:</span>
+          <strong style="color: var(--text-primary);"><?php echo htmlspecialchars($wmRecord['company_name']); ?></strong>
+        </div>
+      <?php endif; ?>
+      <?php if (!empty($wmRecord['link_url'])): 
+        $linkIcon = function_exists('detect_social_link_type') ? detect_social_link_type($wmRecord['link_url'], $wmRecord['link_type'] ?? 'auto') : 'globe';
+      ?>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+          <span>Showcase Link:</span>
+          <a href="<?php echo htmlspecialchars($wmRecord['link_url']); ?>" target="_blank" rel="noopener noreferrer" style="color: var(--accent-primary); display: inline-flex; align-items: center; gap: 4px; font-weight: 600; text-decoration: none; font-size: 11.5px;">
+            <?php echo icon($linkIcon === 'website' ? 'globe' : $linkIcon, '', 13); ?>
+            <span><?php echo ucfirst($linkIcon); ?></span>
+          </a>
+        </div>
+      <?php endif; ?>
+      <?php if ($standing['is_revoked']): ?>
+        <div style="margin-top: 10px; padding: 8px 10px; background: rgba(239,68,68,0.08); border-radius: 6px; border: 1px solid rgba(239,68,68,0.2); font-size: 11.5px; color: #ef4444; line-height: 1.4;">
+          <strong>Administrative Hold:</strong> <?php echo htmlspecialchars($standing['reason'] ?: 'Good standing placed on hold by Chapter Administration.'); ?>
         </div>
       <?php endif; ?>
     </div>

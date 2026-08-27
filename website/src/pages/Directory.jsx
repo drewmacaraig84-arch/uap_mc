@@ -19,6 +19,7 @@ export default function Directory() {
         !q ||
         m.name.toLowerCase().includes(q) ||
         (m.id_number || '').toLowerCase().includes(q) ||
+        (m.company_name || '').toLowerCase().includes(q) ||
         (m.location || '').toLowerCase().includes(q) ||
         (m.specialty || '').toLowerCase().includes(q);
       const matchSpec =
@@ -48,7 +49,7 @@ export default function Directory() {
             <IconSearch size={18} className="dir-search-icon" />
             <input
               type="text"
-              placeholder="Search by name, PRC ID, location, or specialty…"
+              placeholder="Search by name, PRC ID, company, specialty…"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="input dir-search"

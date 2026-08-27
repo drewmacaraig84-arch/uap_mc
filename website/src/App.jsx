@@ -8,11 +8,13 @@ import { useScrollReveal } from './hooks/useScrollReveal';
 // Lazy-loaded pages
 const Home      = lazy(() => import('./pages/Home'));
 const Directory = lazy(() => import('./pages/Directory'));
-const Profile   = lazy(() => import('./pages/Profile'));
-const About     = lazy(() => import('./pages/About'));
-const News      = lazy(() => import('./pages/News'));
-const Sponsors  = lazy(() => import('./pages/Sponsors'));
-const Contact   = lazy(() => import('./pages/Contact'));
+const Profile       = lazy(() => import('./pages/Profile'));
+const ProjectDetail = lazy(() => import('./pages/ProjectDetail'));
+const About         = lazy(() => import('./pages/About'));
+const News          = lazy(() => import('./pages/News'));
+const Sponsors      = lazy(() => import('./pages/Sponsors'));
+const SponsorDetail = lazy(() => import('./pages/SponsorDetail'));
+const Contact       = lazy(() => import('./pages/Contact'));
 
 function PageLoader() {
   return (
@@ -38,10 +40,13 @@ export default function App() {
           <Route path="/"           element={<Home />} />
           <Route path="/directory"  element={<Directory />} />
           <Route path="/profile/:id" element={<Profile />} />
+          <Route path="/profile/:id/project/:projectId" element={<ProjectDetail />} />
           <Route path="/about"      element={<About />} />
           <Route path="/news"       element={<News />} />
           <Route path="/partners"   element={<Sponsors />} />
+          <Route path="/partners/:id" element={<SponsorDetail />} />
           <Route path="/sponsors"   element={<Sponsors />} />
+          <Route path="/sponsors/:id" element={<SponsorDetail />} />
           <Route path="/contact"    element={<Contact />} />
         </Routes>
       </Suspense>

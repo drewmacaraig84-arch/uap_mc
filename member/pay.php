@@ -331,9 +331,9 @@ function handlePaymentSubmit(form) {
 }
 
 const qrImages = {
-  gcash: <?php echo isset($qr_by_method['gcash']) ? json_encode('../' . $qr_by_method['gcash']) : 'null'; ?>,
-  maya: <?php echo isset($qr_by_method['maya']) ? json_encode('../' . $qr_by_method['maya']) : 'null'; ?>,
-  bank: <?php echo isset($qr_by_method['bank']) ? json_encode('../' . $qr_by_method['bank']) : 'null'; ?>
+  gcash: <?php echo !empty($qr_by_method['gcash']) ? json_encode(media_url($qr_by_method['gcash'])) : 'null'; ?>,
+  maya: <?php echo !empty($qr_by_method['maya']) ? json_encode(media_url($qr_by_method['maya'])) : 'null'; ?>,
+  bank: <?php echo !empty($qr_by_method['bank']) ? json_encode(media_url($qr_by_method['bank'])) : 'null'; ?>
 };
 
 function updateQR() {

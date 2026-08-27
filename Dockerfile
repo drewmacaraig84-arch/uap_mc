@@ -52,13 +52,16 @@ COPY . /var/www/html/
 # Copy compiled React frontend assets over the web root (index.html, assets, logo)
 COPY --from=frontend-builder /app/website/dist/ /var/www/html/
 
-# Ensure includes/config.php exists and setup permissions
+# Ensure includes/config.php exists and setup permissions & persistent seed backups
 RUN if [ ! -f /var/www/html/includes/config.php ] && [ -f /var/www/html/includes/config.example.php ]; then \
         cp /var/www/html/includes/config.example.php /var/www/html/includes/config.php; \
     fi \
     && chmod +x /var/www/html/docker-entrypoint.sh \
-    && mkdir -p /var/www/html/uploads /var/www/html/receipts \
-    && chown -R www-data:www-data /var/www/html/uploads /var/www/html/receipts
+    && mkdir -p /var/www/html/seed_assets \
+    && cp -r /var/www/html/uploads /var/www/html/seed_assets/ \
+    && cp -r /var/www/html/public /var/www/html/seed_assets/ \
+    && mkdir -p /var/www/html/uploads/qr_codes /var/www/html/uploads/avatars /var/www/html/uploads/members /var/www/html/uploads/sponsors /var/www/html/uploads/proofs /var/www/html/uploads/receipts /var/www/html/receipts \
+    && chown -R www-data:www-data /var/www/html/uploads /var/www/html/receipts /var/www/html/seed_assets
 
 # Expose default HTTP port
 EXPOSE 80

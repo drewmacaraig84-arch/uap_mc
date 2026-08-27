@@ -163,15 +163,15 @@ include __DIR__ . '/../includes/header.php';
               <td>
                 <?php if ($p['proof_image']): ?>
                   <?php 
-                    $proofPath = '../' . htmlspecialchars($p['proof_image']); 
+                    $proofPath = media_url($p['proof_image']); 
                     $isPdf = strtolower(pathinfo($p['proof_image'], PATHINFO_EXTENSION)) === 'pdf';
                   ?>
                   <?php if ($isPdf): ?>
-                    <a href="<?php echo $proofPath; ?>" target="_blank" class="btn btn-sm btn-secondary" style="padding: 4px 8px; font-size: 11px; display: inline-flex; align-items: center; gap: 4px;">
+                    <a href="<?php echo htmlspecialchars($proofPath); ?>" target="_blank" class="btn btn-sm btn-secondary" style="padding: 4px 8px; font-size: 11px; display: inline-flex; align-items: center; gap: 4px;">
                       <?php echo icon('file', '', 12); ?> PDF
                     </a>
                   <?php else: ?>
-                    <button type="button" class="btn btn-sm btn-secondary" style="padding: 4px 8px; font-size: 11px; display: inline-flex; align-items: center; gap: 4px;" onclick="openProofModal('<?php echo $proofPath; ?>', '<?php echo htmlspecialchars(addslashes($p['member_name'])); ?>', '<?php echo htmlspecialchars(addslashes($p['reference_number'])); ?>')">
+                    <button type="button" class="btn btn-sm btn-secondary" style="padding: 4px 8px; font-size: 11px; display: inline-flex; align-items: center; gap: 4px;" onclick="openProofModal('<?php echo htmlspecialchars($proofPath); ?>', '<?php echo htmlspecialchars(addslashes($p['member_name'])); ?>', '<?php echo htmlspecialchars(addslashes($p['reference_number'])); ?>')">
                       <?php echo icon('image', '', 12); ?> View
                     </button>
                   <?php endif; ?>

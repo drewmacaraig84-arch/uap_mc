@@ -122,23 +122,85 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'updat
     exit;
 }
 
-$members = $pdo->query("
-    SELECT u.id, u.name, u.id_number, u.status,
-        SUM(CASE WHEN md.status = 'paid' THEN 1 ELSE 0 END) as paid_count,
-        SUM(CASE WHEN md.status = 'partial' THEN 1 ELSE 0 END) as partial_count,
-        SUM(CASE WHEN md.status = 'pending' THEN 1 ELSE 0 END) as pending_count,
-        SUM(CASE WHEN md.status = 'unpaid' THEN 1 ELSE 0 END) as unpaid_count,
-        COUNT(md.id) as total_dues,
-        SUM(COALESCE(md.custom_amount, d.amount)) as total_amount,
-        SUM(md.total_paid) as total_paid_sum,
-        SUM(COALESCE(md.custom_amount, d.amount)) - SUM(md.total_paid) as remaining_balance
-    FROM users u
-    LEFT JOIN member_dues md ON md.user_id = u.id
-    LEFT JOIN dues d ON md.due_id = d.id
-    WHERE u.role = 'member'
-    GROUP BY u.id
-    ORDER BY u.name ASC
-")->fetchAll();
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'revoke_good_standing') {
+    require_csrf();
+    $user_id = (int)$_POST['user_id'];
+    $reason = trim($_POST['reason'] ?? '');
+    if ($reason === '') {
+        $reason = 'Administrative hold placed by Chapter Administration.';
+    }
+    if (set_member_good_standing($pdo, $user_id, 'revoked', $reason)) {
+        if (function_exists('set_flash')) {
+            set_flash('success', 'Good standing status revoked for member.');
+        }
+    } else {
+        if (function_exists('set_flash')) {
+            set_flash('error', 'Failed to revoke good standing status.');
+        }
+    }
+    header('Location: members.php' . ($selected_member_id ? '?member_id=' . $selected_member_id : ''));
+    exit;
+}
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'restore_good_standing') {
+    require_csrf();
+    $user_id = (int)$_POST['user_id'];
+    if (set_member_good_standing($pdo, $user_id, 'auto', null)) {
+        if (function_exists('set_flash')) {
+            set_flash('success', 'Good standing status restored to automatic settlement.');
+        }
+    } else {
+        if (function_exists('set_flash')) {
+            set_flash('error', 'Failed to restore good standing status.');
+        }
+    }
+    header('Location: members.php' . ($selected_member_id ? '?member_id=' . $selected_member_id : ''));
+    exit;
+}
+
+try {
+    $members = $pdo->query("
+        SELECT u.id, u.name, u.id_number, u.status,
+            COALESCE(u.good_standing_override, 'auto') as good_standing_override,
+            u.good_standing_reason,
+            u.good_standing_updated_at,
+            SUM(CASE WHEN md.status = 'paid' THEN 1 ELSE 0 END) as paid_count,
+            SUM(CASE WHEN md.status = 'partial' THEN 1 ELSE 0 END) as partial_count,
+            SUM(CASE WHEN md.status = 'pending' THEN 1 ELSE 0 END) as pending_count,
+            SUM(CASE WHEN md.status = 'unpaid' THEN 1 ELSE 0 END) as unpaid_count,
+            COUNT(md.id) as total_dues,
+            SUM(COALESCE(md.custom_amount, d.amount)) as total_amount,
+            SUM(md.total_paid) as total_paid_sum,
+            SUM(COALESCE(md.custom_amount, d.amount)) - SUM(md.total_paid) as remaining_balance
+        FROM users u
+        LEFT JOIN member_dues md ON md.user_id = u.id
+        LEFT JOIN dues d ON md.due_id = d.id
+        WHERE u.role = 'member'
+        GROUP BY u.id, u.name, u.id_number, u.status, u.good_standing_override, u.good_standing_reason, u.good_standing_updated_at
+        ORDER BY u.name ASC
+    ")->fetchAll();
+} catch (Throwable $e) {
+    $members = $pdo->query("
+        SELECT u.id, u.name, u.id_number, u.status,
+            'auto' as good_standing_override,
+            NULL as good_standing_reason,
+            NULL as good_standing_updated_at,
+            SUM(CASE WHEN md.status = 'paid' THEN 1 ELSE 0 END) as paid_count,
+            SUM(CASE WHEN md.status = 'partial' THEN 1 ELSE 0 END) as partial_count,
+            SUM(CASE WHEN md.status = 'pending' THEN 1 ELSE 0 END) as pending_count,
+            SUM(CASE WHEN md.status = 'unpaid' THEN 1 ELSE 0 END) as unpaid_count,
+            COUNT(md.id) as total_dues,
+            SUM(COALESCE(md.custom_amount, d.amount)) as total_amount,
+            SUM(md.total_paid) as total_paid_sum,
+            SUM(COALESCE(md.custom_amount, d.amount)) - SUM(md.total_paid) as remaining_balance
+        FROM users u
+        LEFT JOIN member_dues md ON md.user_id = u.id
+        LEFT JOIN dues d ON md.due_id = d.id
+        WHERE u.role = 'member'
+        GROUP BY u.id, u.name, u.id_number, u.status
+        ORDER BY u.name ASC
+    ")->fetchAll();
+}
 
 $selected_member = null;
 $selected_member_dues = [];
@@ -205,6 +267,8 @@ include __DIR__ . '/../includes/header.php';
       <div style="width: 200px;">
         <select id="statusFilter" onchange="filterTable()">
           <option value="all">All Members</option>
+          <option value="good-standing">Good Standing</option>
+          <option value="standing-revoked">Standing Revoked / Hold</option>
           <option value="fully-paid">Fully Paid</option>
           <option value="partially-paid">Partially Paid</option>
           <option value="pending-verification">Pending Verification</option>
@@ -231,8 +295,11 @@ include __DIR__ . '/../includes/header.php';
       </thead>
       <tbody>
       <?php foreach ($members as $m):
+        $standing = get_member_standing_details($pdo, $m['id']);
         if ($m['status'] === 'pending') {
             $row_status = 'awaiting-approval';
+        } elseif ($standing['is_revoked']) {
+            $row_status = 'standing-revoked';
         } elseif ($m['total_dues'] > 0 && $m['paid_count'] == $m['total_dues']) {
             $row_status = 'fully-paid';
         } elseif ($m['partial_count'] > 0) {
@@ -245,14 +312,17 @@ include __DIR__ . '/../includes/header.php';
             $row_status = 'fully-paid';
         }
         $search_text = strtolower($m['name'] . ' ' . $m['id_number']);
-        $isGoodMember = is_good_member($pdo, $m['id']);
       ?>
-      <tr data-status="<?php echo $row_status; ?>" data-search="<?php echo htmlspecialchars($search_text); ?>">
+      <tr data-status="<?php echo $row_status; ?>" data-good="<?php echo $standing['is_good'] ? '1' : '0'; ?>" data-revoked="<?php echo $standing['is_revoked'] ? '1' : '0'; ?>" data-search="<?php echo htmlspecialchars($search_text); ?>">
         <td>
           <strong style="color: var(--text-primary);"><?php echo htmlspecialchars($m['name']); ?></strong>
           <?php if ($m['status'] === 'pending'): ?>
             <span class="badge-pill badge-pending" style="font-size: 10px;">Pending</span>
-          <?php elseif ($isGoodMember): ?>
+          <?php elseif ($standing['is_revoked']): ?>
+            <span class="badge-pill badge-unpaid" style="font-size: 10px;" title="<?php echo htmlspecialchars($standing['reason'] ?? 'Standing Revoked'); ?>">
+              <?php echo icon('alert', '', 10); ?> Standing Revoked
+            </span>
+          <?php elseif ($standing['is_good']): ?>
             <span class="badge-pill badge-paid" style="font-size: 10px;"><?php echo icon('good_members', '', 10); ?> Good Standing</span>
           <?php endif; ?>
         </td>
@@ -282,6 +352,25 @@ include __DIR__ . '/../includes/header.php';
           <?php endif; ?>
         </td>
         <td style="white-space: nowrap; text-align: right;">
+          <?php if ($standing['is_revoked']): ?>
+            <form method="post" style="display:inline-block;"
+                  data-confirm="Restore good standing for <?php echo htmlspecialchars($m['name']); ?>? Dues compliance will be checked automatically."
+                  data-confirm-title="Restore Good Standing"
+                  data-confirm-btn="Restore Standing"
+                  data-confirm-class="btn-success">
+              <?php echo csrf_field(); ?>
+              <input type="hidden" name="user_id" value="<?php echo $m['id']; ?>">
+              <input type="hidden" name="action" value="restore_good_standing">
+              <button class="btn btn-sm btn-success" type="submit" style="display:inline-flex;align-items:center;gap:4px;margin-right:4px;" title="Restore Good Standing">
+                <?php echo icon('check', '', 12); ?> <span>Restore</span>
+              </button>
+            </form>
+          <?php elseif ($standing['is_good']): ?>
+            <button type="button" class="btn btn-sm btn-secondary" style="color:#ef4444;border-color:rgba(239,68,68,0.3);display:inline-flex;align-items:center;gap:4px;margin-right:4px;" title="Revoke Good Standing"
+                    onclick="openMemberRevokeModal(<?php echo (int)$m['id']; ?>, '<?php echo htmlspecialchars(addslashes($m['name'])); ?>', '<?php echo htmlspecialchars(addslashes($m['id_number'])); ?>')">
+              <?php echo icon('alert', '', 12); ?> <span>Revoke</span>
+            </button>
+          <?php endif; ?>
           <a class="btn btn-sm btn-secondary" href="members.php?member_id=<?php echo $m['id']; ?>#member-dues-panel" style="display:inline-flex;align-items:center;gap:4px;margin-right:4px;">
             <?php echo icon('dues', '', 12); ?> <span>Dues</span>
           </a>
@@ -407,7 +496,65 @@ include __DIR__ . '/../includes/header.php';
 </div>
 <?php endif; ?>
 
+<!-- REVOKE GOOD STANDING MODAL -->
+<div id="memberRevokeModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.78); z-index:99999; align-items:center; justify-content:center; padding:20px; backdrop-filter:blur(8px);">
+  <div style="background:var(--card-bg, #131d33); border:1px solid var(--border-color, rgba(255,255,255,0.15)); border-radius:16px; max-width:480px; width:100%; overflow:hidden; box-shadow:0 25px 50px -12px rgba(0,0,0,0.7); color:var(--text-primary);">
+    <form method="post" style="padding:24px; margin:0;">
+      <?php echo csrf_field(); ?>
+      <input type="hidden" name="action" value="revoke_good_standing">
+      <input type="hidden" name="user_id" id="modalMemberId" value="0">
+
+      <div style="display:flex; align-items:center; gap:14px; margin-bottom:14px;">
+        <div style="width:42px; height:42px; border-radius:10px; display:flex; align-items:center; justify-content:center; background:rgba(239,68,68,0.15); color:#ef4444; flex-shrink:0;">
+          <?php echo icon('alert', '', 22); ?>
+        </div>
+        <div>
+          <h3 style="margin:0; font-size:17px; font-weight:700; color:#ef4444;">Revoke Good Standing Status</h3>
+          <p class="muted" style="margin:2px 0 0; font-size:12px;" id="modalMemberSubtitle">Placing administrative hold on member standing</p>
+        </div>
+      </div>
+
+      <div style="background: rgba(239,68,68,0.06); border: 1px solid rgba(239,68,68,0.2); border-radius: 8px; padding: 12px; margin-bottom: 16px; font-size: 13px; line-height: 1.5; color: var(--text-secondary);">
+        Revoking good standing removes this member's certification across the chapter portal, voting eligibility, and directory standing badge.
+      </div>
+
+      <div class="field" style="margin-bottom: 16px;">
+        <label style="font-weight: 600; font-size: 13px; display: block; margin-bottom: 6px;">Reason for Revocation / Administrative Note <span class="muted" style="font-weight: normal; font-size: 11.5px;">(Optional)</span></label>
+        <textarea name="reason" id="memberRevokeReasonInput" rows="3" placeholder="Enter reason (e.g. Disciplinary review, By-law non-compliance, Administrative hold)..." style="width: 100%; font-size: 13px; line-height: 1.4;"></textarea>
+        
+        <div style="display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px;">
+          <button type="button" class="btn btn-sm btn-secondary" style="font-size: 11px; padding: 3px 8px;" onclick="setMemberRevokeReason('Disciplinary & Ethics Committee Review')">Ethics Review</button>
+          <button type="button" class="btn btn-sm btn-secondary" style="font-size: 11px; padding: 3px 8px;" onclick="setMemberRevokeReason('Non-compliance with Chapter By-Laws & Resolutions')">By-Law Non-compliance</button>
+          <button type="button" class="btn btn-sm btn-secondary" style="font-size: 11px; padding: 3px 8px;" onclick="setMemberRevokeReason('Administrative Hold Pending Secretariat Clearance')">Secretariat Hold</button>
+        </div>
+      </div>
+
+      <div style="display:flex; justify-content:flex-end; gap:10px; margin-top: 20px;">
+        <button type="button" onclick="closeMemberRevokeModal()" class="btn btn-sm btn-secondary" style="padding:8px 16px;">Cancel</button>
+        <button type="submit" class="btn btn-sm btn-danger" style="padding:8px 18px; font-weight:700; display: inline-flex; align-items: center; gap: 6px;">
+          <?php echo icon('alert', '', 13); ?> <span>Confirm Revocation</span>
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
 <script>
+function openMemberRevokeModal(userId, name, prc) {
+  document.getElementById('modalMemberId').value = userId;
+  document.getElementById('modalMemberSubtitle').textContent = 'Placing hold on ' + name + (prc ? ' (PRC: ' + prc + ')' : '');
+  document.getElementById('memberRevokeReasonInput').value = '';
+  document.getElementById('memberRevokeModal').style.display = 'flex';
+}
+
+function closeMemberRevokeModal() {
+  document.getElementById('memberRevokeModal').style.display = 'none';
+}
+
+function setMemberRevokeReason(text) {
+  document.getElementById('memberRevokeReasonInput').value = text;
+}
+
 function filterTable() {
   const search = document.getElementById('memberSearch').value.toLowerCase();
   const status = document.getElementById('statusFilter').value;
@@ -415,12 +562,28 @@ function filterTable() {
   let visible = 0;
 
   rows.forEach(row => {
-    const matchSearch = !search || row.dataset.search.includes(search);
-    const matchStatus = status === 'all' || row.dataset.status === status;
+    const matchSearch = !search || (row.dataset.search && row.dataset.search.includes(search));
+    let matchStatus = true;
+    if (status === 'good-standing') {
+      matchStatus = row.dataset.good === '1';
+    } else if (status === 'standing-revoked') {
+      matchStatus = row.dataset.revoked === '1';
+    } else if (status !== 'all') {
+      matchStatus = row.dataset.status === status;
+    }
     row.style.display = (matchSearch && matchStatus) ? '' : 'none';
     if (matchSearch && matchStatus) visible++;
   });
 }
+
+document.addEventListener('DOMContentLoaded', function() {
+  const modal = document.getElementById('memberRevokeModal');
+  if (modal) {
+    modal.addEventListener('click', function(e) {
+      if (e.target === this) closeMemberRevokeModal();
+    });
+  }
+});
 </script>
 
 <?php include __DIR__ . '/../includes/footer.php'; ?>
