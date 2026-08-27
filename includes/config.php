@@ -357,10 +357,20 @@ function get_public_base_url() {
     
     // 2. Check HTTP Host from active web request
     if (!empty($_SERVER['HTTP_HOST'])) {
-        $proto = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https') || (isset($_SERVER['SERVER_PORT']) && $_SERVER['SERVER_PORT'] == 443) ? 'https://' : 'http://';
+        $proto = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') 
+                 || (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https') 
+                 || (isset($_SERVER['SERVER_PORT']) && $_SERVER['SERVER_PORT'] == 443) 
+                 ? 'https://' : 'http://';
         $host = $_SERVER['HTTP_HOST'];
-        $base = defined('BASE_URL') ? BASE_URL : '';
-        return rtrim($proto . $host . $base, '/');
+        
+        // In local development (Laragon)
+        if (str_contains($host, 'localhost') || str_contains($host, '127.0.0.1')) {
+            $base = defined('BASE_URL') ? BASE_URL : '/UAP-MINDORO/uap_mc';
+            return rtrim($proto . $host . $base, '/');
+        }
+        
+        // In production (e.g. uapmc-production.up.railway.app)
+        return rtrim($proto . $host, '/');
     }
 
     // 3. Check Railway / Cloud public domain env vars

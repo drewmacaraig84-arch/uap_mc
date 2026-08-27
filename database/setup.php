@@ -297,6 +297,15 @@ try {
     }
 
     echo "Asset directories & default media verified.\n";
+    
+    // 5. Force fresh generation of all member directory QR codes with live domain
+    if (file_exists(__DIR__ . '/../includes/qr_helper.php')) {
+        require_once __DIR__ . '/../includes/qr_helper.php';
+        if (function_exists('batch_generate_member_qr_codes')) {
+            $qrCount = batch_generate_member_qr_codes($pdo, true);
+            echo "Generated/refreshed {$qrCount} member directory QR codes with full domain URL.\n";
+        }
+    }
 } catch (Throwable $e) {
     echo "Asset verification notice: " . $e->getMessage() . "\n";
 }

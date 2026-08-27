@@ -14,8 +14,8 @@ if (!$wm) {
     die("No directory profile found for your account.");
 }
 
-// Generate or fetch QR code relative path
-$qrPath = generate_member_directory_qr($pdo, (int)$wm['id']);
+// Generate or fetch QR code relative path (force fresh generation with live domain)
+$qrPath = generate_member_directory_qr($pdo, (int)$wm['id'], true);
 if (!$qrPath) {
     die("Unable to generate QR code at this time.");
 }

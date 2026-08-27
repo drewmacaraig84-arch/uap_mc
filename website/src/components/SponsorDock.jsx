@@ -6,41 +6,10 @@ import './SponsorDock.css';
 
 export default function SponsorDock() {
   const { data: sponsors } = useApi('/api/sponsors.php');
-  const [bottomOffset, setBottomOffset] = useState(16);
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const [openDropdowns, setOpenDropdowns] = useState({});
   const marqueeRef = useRef(null);
-
-  // Calculate footer overlap on desktop
-  useEffect(() => {
-    const handleScroll = () => {
-      const footer = document.querySelector('footer.footer');
-      if (!footer) {
-        setBottomOffset(16);
-        return;
-      }
-
-      const footerRect = footer.getBoundingClientRect();
-      const windowHeight = window.innerHeight;
-
-      if (footerRect.top < windowHeight) {
-        const overlap = windowHeight - footerRect.top;
-        setBottomOffset(overlap + 16);
-      } else {
-        setBottomOffset(16);
-      }
-    };
-
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    window.addEventListener('resize', handleScroll, { passive: true });
-    handleScroll();
-
-    return () => {
-      window.removeEventListener('scroll', handleScroll);
-      window.removeEventListener('resize', handleScroll);
-    };
-  }, []);
 
   const rawItems = sponsors && Array.isArray(sponsors) ? sponsors : [];
 
@@ -98,7 +67,6 @@ export default function SponsorDock() {
       <aside
         className={`sponsor-rail${isCollapsed ? ' mobile-collapsed' : ''}`}
         aria-label="Featured Partners"
-        style={{ maxHeight: `calc(100vh - var(--nav-h) - ${bottomOffset + 16}px)` }}
       >
         {/* Dock Header */}
         <div className="sponsor-rail-header">

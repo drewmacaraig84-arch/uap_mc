@@ -265,7 +265,7 @@ $initials = strtoupper(substr($user['name'], 0, 1) . substr(strrchr($user['name'
       </a>
 
       <?php if ($wmRecord): 
-        $qrRelative = generate_member_directory_qr($pdo, (int)$wmRecord['id']);
+        $qrRelative = generate_member_directory_qr($pdo, (int)$wmRecord['id'], true);
       ?>
         <!-- Public Directory QR Code Section -->
         <div style="padding: 14px; background: rgba(245,158,11,0.06); border: 1px dashed rgba(245,158,11,0.35); border-radius: 10px; text-align: center;">
