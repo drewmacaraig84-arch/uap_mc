@@ -1,4 +1,4 @@
-    #!/bin/bash
+#!/bin/bash
 set -e
 
 # Configure dynamic port from Railway ($PORT) or fallback to 80
