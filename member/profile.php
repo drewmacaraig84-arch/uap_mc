@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/../includes/auth.php';
+require_once __DIR__ . '/../includes/qr_helper.php';
 require_member();
 
 $userId = current_user_id();
@@ -259,9 +260,40 @@ $initials = strtoupper(substr($user['name'], 0, 1) . substr(strrchr($user['name'
 
     <!-- Quick Link to Website Directory Profile -->
     <div style="width: 100%; margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--border-color);">
-      <a href="<?php echo BASE_URL; ?>/member/website_directory.php" class="btn btn-outline btn-sm" style="width: 100%; justify-content: center; font-size: 12px;">
+      <a href="<?php echo BASE_URL; ?>/member/website_directory.php" class="btn btn-outline btn-sm" style="width: 100%; justify-content: center; font-size: 12px; margin-bottom: 12px;">
         <?php echo icon('website_directory', '', 14); ?> Manage Directory &amp; Showcase
       </a>
+
+      <?php if ($wmRecord): 
+        $qrRelative = generate_member_directory_qr($pdo, (int)$wmRecord['id']);
+      ?>
+        <!-- Public Directory QR Code Section -->
+        <div style="padding: 14px; background: rgba(245,158,11,0.06); border: 1px dashed rgba(245,158,11,0.35); border-radius: 10px; text-align: center;">
+          <div style="display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 12px; font-weight: 700; color: var(--accent-primary, #f5b800); margin-bottom: 8px;">
+            <?php echo icon('qr_codes', '', 14); ?>
+            <span>Digital Directory QR Code</span>
+          </div>
+
+          <?php if ($qrRelative && file_exists(__DIR__ . '/../' . ltrim($qrRelative, '/'))): ?>
+            <div style="width: 110px; height: 110px; margin: 0 auto 10px; background: #ffffff; padding: 6px; border-radius: 8px; box-shadow: 0 3px 10px rgba(0,0,0,0.35);">
+              <img src="<?php echo BASE_URL . '/' . ltrim($qrRelative, '/'); ?>" alt="My Directory QR Code" style="width: 100%; height: 100%; object-fit: contain;">
+            </div>
+          <?php endif; ?>
+
+          <p style="font-size: 11px; color: var(--text-secondary); margin: 0 0 10px; line-height: 1.35;">
+            Scannable QR code linking to your official public architect profile.
+          </p>
+
+          <div style="display: flex; flex-direction: column; gap: 6px;">
+            <a href="download_qr.php" class="btn btn-primary btn-sm" style="width: 100%; justify-content: center; font-size: 11.5px; font-weight: 700; padding: 7px 10px;">
+              <?php echo icon('download', '', 13); ?> Download QR Code
+            </a>
+            <a href="<?php echo BASE_URL . '/profile/' . $wmRecord['id']; ?>" target="_blank" class="btn btn-secondary btn-sm" style="width: 100%; justify-content: center; font-size: 11px; padding: 5px 10px;">
+              <?php echo icon('external_link', '', 12); ?> View Public Profile
+            </a>
+          </div>
+        </div>
+      <?php endif; ?>
     </div>
   </div>
 

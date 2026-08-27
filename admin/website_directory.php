@@ -431,9 +431,14 @@ include __DIR__ . '/../includes/header.php';
                 </div>
               </td>
               <td style="text-align: right;">
-                <a href="<?php echo BASE_URL; ?>/public/member_profile.php?prc=<?php echo urlencode($am['id_number']); ?>" target="_blank" class="btn btn-sm btn-secondary" style="font-size:11px; padding:4px 10px; display: inline-flex; align-items: center; gap: 4px;">
-                  <?php echo icon('external_link', '', 12); ?> <span>View Profile</span>
-                </a>
+                <div style="display:inline-flex; align-items:center; gap:6px; justify-content:flex-end;">
+                  <a href="download_qr.php?id=<?php echo (int)$am['id']; ?>" class="btn btn-sm btn-primary" style="font-size:11px; padding:4px 9px; display:inline-flex; align-items:center; gap:4px;" title="Download Public Directory QR Code">
+                    <?php echo icon('download', '', 12); ?> <span>Download QR</span>
+                  </a>
+                  <a href="<?php echo BASE_URL; ?>/profile/<?php echo (int)$am['id']; ?>" target="_blank" class="btn btn-sm btn-secondary" style="font-size:11px; padding:4px 9px; display:inline-flex; align-items:center; gap:4px;">
+                    <?php echo icon('external_link', '', 12); ?> <span>View Profile</span>
+                  </a>
+                </div>
               </td>
             </tr>
           <?php endforeach; ?>

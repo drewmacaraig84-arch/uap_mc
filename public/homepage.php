@@ -685,7 +685,7 @@ $newsItems = [
                                             <td><?php echo htmlspecialchars($mLoc); ?></td>
                                             <td>
                                                 <a 
-                                                    href="<?php echo BASE_URL; ?>/public/member_profile.php?prc=<?php echo urlencode($member['prc'] ?? ''); ?>&name=<?php echo urlencode($member['name'] ?? ''); ?>" 
+                                                    href="<?php echo BASE_URL; ?>/profile/<?php echo (int)($member['id'] ?? 0); ?>" 
                                                     class="badge-status" 
                                                     style="text-decoration:none; display:inline-block; font-weight:600; cursor:pointer;"
                                                 >

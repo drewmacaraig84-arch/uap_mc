@@ -142,6 +142,11 @@ try {
         $pdo->exec("ALTER TABLE website_members ADD COLUMN projects_json LONGTEXT NULL AFTER gallery_json");
         echo "Added column 'projects_json' to 'website_members' table.\n";
     }
+    $colCheck = $pdo->query("SHOW COLUMNS FROM website_members LIKE 'qr_code_path'")->fetch();
+    if (!$colCheck) {
+        $pdo->exec("ALTER TABLE website_members ADD COLUMN qr_code_path VARCHAR(255) NULL AFTER projects_json");
+        echo "Added column 'qr_code_path' to 'website_members' table.\n";
+    }
 } catch (Throwable $e) {
     echo "Notice: " . $e->getMessage() . "\n";
 }
@@ -160,6 +165,17 @@ try {
     }
 } catch (Throwable $e) {
     echo "Notice: " . $e->getMessage() . "\n";
+}
+
+// Generate QR codes for all existing website_members if missing
+try {
+    require_once __DIR__ . '/../includes/qr_helper.php';
+    $qrCount = batch_generate_member_qr_codes($pdo);
+    if ($qrCount > 0) {
+        echo "Generated directory QR codes for {$qrCount} member(s).\n";
+    }
+} catch (Throwable $e) {
+    echo "Member QR generation notice: " . $e->getMessage() . "\n";
 }
 
 run_sql_files($pdo, __DIR__ . '/seeds', 'seed');

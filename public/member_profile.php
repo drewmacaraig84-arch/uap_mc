@@ -33,6 +33,15 @@ if ($member && !empty($member['user_id'])) {
     }
 }
 
+// Redirect to modern React website profile page
+if ($member && !empty($member['id'])) {
+    header('Location: ' . BASE_URL . '/profile/' . (int)$member['id']);
+    exit;
+} else {
+    header('Location: ' . BASE_URL . '/directory');
+    exit;
+}
+
 
 // Decode multiple project gallery photos
 $gallery = [];

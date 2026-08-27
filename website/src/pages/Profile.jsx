@@ -114,24 +114,6 @@ export default function Profile() {
                 </a>
               </div>
             )}
-
-            {m.qr_url && (
-              <div className="profile-qr">
-                <img
-                  src={m.qr_url}
-                  alt="Payment QR"
-                  onError={(e) => {
-                    if (e.currentTarget.parentElement) {
-                      e.currentTarget.parentElement.style.display = 'none';
-                    }
-                  }}
-                />
-                <span className="eyebrow" style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                  <IconQrCode size={12} />
-                  <span>Payment QR</span>
-                </span>
-              </div>
-            )}
           </div>
         </div>
 

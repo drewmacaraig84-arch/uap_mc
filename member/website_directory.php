@@ -398,9 +398,14 @@ include __DIR__ . '/../includes/header.php';
     <!-- ================= STATE 4: UNLOCKED! FULL PROFILE & COMPLETED WORKS EDITOR ================= -->
     <div style="margin-bottom: 16px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
       <span class="muted" style="font-size:13px;">Manage your directory details and completed works portfolio below.</span>
-      <a href="<?php echo BASE_URL; ?>/public/member_profile.php?prc=<?php echo urlencode($profile['id_number']); ?>" target="_blank" class="btn btn-sm" style="background:transparent; border:1px solid var(--accent-primary, #f5b800); color:var(--accent-primary, #f5b800); font-weight:700; display:inline-flex; align-items:center; gap:6px;">
-        <?php echo icon('eye', '', 14); ?> <span>View Public Profile</span>
-      </a>
+      <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+        <a href="download_qr.php" class="btn btn-sm btn-primary" style="font-weight:700; display:inline-flex; align-items:center; gap:6px;">
+          <?php echo icon('download', '', 14); ?> <span>Download Public QR Code</span>
+        </a>
+        <a href="<?php echo BASE_URL; ?>/profile/<?php echo (int)($profile['id'] ?? 0); ?>" target="_blank" class="btn btn-sm" style="background:transparent; border:1px solid var(--accent-primary, #f5b800); color:var(--accent-primary, #f5b800); font-weight:700; display:inline-flex; align-items:center; gap:6px;">
+          <?php echo icon('eye', '', 14); ?> <span>View Public Profile</span>
+        </a>
+      </div>
     </div>
 
     <form method="post" enctype="multipart/form-data" style="margin-top: 10px;">

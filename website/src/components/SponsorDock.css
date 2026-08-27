@@ -11,8 +11,10 @@
   position: fixed;
   right: 0;
   top: calc(var(--nav-h) + 12px);
-  width: var(--sponsor-rail-w, clamp(260px, 25vw, 440px));
-  max-width: var(--sponsor-rail-w, clamp(260px, 25vw, 440px));
+  height: auto;
+  max-height: calc(100vh - var(--nav-h) - 32px);
+  width: var(--sponsor-rail-w, clamp(260px, 22vw, 360px));
+  max-width: var(--sponsor-rail-w, clamp(260px, 22vw, 360px));
   z-index: 850;
   display: flex;
   flex-direction: column;
@@ -25,7 +27,7 @@
   border-radius: 16px 0 0 16px;
   box-shadow: -8px 0 35px rgba(0, 0, 0, 0.65), 0 0 22px rgba(245, 158, 11, 0.16);
   overflow: hidden;
-  transition: bottom 0.15s ease-out;
+  transition: max-height 0.15s ease-out;
 }
 
 /* Header */

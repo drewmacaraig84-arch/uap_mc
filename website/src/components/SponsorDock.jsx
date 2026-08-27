@@ -98,7 +98,7 @@ export default function SponsorDock() {
       <aside
         className={`sponsor-rail${isCollapsed ? ' mobile-collapsed' : ''}`}
         aria-label="Featured Partners"
-        style={{ bottom: `${bottomOffset}px` }}
+        style={{ maxHeight: `calc(100vh - var(--nav-h) - ${bottomOffset + 16}px)` }}
       >
         {/* Dock Header */}
         <div className="sponsor-rail-header">
