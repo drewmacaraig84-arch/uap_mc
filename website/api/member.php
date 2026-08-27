@@ -14,10 +14,17 @@ try {
     $member = $stmt->fetch();
     if (!$member) { http_response_code(404); echo json_encode(['error' => 'Not found']); exit; }
 
-    if (!empty($member['user_id']) && function_exists('is_good_member') && !is_good_member($pdo, (int)$member['user_id'])) {
-        http_response_code(404);
-        echo json_encode(['error' => 'Member profile is currently on administrative hold or pending certification.']);
-        exit;
+    if (!empty($member['user_id'])) {
+        if (function_exists('has_unlocked_website_directory') && !has_unlocked_website_directory($pdo, (int)$member['user_id'])) {
+            http_response_code(404);
+            echo json_encode(['error' => 'This directory profile is currently pending approval or payment.']);
+            exit;
+        }
+        if (function_exists('is_good_member') && !is_good_member($pdo, (int)$member['user_id'])) {
+            http_response_code(404);
+            echo json_encode(['error' => 'Member profile is currently on administrative hold or pending certification.']);
+            exit;
+        }
     }
 
     $toUrl = function($path) {

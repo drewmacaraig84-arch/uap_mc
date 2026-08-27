@@ -137,6 +137,13 @@ function generate_member_directory_qr(PDO $pdo, $websiteMemberId, $forceRegenera
         return false;
     }
 
+    // Never generate QR code for members who have not paid/unlocked directory access
+    if (!empty($wm['user_id']) && function_exists('has_unlocked_website_directory')) {
+        if (!has_unlocked_website_directory($pdo, (int)$wm['user_id'])) {
+            return false;
+        }
+    }
+
     $qrDir = __DIR__ . '/../uploads/qr_codes';
     if (!is_dir($qrDir)) {
         @mkdir($qrDir, 0775, true);

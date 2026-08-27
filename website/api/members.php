@@ -17,6 +17,9 @@ try {
     
     $members = [];
     foreach ($rows as $m) {
+        if (!empty($m['user_id']) && function_exists('has_unlocked_website_directory') && !has_unlocked_website_directory($pdo, (int)$m['user_id'])) {
+            continue; // Exclude if pending fee assignment or payment
+        }
         if (!empty($m['user_id']) && function_exists('is_good_member') && !is_good_member($pdo, (int)$m['user_id'])) {
             continue; // Exclude if good standing is revoked or overdue
         }

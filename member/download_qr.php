@@ -14,6 +14,11 @@ if (!$wm) {
     die("No directory profile found for your account.");
 }
 
+// Ensure the member's website directory application is paid/unlocked
+if (function_exists('has_unlocked_website_directory') && !has_unlocked_website_directory($pdo, $userId)) {
+    die("Your website directory application is currently pending approval or payment. Your public QR code will be available once unlocked.");
+}
+
 // Generate or fetch QR code relative path (force fresh generation with live domain)
 $qrPath = generate_member_directory_qr($pdo, (int)$wm['id'], true);
 if (!$qrPath) {

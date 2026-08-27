@@ -264,7 +264,7 @@ $initials = strtoupper(substr($user['name'], 0, 1) . substr(strrchr($user['name'
         <?php echo icon('website_directory', '', 14); ?> Manage Directory &amp; Showcase
       </a>
 
-      <?php if ($wmRecord): 
+      <?php if ($wmRecord && function_exists('has_unlocked_website_directory') && has_unlocked_website_directory($pdo, $userId)): 
         $qrRelative = generate_member_directory_qr($pdo, (int)$wmRecord['id'], true);
       ?>
         <!-- Public Directory QR Code Section -->
