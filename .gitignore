@@ -5,6 +5,10 @@
 # Uploaded files - these are real user data, not code
 uploads/*
 !uploads/.gitkeep
+!uploads/*/.gitkeep
+!uploads/davies.png
+!uploads/qr_*
+!public/logo.jpg
 receipts/*
 !receipts/.gitkeep
 
