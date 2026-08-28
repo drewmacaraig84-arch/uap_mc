@@ -266,31 +266,53 @@ $initials = strtoupper(substr($user['name'], 0, 1) . substr(strrchr($user['name'
 
       <?php if ($wmRecord && function_exists('has_unlocked_website_directory') && has_unlocked_website_directory($pdo, $userId)): 
         $qrRelative = generate_member_directory_qr($pdo, (int)$wmRecord['id'], true);
+        $isRevoked = !empty($standing['is_revoked']) || !$isGoodStanding;
       ?>
         <!-- Public Directory QR Code Section -->
-        <div style="padding: 14px; background: rgba(245,158,11,0.06); border: 1px dashed rgba(245,158,11,0.35); border-radius: 10px; text-align: center;">
-          <div style="display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 12px; font-weight: 700; color: var(--accent-primary, #f5b800); margin-bottom: 8px;">
+        <div style="padding: 14px; background: <?php echo $isRevoked ? 'rgba(239,68,68,0.04)' : 'rgba(245,158,11,0.06)'; ?>; border: 1px dashed <?php echo $isRevoked ? 'rgba(239,68,68,0.35)' : 'rgba(245,158,11,0.35)'; ?>; border-radius: 10px; text-align: center; transition: all 0.3s ease;">
+          <div style="display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 12px; font-weight: 700; color: <?php echo $isRevoked ? '#ef4444' : 'var(--accent-primary, #f5b800)'; ?>; margin-bottom: 8px;">
             <?php echo icon('qr_codes', '', 14); ?>
             <span>Digital Directory QR Code</span>
           </div>
 
           <?php if ($qrRelative && file_exists(__DIR__ . '/../' . ltrim($qrRelative, '/'))): ?>
-            <div style="width: 110px; height: 110px; margin: 0 auto 10px; background: #ffffff; padding: 6px; border-radius: 8px; box-shadow: 0 3px 10px rgba(0,0,0,0.35);">
-              <img src="<?php echo BASE_URL . '/' . ltrim($qrRelative, '/'); ?>" alt="My Directory QR Code" style="width: 100%; height: 100%; object-fit: contain;">
+            <div style="position: relative; width: 110px; height: 110px; margin: 0 auto 10px; background: #ffffff; padding: 6px; border-radius: 8px; box-shadow: 0 3px 10px rgba(0,0,0,0.35); overflow: hidden;">
+              <img src="<?php echo BASE_URL . '/' . ltrim($qrRelative, '/'); ?>" alt="My Directory QR Code" style="width: 100%; height: 100%; object-fit: contain; <?php echo $isRevoked ? 'filter: blur(6px) grayscale(80%); opacity: 0.35;' : ''; ?> transition: filter 0.3s ease, opacity 0.3s ease;">
+              <?php if ($isRevoked): ?>
+                <div style="position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(15,23,42,0.68); color: #ef4444; font-size: 9.5px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; padding: 4px; text-align: center;">
+                  <?php echo icon('alert', '', 18); ?>
+                  <span style="margin-top: 3px; font-size: 9px; line-height: 1.15;">QR Code Suspended</span>
+                </div>
+              <?php endif; ?>
             </div>
           <?php endif; ?>
 
-          <p style="font-size: 11px; color: var(--text-secondary); margin: 0 0 10px; line-height: 1.35;">
-            Scannable QR code linking to your official public architect profile.
-          </p>
+          <?php if ($isRevoked): ?>
+            <p style="font-size: 11px; color: #ef4444; margin: 0 0 10px; line-height: 1.35; font-weight: 600;">
+              QR Code &amp; directory profile are suspended while standing is revoked.
+            </p>
+          <?php else: ?>
+            <p style="font-size: 11px; color: var(--text-secondary); margin: 0 0 10px; line-height: 1.35;">
+              Scannable QR code linking to your official public architect profile.
+            </p>
+          <?php endif; ?>
 
           <div style="display: flex; flex-direction: column; gap: 6px;">
-            <a href="download_qr.php" class="btn btn-primary btn-sm" style="width: 100%; justify-content: center; font-size: 11.5px; font-weight: 700; padding: 7px 10px;">
-              <?php echo icon('download', '', 13); ?> Download QR Code
-            </a>
-            <a href="<?php echo BASE_URL . '/profile/' . $wmRecord['id']; ?>" target="_blank" class="btn btn-secondary btn-sm" style="width: 100%; justify-content: center; font-size: 11px; padding: 5px 10px;">
-              <?php echo icon('external_link', '', 12); ?> View Public Profile
-            </a>
+            <?php if ($isRevoked): ?>
+              <button type="button" disabled class="btn btn-sm" style="width: 100%; justify-content: center; font-size: 11.5px; font-weight: 700; padding: 7px 10px; background: #374151; border: 1px solid #4b5563; color: #9ca3af; cursor: not-allowed; opacity: 0.6; pointer-events: none;" title="Download disabled while standing is revoked">
+                <?php echo icon('download', '', 13); ?> Download QR Code
+              </button>
+              <button type="button" disabled class="btn btn-sm" style="width: 100%; justify-content: center; font-size: 11px; padding: 5px 10px; background: #1f2937; border: 1px solid #374151; color: #6b7280; cursor: not-allowed; opacity: 0.5; pointer-events: none;" title="View Profile disabled while standing is revoked">
+                <?php echo icon('external_link', '', 12); ?> View Public Profile
+              </button>
+            <?php else: ?>
+              <a href="download_qr.php" class="btn btn-primary btn-sm" style="width: 100%; justify-content: center; font-size: 11.5px; font-weight: 700; padding: 7px 10px;">
+                <?php echo icon('download', '', 13); ?> Download QR Code
+              </a>
+              <a href="<?php echo BASE_URL . '/profile/' . $wmRecord['id']; ?>" target="_blank" class="btn btn-secondary btn-sm" style="width: 100%; justify-content: center; font-size: 11px; padding: 5px 10px;">
+                <?php echo icon('external_link', '', 12); ?> View Public Profile
+              </a>
+            <?php endif; ?>
           </div>
         </div>
       <?php endif; ?>

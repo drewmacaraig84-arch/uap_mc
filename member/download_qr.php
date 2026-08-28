@@ -19,6 +19,11 @@ if (function_exists('has_unlocked_website_directory') && !has_unlocked_website_d
     die("Your website directory application is currently pending approval or payment. Your public QR code will be available once unlocked.");
 }
 
+// Ensure member is in good standing
+if (function_exists('is_good_member') && !is_good_member($pdo, $userId)) {
+    die("Your member standing is currently revoked or on administrative hold. QR code download is suspended.");
+}
+
 // Generate or fetch QR code relative path (force fresh generation with live domain)
 $qrPath = generate_member_directory_qr($pdo, (int)$wm['id'], true);
 if (!$qrPath) {
