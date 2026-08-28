@@ -579,8 +579,11 @@ include __DIR__ . '/../includes/header.php';
           <p class="muted" style="font-size:12.5px; margin:4px 0 0;">Add completed architectural works with cover photo, team credits, and up to 5 photos per project. Save each project individually.</p>
         </div>
         <div style="display: flex; align-items: center; gap: 8px;">
-          <button type="button" id="btnToggleAllProjects" onclick="toggleAllProjects()" class="btn btn-sm btn-secondary" style="font-size:11.5px; padding: 5px 14px; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
-            <span>Collapse All</span>
+          <button type="button" onclick="toggleAllProjects(true)" class="btn btn-sm btn-secondary" style="font-size:11.5px; padding: 5px 12px; border-radius: 6px; cursor: pointer;">
+            Expand All
+          </button>
+          <button type="button" onclick="toggleAllProjects(false)" class="btn btn-sm btn-secondary" style="font-size:11.5px; padding: 5px 12px; border-radius: 6px; cursor: pointer;">
+            Collapse All
           </button>
         </div>
       </div>
@@ -617,7 +620,7 @@ include __DIR__ . '/../includes/header.php';
               <!-- Accordion Header Bar (Clickable) -->
               <div class="project-card-header" onclick="toggleProjectAccordion(this)" style="display:flex; justify-content:space-between; align-items:center; padding: 12px 16px; background: rgba(255,255,255,0.03); cursor: pointer; user-select: none; border-bottom: 1px solid var(--border-color, rgba(255,255,255,0.08));">
                 <div style="display: flex; align-items: center; gap: 12px; min-width: 0;">
-                  <span class="accordion-chevron">▼</span>
+                  <span class="accordion-chevron" style="display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 50%; background: rgba(245,158,11,0.15); color: var(--accent-primary, #f5b800); font-size: 10px; font-weight: 900; transition: transform 0.25s ease;">▼</span>
                   
                   <?php if ($coverPath): ?>
                     <div style="width: 36px; height: 36px; border-radius: 6px; overflow: hidden; background: #000; flex-shrink: 0; border: 1px solid rgba(255,255,255,0.1);">
@@ -646,7 +649,7 @@ include __DIR__ . '/../includes/header.php';
               </div>
 
               <!-- Collapsible Body Content -->
-              <div class="project-card-body" style="padding: 18px;">
+              <div class="project-card-body" style="padding: 18px; display: block;">
                 <div class="grid-3" style="gap: 12px; margin-bottom: 12px;">
                   <div class="field" style="margin-bottom:0;">
                     <label style="font-size:12px;">Project Title / Name *</label>
@@ -756,119 +759,85 @@ include __DIR__ . '/../includes/header.php';
       </div>
     </div>
 
-    <style>
-      .project-card-item { transition: all 0.2s ease; }
-      .project-card-item .project-card-body { display: block !important; }
-      .project-card-item.is-collapsed .project-card-body { display: none !important; }
-      .project-card-item .accordion-chevron {
-        display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 50%;
-        background: rgba(245,158,11,0.15); color: var(--accent-primary, #f5b800); font-size: 10px; font-weight: 900;
-        transition: transform 0.25s ease; transform: rotate(0deg);
-      }
-      .project-card-item.is-collapsed .accordion-chevron { transform: rotate(-90deg) !important; }
-      .project-card-header { user-select: none; cursor: pointer; transition: background 0.15s ease; }
-      .project-card-header:hover { background: rgba(255,255,255,0.06) !important; }
-    </style>
-
     <script>
-    function toggleProjectAccordion(el) {
-      var card = el.closest('.project-card-item');
-      if (!card) return;
-      card.classList.toggle('is-collapsed');
-      updateToggleAllBtn();
-    }
+    (function() {
+      var projectCount = <?php echo count($renderProjects); ?>;
 
-    function toggleAllProjects() {
-      var cards = document.querySelectorAll('.project-card-item');
-      var btn = document.getElementById('btnToggleAllProjects');
-      if (!cards || cards.length === 0) return;
+      window.toggleProjectAccordion = function(header) {
+        var card = header.closest('.project-card-item');
+        if (!card) return;
+        var body = card.querySelector('.project-card-body');
+        var chevron = card.querySelector('.accordion-chevron');
+        if (!body) return;
 
-      var anyOpen = false;
-      cards.forEach(function(c) {
-        if (!c.classList.contains('is-collapsed')) {
-          anyOpen = true;
-        }
-      });
-
-      var shouldCollapse = anyOpen;
-      cards.forEach(function(c) {
-        if (shouldCollapse) {
-          c.classList.add('is-collapsed');
+        if (body.style.display === 'none') {
+          body.style.display = 'block';
+          if (chevron) chevron.style.transform = 'rotate(0deg)';
         } else {
-          c.classList.remove('is-collapsed');
+          body.style.display = 'none';
+          if (chevron) chevron.style.transform = 'rotate(-90deg)';
         }
-      });
+      };
 
-      if (btn) {
-        btn.innerHTML = shouldCollapse ? '<span>Expand All</span>' : '<span>Collapse All</span>';
-      }
-    }
+      window.toggleAllProjects = function(expand) {
+        var bodies = document.querySelectorAll('.project-card-item .project-card-body');
+        var chevrons = document.querySelectorAll('.project-card-item .accordion-chevron');
+        bodies.forEach(function(b) {
+          b.style.display = expand ? 'block' : 'none';
+        });
+        chevrons.forEach(function(c) {
+          c.style.transform = expand ? 'rotate(0deg)' : 'rotate(-90deg)';
+        });
+      };
 
-    function updateToggleAllBtn() {
-      var cards = document.querySelectorAll('.project-card-item');
-      var btn = document.getElementById('btnToggleAllProjects');
-      if (!btn || cards.length === 0) return;
-
-      var anyOpen = false;
-      cards.forEach(function(c) {
-        if (!c.classList.contains('is-collapsed')) {
-          anyOpen = true;
+      window.updateProjTitlePreview = function(input) {
+        var card = input.closest('.project-card-item');
+        if (!card) return;
+        var preview = card.querySelector('.proj-title-preview');
+        if (preview) {
+          preview.textContent = input.value.trim() || 'New Architectural Work';
         }
-      });
+      };
 
-      btn.innerHTML = anyOpen ? '<span>Collapse All</span>' : '<span>Expand All</span>';
-    }
-
-    function updateProjTitlePreview(input) {
-      var card = input.closest('.project-card-item');
-      if (!card) return;
-      var preview = card.querySelector('.proj-title-preview');
-      if (preview) {
-        preview.textContent = input.value.trim() || 'New Architectural Work';
-      }
-    }
-
-    function updateProjCatPreview(input) {
-      var card = input.closest('.project-card-item');
-      if (!card) return;
-      var preview = card.querySelector('.proj-cat-preview');
-      if (preview) {
-        preview.textContent = input.value.trim().toUpperCase() || 'RESIDENTIAL';
-      }
-    }
-
-    function removeUnsavedProjectCard(btn) {
-      var card = btn.closest('.project-card-item');
-      if (card) {
-        card.remove();
-      }
-      var container = document.getElementById('projectsContainer');
-      var notice = document.getElementById('noProjectsNotice');
-      if (container && notice) {
-        if (container.querySelectorAll('.project-card-item').length === 0) {
-          notice.style.display = 'block';
+      window.updateProjCatPreview = function(input) {
+        var card = input.closest('.project-card-item');
+        if (!card) return;
+        var preview = card.querySelector('.proj-cat-preview');
+        if (preview) {
+          preview.textContent = input.value.trim().toUpperCase() || 'RESIDENTIAL';
         }
-      }
-      updateToggleAllBtn();
-    }
+      };
 
-    function initAddProject() {
+      window.removeUnsavedProjectCard = function(btn) {
+        var card = btn.closest('.project-card-item');
+        if (card) {
+          card.remove();
+        }
+        var container = document.getElementById('projectsContainer');
+        var notice = document.getElementById('noProjectsNotice');
+        if (container && notice) {
+          if (container.querySelectorAll('.project-card-item').length === 0) {
+            notice.style.display = 'block';
+          }
+        }
+      };
+
       var btnAdd = document.getElementById('btnAddProject');
-      if (btnAdd && !btnAdd.dataset.bound) {
-        btnAdd.dataset.bound = 'true';
+      if (btnAdd) {
         btnAdd.addEventListener('click', function(e) {
           e.preventDefault();
           var notice = document.getElementById('noProjectsNotice');
           if (notice) notice.style.display = 'none';
 
-          var projectCount = document.querySelectorAll('.project-card-item').length + 1;
+          projectCount++;
           var timestamp = Date.now();
+          var pIdx = 'new_' + timestamp;
           var container = document.getElementById('projectsContainer');
           if (!container) return;
 
           var div = document.createElement('div');
           div.className = 'project-card-item';
-          div.id = 'proj_card_new_' + timestamp;
+          div.id = 'proj_card_' + pIdx;
           div.style.cssText = 'background: var(--field-bg, rgba(0,0,0,0.25)); border: 1px dashed var(--border-color-gold, rgba(245,158,11,0.35)); border-radius: 12px; margin-bottom: 16px; overflow: hidden; width: 100%; box-sizing: border-box;';
           
           div.innerHTML = [
@@ -878,7 +847,7 @@ include __DIR__ . '/../includes/header.php';
             '  <input type="hidden" name="project_id" value="proj_' + timestamp + '">',
             '  <div class="project-card-header" onclick="toggleProjectAccordion(this)" style="display:flex; justify-content:space-between; align-items:center; padding: 12px 16px; background: rgba(255,255,255,0.03); cursor: pointer; user-select: none; border-bottom: 1px solid var(--border-color, rgba(255,255,255,0.08));">',
             '    <div style="display: flex; align-items: center; gap: 12px; min-width: 0;">',
-            '      <span class="accordion-chevron">▼</span>',
+            '      <span class="accordion-chevron" style="display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 50%; background: rgba(245,158,11,0.15); color: var(--accent-primary, #f5b800); font-size: 10px; font-weight: 900; transition: transform 0.25s ease;">▼</span>',
             '      <div style="min-width: 0;">',
             '        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">',
             '          <span style="font-weight: 800; font-size: 13.5px; color: var(--accent-primary, #f5b800);">New Completed Work #' + projectCount + ':</span>',
@@ -897,7 +866,7 @@ include __DIR__ . '/../includes/header.php';
             '      </button>',
             '    </div>',
             '  </div>',
-            '  <div class="project-card-body" style="padding: 18px;">',
+            '  <div class="project-card-body" style="padding: 18px; display: block;">',
             '    <div class="grid-3" style="gap: 12px; margin-bottom: 12px;">',
             '      <div class="field" style="margin-bottom:0;">',
             '        <label style="font-size:12px;">Project Title / Name *</label>',
@@ -919,7 +888,7 @@ include __DIR__ . '/../includes/header.php';
             '      </div>',
             '      <div class="field" style="margin-bottom:0;">',
             '        <label style="font-size:13px; font-weight:700; color:var(--text-primary);">Project Team / Collaborators</label>',
-            '        <textarea name="project_team" rows="7" placeholder="e.g. Ar. Anthony Nazareno, Ar. Vladimir Banks, IDr. Marielle Saguibo, Engr. Juan Dela Cruz" style="font-size:13.5px; line-height:1.6; min-height:160px; width:100%; box-sizing:border-box; resize:vertical;"></textarea>',
+            '        <textarea name="project_team" rows="7" placeholder="e.g. Ar. Anthony Nazareno&#10;Ar. Vladimir Banks&#10;IDr. Marielle Saguibo&#10;Engr. Juan Dela Cruz" style="font-size:13.5px; line-height:1.6; min-height:160px; width:100%; box-sizing:border-box; resize:vertical;"></textarea>',
             '      </div>',
             '    </div>',
             '    <div style="background: rgba(0,0,0,0.2); border-radius: 10px; padding: 14px; border: 1px solid var(--border-color, rgba(255,255,255,0.06));">',
@@ -942,16 +911,9 @@ include __DIR__ . '/../includes/header.php';
           ].join('');
 
           container.appendChild(div);
-          updateToggleAllBtn();
         });
       }
-    }
-
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', initAddProject);
-    } else {
-      initAddProject();
-    }
+    })();
     </script>
   <?php endif; ?>
 
