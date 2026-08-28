@@ -33,8 +33,12 @@ try {
         return '/' . ltrim($path, '/');
     };
 
-    // Build photo URL
-    $member['photo_url'] = $toUrl($member['photo_path']);
+    // Build photo URL (strictly member portrait, never project cover photos)
+    $photo = $member['photo_path'];
+    if ($photo && str_contains($photo, 'proj_')) {
+        $photo = null;
+    }
+    $member['photo_url'] = $toUrl($photo);
 
     if (!empty($member['link_url']) && function_exists('detect_social_link_type')) {
         $member['link_type'] = detect_social_link_type($member['link_url'], $member['link_type'] ?? 'auto');

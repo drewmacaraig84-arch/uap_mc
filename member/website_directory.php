@@ -159,9 +159,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'save_
         $uStmt = $pdo->prepare("SELECT profile_photo FROM users WHERE id = ?");
         $uStmt->execute([$userId]);
         $userPhoto = $uStmt->fetchColumn();
-
-        $firstPhoto = !empty($projects[0]['cover_photo']) ? $projects[0]['cover_photo'] : (!empty($userPhoto) ? $userPhoto : null);
-        $firstDesc = !empty($projects[0]['title']) ? $projects[0]['title'] : null;
+        // STRICT: Never use project cover photos for the member's profile avatar
+        $firstPhoto = !empty($userPhoto) ? $userPhoto : null;
+        $firstDesc = null;
 
         ensure_user_profile_photo_column($pdo);
         $stmt = $pdo->prepare("INSERT INTO website_members 

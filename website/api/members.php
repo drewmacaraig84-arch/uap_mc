@@ -23,7 +23,11 @@ try {
         if (!empty($m['user_id']) && function_exists('is_good_member') && !is_good_member($pdo, (int)$m['user_id'])) {
             continue; // Exclude if good standing is revoked or overdue
         }
-        $m['photo_url'] = $toUrl($m['photo_path']);
+        $photo = $m['photo_path'];
+        if ($photo && str_contains($photo, 'proj_')) {
+            $photo = null;
+        }
+        $m['photo_url'] = $toUrl($photo);
         unset($m['photo_path']);
         if (!empty($m['link_url']) && function_exists('detect_social_link_type')) {
             $m['link_type'] = detect_social_link_type($m['link_url'], $m['link_type'] ?? 'auto');
