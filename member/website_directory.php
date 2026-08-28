@@ -424,27 +424,27 @@ include __DIR__ . '/../includes/header.php';
         <input type="text" name="name" value="<?php echo htmlspecialchars($profile['name'] ?? ''); ?>" required>
       </div>
 
-      <!-- 2. COMPANY & SPECIALTY -->
+      <!-- 2. COMPANY & ADDRESS -->
       <div class="grid-2">
         <div class="field">
           <label>Company / Architectural Firm Name</label>
           <input type="text" name="company_name" value="<?php echo htmlspecialchars($profile['company_name'] ?? ''); ?>" placeholder="e.g. Ting & Associates Architects, AESTRUKTURA Design Studio">
         </div>
         <div class="field">
-          <label>Architectural Specialty</label>
-          <input type="text" name="specialty" value="<?php echo htmlspecialchars($profile['specialty'] ?? ''); ?>" placeholder="e.g. Sustainable & Residential Design, Commercial" required>
+          <label>Company / Office Address</label>
+          <input type="text" name="location" value="<?php echo htmlspecialchars($profile['location'] ?? ''); ?>" placeholder="e.g. Calapan City, Oriental Mindoro (or full office address)" required>
         </div>
       </div>
 
-      <!-- 3. ROLE / TITLE & ADDRESS -->
+      <!-- 3. ROLE / TITLE & SPECIALIZATION -->
       <div class="grid-2">
         <div class="field">
           <label>Role / Title</label>
           <input type="text" name="role_title" value="<?php echo htmlspecialchars($profile['role_title'] ?? ''); ?>" placeholder="e.g. Principal Architect, Project Architect, General Manager" required>
         </div>
         <div class="field">
-          <label>Address</label>
-          <input type="text" name="location" value="<?php echo htmlspecialchars($profile['location'] ?? ''); ?>" placeholder="e.g. Calapan City, Oriental Mindoro (or full office address)" required>
+          <label>Architectural Specialty / Specialization</label>
+          <input type="text" name="specialty" value="<?php echo htmlspecialchars($profile['specialty'] ?? ''); ?>" placeholder="e.g. Sustainable & Residential Design, Commercial" required>
         </div>
       </div>
 

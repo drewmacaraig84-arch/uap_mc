@@ -147,6 +147,9 @@ export default function Profile() {
             <dl className="profile-dl">
               <dt>Full Name</dt><dd>{m.name}</dd>
               {m.company_name && <><dt>Company / Firm</dt><dd>{m.company_name}</dd></>}
+              {m.location && <><dt>Company / Office Address</dt><dd>{m.location}</dd></>}
+              {m.role_title && <><dt>Title / Role</dt><dd>{m.role_title}</dd></>}
+              {m.specialty && <><dt>Specialization</dt><dd>{m.specialty}</dd></>}
               {(() => {
                 const sList = (m.links && m.links.length > 0)
                   ? m.links.map(l => getSocialLinkInfo(l.url, l.type)).filter(Boolean)
@@ -174,9 +177,6 @@ export default function Profile() {
                   </>
                 );
               })()}
-              {m.specialty && <><dt>Specialization</dt><dd>{m.specialty}</dd></>}
-              {m.location  && <><dt>Company / Office Address</dt><dd>{m.location}</dd></>}
-              {m.role_title && <><dt>Title / Role</dt><dd>{m.role_title}</dd></>}
             </dl>
           </div>
         </div>
