@@ -615,9 +615,9 @@ include __DIR__ . '/../includes/header.php';
               <input type="hidden" name="existing_cover" value="<?php echo htmlspecialchars($coverPath); ?>">
 
               <!-- Accordion Header Bar (Clickable) -->
-              <div class="project-card-header" style="display:flex; justify-content:space-between; align-items:center; padding: 12px 16px; background: rgba(255,255,255,0.03); cursor: pointer; user-select: none; border-bottom: 1px solid var(--border-color, rgba(255,255,255,0.08));">
+              <div class="project-card-header" onclick="toggleProjectAccordion(this)" style="display:flex; justify-content:space-between; align-items:center; padding: 12px 16px; background: rgba(255,255,255,0.03); cursor: pointer; user-select: none; border-bottom: 1px solid var(--border-color, rgba(255,255,255,0.08));">
                 <div style="display: flex; align-items: center; gap: 12px; min-width: 0;">
-                  <span class="accordion-chevron" style="display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 50%; background: rgba(245,158,11,0.15); color: var(--accent-primary, #f5b800); font-size: 10px; font-weight: 900; transition: transform 0.25s ease;">▼</span>
+                  <span class="accordion-chevron">▼</span>
                   
                   <?php if ($coverPath): ?>
                     <div style="width: 36px; height: 36px; border-radius: 6px; overflow: hidden; background: #000; flex-shrink: 0; border: 1px solid rgba(255,255,255,0.1);">
@@ -638,7 +638,7 @@ include __DIR__ . '/../includes/header.php';
                   </div>
                 </div>
 
-                <div style="display: flex; align-items: center; gap: 8px;">
+                <div style="display: flex; align-items: center; gap: 8px;" onclick="event.stopPropagation()">
                   <button type="submit" form="del_form_<?php echo $pIdx; ?>" class="btn btn-sm btn-secondary" style="color: #ef4444; border-color: rgba(239,68,68,0.3); font-size: 11px; padding: 4px 10px; display: inline-flex; align-items: center; gap: 4px; cursor: pointer;" onclick="return confirm('Are you sure you want to delete this project?');">
                     <?php echo icon('trash', '', 12); ?> <span>Delete Project</span>
                   </button>
@@ -646,7 +646,7 @@ include __DIR__ . '/../includes/header.php';
               </div>
 
               <!-- Collapsible Body Content -->
-              <div class="project-card-body" style="padding: 18px; display: block;">
+              <div class="project-card-body" style="padding: 18px;">
                 <div class="grid-3" style="gap: 12px; margin-bottom: 12px;">
                   <div class="field" style="margin-bottom:0;">
                     <label style="font-size:12px;">Project Title / Name *</label>
@@ -757,7 +757,8 @@ include __DIR__ . '/../includes/header.php';
     </div>
 
     <style>
-      .project-card-item .project-card-body { display: block; }
+      .project-card-item { transition: all 0.2s ease; }
+      .project-card-item .project-card-body { display: block !important; }
       .project-card-item.is-collapsed .project-card-body { display: none !important; }
       .project-card-item .accordion-chevron {
         display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 50%;
@@ -770,191 +771,187 @@ include __DIR__ . '/../includes/header.php';
     </style>
 
     <script>
-    (function() {
-      window.toggleProjectAccordion = function(el) {
-        var card = el.closest('.project-card-item');
-        if (!card) return;
-        card.classList.toggle('is-collapsed');
-        window.updateToggleAllBtn();
-      };
+    function toggleProjectAccordion(el) {
+      var card = el.closest('.project-card-item');
+      if (!card) return;
+      card.classList.toggle('is-collapsed');
+      updateToggleAllBtn();
+    }
 
-      window.toggleAllProjects = function() {
-        var cards = document.querySelectorAll('.project-card-item');
-        var btn = document.getElementById('btnToggleAllProjects');
-        if (!cards || cards.length === 0) return;
+    function toggleAllProjects() {
+      var cards = document.querySelectorAll('.project-card-item');
+      var btn = document.getElementById('btnToggleAllProjects');
+      if (!cards || cards.length === 0) return;
 
-        var anyOpen = false;
-        cards.forEach(function(c) {
-          if (!c.classList.contains('is-collapsed')) {
-            anyOpen = true;
-          }
-        });
-
-        var shouldCollapse = anyOpen;
-        cards.forEach(function(c) {
-          if (shouldCollapse) {
-            c.classList.add('is-collapsed');
-          } else {
-            c.classList.remove('is-collapsed');
-          }
-        });
-
-        if (btn) {
-          btn.innerHTML = shouldCollapse ? '<span>Expand All</span>' : '<span>Collapse All</span>';
-        }
-      };
-
-      window.updateToggleAllBtn = function() {
-        var cards = document.querySelectorAll('.project-card-item');
-        var btn = document.getElementById('btnToggleAllProjects');
-        if (!btn || cards.length === 0) return;
-
-        var anyOpen = false;
-        cards.forEach(function(c) {
-          if (!c.classList.contains('is-collapsed')) {
-            anyOpen = true;
-          }
-        });
-
-        btn.innerHTML = anyOpen ? '<span>Collapse All</span>' : '<span>Expand All</span>';
-      };
-
-      window.updateProjTitlePreview = function(input) {
-        var card = input.closest('.project-card-item');
-        if (!card) return;
-        var preview = card.querySelector('.proj-title-preview');
-        if (preview) {
-          preview.textContent = input.value.trim() || 'New Architectural Work';
-        }
-      };
-
-      window.updateProjCatPreview = function(input) {
-        var card = input.closest('.project-card-item');
-        if (!card) return;
-        var preview = card.querySelector('.proj-cat-preview');
-        if (preview) {
-          preview.textContent = input.value.trim().toUpperCase() || 'RESIDENTIAL';
-        }
-      };
-
-      window.removeUnsavedProjectCard = function(btn) {
-        var card = btn.closest('.project-card-item');
-        if (card) {
-          card.remove();
-        }
-        var container = document.getElementById('projectsContainer');
-        var notice = document.getElementById('noProjectsNotice');
-        if (container && notice) {
-          if (container.querySelectorAll('.project-card-item').length === 0) {
-            notice.style.display = 'block';
-          }
-        }
-        window.updateToggleAllBtn();
-      };
-
-      document.addEventListener('click', function(e) {
-        var header = e.target.closest('.project-card-header');
-        if (!header) return;
-        if (e.target.closest('button') || e.target.closest('input') || e.target.closest('a') || e.target.closest('select')) {
-          return;
-        }
-        window.toggleProjectAccordion(header);
-      });
-
-      document.addEventListener('DOMContentLoaded', function() {
-        var btnAdd = document.getElementById('btnAddProject');
-        if (btnAdd) {
-          btnAdd.addEventListener('click', function(e) {
-            e.preventDefault();
-            var notice = document.getElementById('noProjectsNotice');
-            if (notice) notice.style.display = 'none';
-
-            var projectCount = document.querySelectorAll('.project-card-item').length + 1;
-            var timestamp = Date.now();
-            var container = document.getElementById('projectsContainer');
-            if (!container) return;
-
-            var div = document.createElement('div');
-            div.className = 'project-card-item';
-            div.id = 'proj_card_new_' + timestamp;
-            div.style.cssText = 'background: var(--field-bg, rgba(0,0,0,0.25)); border: 1px dashed var(--border-color-gold, rgba(245,158,11,0.35)); border-radius: 12px; margin-bottom: 16px; overflow: hidden; width: 100%; box-sizing: border-box;';
-            
-            div.innerHTML = [
-              '<form method="POST" enctype="multipart/form-data">',
-              '  <input type="hidden" name="_csrf_token" value="<?php echo generate_csrf(); ?>">',
-              '  <input type="hidden" name="action" value="save_project">',
-              '  <input type="hidden" name="project_id" value="proj_' + timestamp + '">',
-              '  <div class="project-card-header" style="display:flex; justify-content:space-between; align-items:center; padding: 12px 16px; background: rgba(255,255,255,0.03); cursor: pointer; user-select: none; border-bottom: 1px solid var(--border-color, rgba(255,255,255,0.08));">',
-              '    <div style="display: flex; align-items: center; gap: 12px; min-width: 0;">',
-              '      <span class="accordion-chevron">▼</span>',
-              '      <div style="min-width: 0;">',
-              '        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">',
-              '          <span style="font-weight: 800; font-size: 13.5px; color: var(--accent-primary, #f5b800);">New Completed Work #' + projectCount + ':</span>',
-              '          <strong class="proj-title-preview" style="font-size: 13.5px; color: var(--text-primary);">(Unsaved New Project)</strong>',
-              '        </div>',
-              '        <div style="display: flex; align-items: center; gap: 6px; margin-top: 2px; font-size: 11px; color: var(--text-secondary);">',
-              '          <span class="proj-cat-preview">RESIDENTIAL</span>',
-              '          <span>•</span>',
-              '          <span>0 / 5 Photos</span>',
-              '        </div>',
-              '      </div>',
-              '    </div>',
-              '    <div style="display: flex; align-items: center; gap: 8px;">',
-              '      <button type="button" onclick="removeUnsavedProjectCard(this)" class="btn btn-sm btn-secondary" style="color: #ef4444; border-color: rgba(239,68,68,0.3); font-size: 11px; padding: 4px 10px; display: inline-flex; align-items: center; gap: 4px; cursor: pointer;">',
-              '        <span>Discard</span>',
-              '      </button>',
-              '    </div>',
-              '  </div>',
-              '  <div class="project-card-body" style="padding: 18px;">',
-              '    <div class="grid-3" style="gap: 12px; margin-bottom: 12px;">',
-              '      <div class="field" style="margin-bottom:0;">',
-              '        <label style="font-size:12px;">Project Title / Name *</label>',
-              '        <input type="text" name="title" placeholder="e.g. Casa San Gregorio, DLSU-D Building" required oninput="updateProjTitlePreview(this)">',
-              '      </div>',
-              '      <div class="field" style="margin-bottom:0;">',
-              '        <label style="font-size:12px;">Project Category</label>',
-              '        <input type="text" name="category" placeholder="e.g. RESIDENTIAL, COMMERCIAL, INSTITUTIONAL" value="RESIDENTIAL" oninput="updateProjCatPreview(this)">',
-              '      </div>',
-              '      <div class="field" style="margin-bottom:0;">',
-              '        <label style="font-size:12px;">Location</label>',
-              '        <input type="text" name="location" placeholder="e.g. Makati, Manila">',
-              '      </div>',
-              '    </div>',
-              '    <div class="grid-2" style="gap: 16px; margin-bottom: 16px;">',
-              '      <div class="field" style="margin-bottom:0;">',
-              '        <label style="font-size:13px; font-weight:700; color:var(--text-primary);">Project Architectural Concept &amp; Narrative</label>',
-              '        <textarea name="description" rows="7" placeholder="Describe the design philosophy, space planning, materials, volumetric form, and concept..." style="font-size:13.5px; line-height:1.65; min-height:160px; width:100%; box-sizing:border-box; resize:vertical;"></textarea>',
-              '      </div>',
-              '      <div class="field" style="margin-bottom:0;">',
-              '        <label style="font-size:13px; font-weight:700; color:var(--text-primary);">Project Team / Collaborators</label>',
-              '        <textarea name="project_team" rows="7" placeholder="e.g. Ar. Anthony Nazareno, Ar. Vladimir Banks, IDr. Marielle Saguibo, Engr. Juan Dela Cruz" style="font-size:13.5px; line-height:1.6; min-height:160px; width:100%; box-sizing:border-box; resize:vertical;"></textarea>',
-              '      </div>',
-              '    </div>',
-              '    <div style="background: rgba(0,0,0,0.2); border-radius: 10px; padding: 14px; border: 1px solid var(--border-color, rgba(255,255,255,0.06));">',
-              '      <div style="margin-bottom: 12px; padding: 10px; background: rgba(245,158,11,0.05); border: 1px solid rgba(245,158,11,0.25); border-radius: 8px;">',
-              '        <span style="font-size: 12px; font-weight: 700; color: var(--accent-primary, #f5b800); display: block; margin-bottom: 6px;">★ Cover Photo (Front Thumbnail on Directory Grid) *</span>',
-              '        <input type="file" name="cover" accept=".jpg,.jpeg,.png,.webp" required style="font-size: 12px;">',
-              '      </div>',
-              '      <div class="field" style="margin-bottom:0;">',
-              '        <label style="font-size: 12px;">Upload Additional Photos (Up to 4 more files, max 5 total photos):</label>',
-              '        <input type="file" name="photos[]" accept=".jpg,.jpeg,.png,.webp" multiple style="font-size: 12px;">',
-              '      </div>',
-              '    </div>',
-              '    <div style="margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--border-color, rgba(255,255,255,0.08)); display: flex; justify-content: flex-end; gap: 10px;">',
-              '      <button type="submit" class="btn btn-primary btn-sm" style="padding: 9px 22px; font-weight: 700; font-size: 13px; display: inline-flex; align-items: center; gap: 6px; cursor: pointer;">',
-              '        <span>Save This Project</span>',
-              '      </button>',
-              '    </div>',
-              '  </div>',
-              '</form>'
-            ].join('');
-
-            container.appendChild(div);
-            window.updateToggleAllBtn();
-          });
+      var anyOpen = false;
+      cards.forEach(function(c) {
+        if (!c.classList.contains('is-collapsed')) {
+          anyOpen = true;
         }
       });
-    })();
+
+      var shouldCollapse = anyOpen;
+      cards.forEach(function(c) {
+        if (shouldCollapse) {
+          c.classList.add('is-collapsed');
+        } else {
+          c.classList.remove('is-collapsed');
+        }
+      });
+
+      if (btn) {
+        btn.innerHTML = shouldCollapse ? '<span>Expand All</span>' : '<span>Collapse All</span>';
+      }
+    }
+
+    function updateToggleAllBtn() {
+      var cards = document.querySelectorAll('.project-card-item');
+      var btn = document.getElementById('btnToggleAllProjects');
+      if (!btn || cards.length === 0) return;
+
+      var anyOpen = false;
+      cards.forEach(function(c) {
+        if (!c.classList.contains('is-collapsed')) {
+          anyOpen = true;
+        }
+      });
+
+      btn.innerHTML = anyOpen ? '<span>Collapse All</span>' : '<span>Expand All</span>';
+    }
+
+    function updateProjTitlePreview(input) {
+      var card = input.closest('.project-card-item');
+      if (!card) return;
+      var preview = card.querySelector('.proj-title-preview');
+      if (preview) {
+        preview.textContent = input.value.trim() || 'New Architectural Work';
+      }
+    }
+
+    function updateProjCatPreview(input) {
+      var card = input.closest('.project-card-item');
+      if (!card) return;
+      var preview = card.querySelector('.proj-cat-preview');
+      if (preview) {
+        preview.textContent = input.value.trim().toUpperCase() || 'RESIDENTIAL';
+      }
+    }
+
+    function removeUnsavedProjectCard(btn) {
+      var card = btn.closest('.project-card-item');
+      if (card) {
+        card.remove();
+      }
+      var container = document.getElementById('projectsContainer');
+      var notice = document.getElementById('noProjectsNotice');
+      if (container && notice) {
+        if (container.querySelectorAll('.project-card-item').length === 0) {
+          notice.style.display = 'block';
+        }
+      }
+      updateToggleAllBtn();
+    }
+
+    function initAddProject() {
+      var btnAdd = document.getElementById('btnAddProject');
+      if (btnAdd && !btnAdd.dataset.bound) {
+        btnAdd.dataset.bound = 'true';
+        btnAdd.addEventListener('click', function(e) {
+          e.preventDefault();
+          var notice = document.getElementById('noProjectsNotice');
+          if (notice) notice.style.display = 'none';
+
+          var projectCount = document.querySelectorAll('.project-card-item').length + 1;
+          var timestamp = Date.now();
+          var container = document.getElementById('projectsContainer');
+          if (!container) return;
+
+          var div = document.createElement('div');
+          div.className = 'project-card-item';
+          div.id = 'proj_card_new_' + timestamp;
+          div.style.cssText = 'background: var(--field-bg, rgba(0,0,0,0.25)); border: 1px dashed var(--border-color-gold, rgba(245,158,11,0.35)); border-radius: 12px; margin-bottom: 16px; overflow: hidden; width: 100%; box-sizing: border-box;';
+          
+          div.innerHTML = [
+            '<form method="POST" enctype="multipart/form-data">',
+            '  <input type="hidden" name="_csrf_token" value="<?php echo generate_csrf(); ?>">',
+            '  <input type="hidden" name="action" value="save_project">',
+            '  <input type="hidden" name="project_id" value="proj_' + timestamp + '">',
+            '  <div class="project-card-header" onclick="toggleProjectAccordion(this)" style="display:flex; justify-content:space-between; align-items:center; padding: 12px 16px; background: rgba(255,255,255,0.03); cursor: pointer; user-select: none; border-bottom: 1px solid var(--border-color, rgba(255,255,255,0.08));">',
+            '    <div style="display: flex; align-items: center; gap: 12px; min-width: 0;">',
+            '      <span class="accordion-chevron">▼</span>',
+            '      <div style="min-width: 0;">',
+            '        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">',
+            '          <span style="font-weight: 800; font-size: 13.5px; color: var(--accent-primary, #f5b800);">New Completed Work #' + projectCount + ':</span>',
+            '          <strong class="proj-title-preview" style="font-size: 13.5px; color: var(--text-primary);">(Unsaved New Project)</strong>',
+            '        </div>',
+            '        <div style="display: flex; align-items: center; gap: 6px; margin-top: 2px; font-size: 11px; color: var(--text-secondary);">',
+            '          <span class="proj-cat-preview">RESIDENTIAL</span>',
+            '          <span>•</span>',
+            '          <span>0 / 5 Photos</span>',
+            '        </div>',
+            '      </div>',
+            '    </div>',
+            '    <div style="display: flex; align-items: center; gap: 8px;" onclick="event.stopPropagation()">',
+            '      <button type="button" onclick="removeUnsavedProjectCard(this)" class="btn btn-sm btn-secondary" style="color: #ef4444; border-color: rgba(239,68,68,0.3); font-size: 11px; padding: 4px 10px; display: inline-flex; align-items: center; gap: 4px; cursor: pointer;">',
+            '        <span>Discard</span>',
+            '      </button>',
+            '    </div>',
+            '  </div>',
+            '  <div class="project-card-body" style="padding: 18px;">',
+            '    <div class="grid-3" style="gap: 12px; margin-bottom: 12px;">',
+            '      <div class="field" style="margin-bottom:0;">',
+            '        <label style="font-size:12px;">Project Title / Name *</label>',
+            '        <input type="text" name="title" placeholder="e.g. Casa San Gregorio, DLSU-D Building" required oninput="updateProjTitlePreview(this)">',
+            '      </div>',
+            '      <div class="field" style="margin-bottom:0;">',
+            '        <label style="font-size:12px;">Project Category</label>',
+            '        <input type="text" name="category" placeholder="e.g. RESIDENTIAL, COMMERCIAL, INSTITUTIONAL" value="RESIDENTIAL" oninput="updateProjCatPreview(this)">',
+            '      </div>',
+            '      <div class="field" style="margin-bottom:0;">',
+            '        <label style="font-size:12px;">Location</label>',
+            '        <input type="text" name="location" placeholder="e.g. Makati, Manila">',
+            '      </div>',
+            '    </div>',
+            '    <div class="grid-2" style="gap: 16px; margin-bottom: 16px;">',
+            '      <div class="field" style="margin-bottom:0;">',
+            '        <label style="font-size:13px; font-weight:700; color:var(--text-primary);">Project Architectural Concept &amp; Narrative</label>',
+            '        <textarea name="description" rows="7" placeholder="Describe the design philosophy, space planning, materials, volumetric form, and concept..." style="font-size:13.5px; line-height:1.65; min-height:160px; width:100%; box-sizing:border-box; resize:vertical;"></textarea>',
+            '      </div>',
+            '      <div class="field" style="margin-bottom:0;">',
+            '        <label style="font-size:13px; font-weight:700; color:var(--text-primary);">Project Team / Collaborators</label>',
+            '        <textarea name="project_team" rows="7" placeholder="e.g. Ar. Anthony Nazareno, Ar. Vladimir Banks, IDr. Marielle Saguibo, Engr. Juan Dela Cruz" style="font-size:13.5px; line-height:1.6; min-height:160px; width:100%; box-sizing:border-box; resize:vertical;"></textarea>',
+            '      </div>',
+            '    </div>',
+            '    <div style="background: rgba(0,0,0,0.2); border-radius: 10px; padding: 14px; border: 1px solid var(--border-color, rgba(255,255,255,0.06));">',
+            '      <div style="margin-bottom: 12px; padding: 10px; background: rgba(245,158,11,0.05); border: 1px solid rgba(245,158,11,0.25); border-radius: 8px;">',
+            '        <span style="font-size: 12px; font-weight: 700; color: var(--accent-primary, #f5b800); display: block; margin-bottom: 6px;">★ Cover Photo (Front Thumbnail on Directory Grid) *</span>',
+            '        <input type="file" name="cover" accept=".jpg,.jpeg,.png,.webp" required style="font-size: 12px;">',
+            '      </div>',
+            '      <div class="field" style="margin-bottom:0;">',
+            '        <label style="font-size: 12px;">Upload Additional Photos (Up to 4 more files, max 5 total photos):</label>',
+            '        <input type="file" name="photos[]" accept=".jpg,.jpeg,.png,.webp" multiple style="font-size: 12px;">',
+            '      </div>',
+            '    </div>',
+            '    <div style="margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--border-color, rgba(255,255,255,0.08)); display: flex; justify-content: flex-end; gap: 10px;">',
+            '      <button type="submit" class="btn btn-primary btn-sm" style="padding: 9px 22px; font-weight: 700; font-size: 13px; display: inline-flex; align-items: center; gap: 6px; cursor: pointer;">',
+            '        <span>Save This Project</span>',
+            '      </button>',
+            '    </div>',
+            '  </div>',
+            '</form>'
+          ].join('');
+
+          container.appendChild(div);
+          updateToggleAllBtn();
+        });
+      }
+    }
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initAddProject);
+    } else {
+      initAddProject();
+    }
     </script>
   <?php endif; ?>
 
