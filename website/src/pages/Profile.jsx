@@ -164,7 +164,7 @@ export default function Profile() {
                 </>
               )}
               {m.specialty && <><dt>Specialization</dt><dd>{m.specialty}</dd></>}
-              {m.location  && <><dt>Location</dt><dd>{m.location}</dd></>}
+              {m.location  && <><dt>Company / Office Address</dt><dd>{m.location}</dd></>}
               {m.role_title && <><dt>Title / Role</dt><dd>{m.role_title}</dd></>}
             </dl>
           </div>

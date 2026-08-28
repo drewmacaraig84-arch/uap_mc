@@ -456,8 +456,8 @@ include __DIR__ . '/../includes/header.php';
           <input type="text" name="company_name" value="<?php echo htmlspecialchars($profile['company_name'] ?? ''); ?>" placeholder="e.g. Ting & Associates Architects, JLS Architecture Studio">
         </div>
         <div class="field">
-          <label>Primary Location / Base</label>
-          <input type="text" name="location" value="<?php echo htmlspecialchars($profile['location'] ?? ''); ?>" placeholder="e.g. Calapan City, Oriental Mindoro" required>
+          <label>Company Address / Architect Address</label>
+          <input type="text" name="location" value="<?php echo htmlspecialchars($profile['location'] ?? ''); ?>" placeholder="e.g. Calapan City, Oriental Mindoro (or full office address)" required>
         </div>
       </div>
 
