@@ -579,11 +579,8 @@ include __DIR__ . '/../includes/header.php';
           <p class="muted" style="font-size:12.5px; margin:4px 0 0;">Add completed architectural works with cover photo, team credits, and up to 5 photos per project. Save each project individually.</p>
         </div>
         <div style="display: flex; align-items: center; gap: 8px;">
-          <button type="button" onclick="toggleAllProjects(true)" class="btn btn-sm btn-secondary" style="font-size:11.5px; padding: 5px 12px; border-radius: 6px; cursor: pointer;">
-            Expand All
-          </button>
-          <button type="button" onclick="toggleAllProjects(false)" class="btn btn-sm btn-secondary" style="font-size:11.5px; padding: 5px 12px; border-radius: 6px; cursor: pointer;">
-            Collapse All
+          <button type="button" id="btnToggleAllProjects" onclick="toggleAllProjects()" class="btn btn-sm btn-secondary" style="font-size:11.5px; padding: 5px 14px; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
+            <span>Collapse All</span>
           </button>
         </div>
       </div>
@@ -618,7 +615,7 @@ include __DIR__ . '/../includes/header.php';
               <input type="hidden" name="existing_cover" value="<?php echo htmlspecialchars($coverPath); ?>">
 
               <!-- Accordion Header Bar (Clickable) -->
-              <div class="project-card-header" onclick="toggleProjectAccordion(this)" style="display:flex; justify-content:space-between; align-items:center; padding: 12px 16px; background: rgba(255,255,255,0.03); cursor: pointer; user-select: none; border-bottom: 1px solid var(--border-color, rgba(255,255,255,0.08));">
+              <div class="project-card-header" style="display:flex; justify-content:space-between; align-items:center; padding: 12px 16px; background: rgba(255,255,255,0.03); cursor: pointer; user-select: none; border-bottom: 1px solid var(--border-color, rgba(255,255,255,0.08));">
                 <div style="display: flex; align-items: center; gap: 12px; min-width: 0;">
                   <span class="accordion-chevron" style="display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 50%; background: rgba(245,158,11,0.15); color: var(--accent-primary, #f5b800); font-size: 10px; font-weight: 900; transition: transform 0.25s ease;">▼</span>
                   
@@ -641,7 +638,7 @@ include __DIR__ . '/../includes/header.php';
                   </div>
                 </div>
 
-                <div style="display: flex; align-items: center; gap: 8px;" onclick="event.stopPropagation()">
+                <div style="display: flex; align-items: center; gap: 8px;">
                   <button type="submit" form="del_form_<?php echo $pIdx; ?>" class="btn btn-sm btn-secondary" style="color: #ef4444; border-color: rgba(239,68,68,0.3); font-size: 11px; padding: 4px 10px; display: inline-flex; align-items: center; gap: 4px; cursor: pointer;" onclick="return confirm('Are you sure you want to delete this project?');">
                     <?php echo icon('trash', '', 12); ?> <span>Delete Project</span>
                   </button>
@@ -762,32 +759,59 @@ include __DIR__ . '/../includes/header.php';
     <script>
     (function() {
       var projectCount = <?php echo count($renderProjects); ?>;
+      var allExpanded = true;
 
-      window.toggleProjectAccordion = function(header) {
-        var card = header.closest('.project-card-item');
+      window.toggleProjectAccordion = function(el) {
+        var card = el.closest('.project-card-item');
         if (!card) return;
         var body = card.querySelector('.project-card-body');
         var chevron = card.querySelector('.accordion-chevron');
         if (!body) return;
 
-        if (body.style.display === 'none') {
+        var isHidden = (body.style.display === 'none' || window.getComputedStyle(body).display === 'none');
+        if (isHidden) {
           body.style.display = 'block';
           if (chevron) chevron.style.transform = 'rotate(0deg)';
         } else {
           body.style.display = 'none';
           if (chevron) chevron.style.transform = 'rotate(-90deg)';
         }
+        updateToggleAllBtn();
       };
 
-      window.toggleAllProjects = function(expand) {
+      window.toggleAllProjects = function() {
         var bodies = document.querySelectorAll('.project-card-item .project-card-body');
         var chevrons = document.querySelectorAll('.project-card-item .accordion-chevron');
+        var btn = document.getElementById('btnToggleAllProjects');
+
+        allExpanded = !allExpanded;
+
         bodies.forEach(function(b) {
-          b.style.display = expand ? 'block' : 'none';
+          b.style.display = allExpanded ? 'block' : 'none';
         });
         chevrons.forEach(function(c) {
-          c.style.transform = expand ? 'rotate(0deg)' : 'rotate(-90deg)';
+          c.style.transform = allExpanded ? 'rotate(0deg)' : 'rotate(-90deg)';
         });
+
+        if (btn) {
+          btn.innerHTML = allExpanded ? '<span>Collapse All</span>' : '<span>Expand All</span>';
+        }
+      };
+
+      window.updateToggleAllBtn = function() {
+        var bodies = document.querySelectorAll('.project-card-item .project-card-body');
+        var btn = document.getElementById('btnToggleAllProjects');
+        if (!btn || bodies.length === 0) return;
+
+        var anyOpen = false;
+        bodies.forEach(function(b) {
+          if (b.style.display !== 'none' && window.getComputedStyle(b).display !== 'none') {
+            anyOpen = true;
+          }
+        });
+
+        allExpanded = anyOpen;
+        btn.innerHTML = anyOpen ? '<span>Collapse All</span>' : '<span>Expand All</span>';
       };
 
       window.updateProjTitlePreview = function(input) {
@@ -820,7 +844,18 @@ include __DIR__ . '/../includes/header.php';
             notice.style.display = 'block';
           }
         }
+        updateToggleAllBtn();
       };
+
+      // Direct event delegation for all project headers
+      document.addEventListener('click', function(e) {
+        var header = e.target.closest('.project-card-header');
+        if (!header) return;
+        if (e.target.closest('button') || e.target.closest('input') || e.target.closest('a')) {
+          return;
+        }
+        toggleProjectAccordion(header);
+      });
 
       var btnAdd = document.getElementById('btnAddProject');
       if (btnAdd) {
@@ -845,7 +880,7 @@ include __DIR__ . '/../includes/header.php';
             '  <input type="hidden" name="_csrf_token" value="<?php echo generate_csrf(); ?>">',
             '  <input type="hidden" name="action" value="save_project">',
             '  <input type="hidden" name="project_id" value="proj_' + timestamp + '">',
-            '  <div class="project-card-header" onclick="toggleProjectAccordion(this)" style="display:flex; justify-content:space-between; align-items:center; padding: 12px 16px; background: rgba(255,255,255,0.03); cursor: pointer; user-select: none; border-bottom: 1px solid var(--border-color, rgba(255,255,255,0.08));">',
+            '  <div class="project-card-header" style="display:flex; justify-content:space-between; align-items:center; padding: 12px 16px; background: rgba(255,255,255,0.03); cursor: pointer; user-select: none; border-bottom: 1px solid var(--border-color, rgba(255,255,255,0.08));">',
             '    <div style="display: flex; align-items: center; gap: 12px; min-width: 0;">',
             '      <span class="accordion-chevron" style="display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 50%; background: rgba(245,158,11,0.15); color: var(--accent-primary, #f5b800); font-size: 10px; font-weight: 900; transition: transform 0.25s ease;">▼</span>',
             '      <div style="min-width: 0;">',
@@ -860,7 +895,7 @@ include __DIR__ . '/../includes/header.php';
             '        </div>',
             '      </div>',
             '    </div>',
-            '    <div style="display: flex; align-items: center; gap: 8px;" onclick="event.stopPropagation()">',
+            '    <div style="display: flex; align-items: center; gap: 8px;">',
             '      <button type="button" onclick="removeUnsavedProjectCard(this)" class="btn btn-sm btn-secondary" style="color: #ef4444; border-color: rgba(239,68,68,0.3); font-size: 11px; padding: 4px 10px; display: inline-flex; align-items: center; gap: 4px; cursor: pointer;">',
             '        <span>Discard</span>',
             '      </button>',
@@ -911,6 +946,7 @@ include __DIR__ . '/../includes/header.php';
           ].join('');
 
           container.appendChild(div);
+          updateToggleAllBtn();
         });
       }
     })();
