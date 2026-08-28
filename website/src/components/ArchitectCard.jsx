@@ -71,7 +71,11 @@ export default function ArchitectCard({ member }) {
         )}
 
         <div className="arch-card-footer">
-          <span className="arch-card-prc">PRC: {member.id_number}</span>
+          {member.location ? (
+            <span className="arch-card-loc" style={{ fontSize: '0.75rem', color: 'var(--c-text-3)', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+              <span>{member.location}</span>
+            </span>
+          ) : <span />}
           <span className="arch-card-view">
             View Profile <IconArrowRight size={13} style={{ verticalAlign: 'middle', display: 'inline' }} />
           </span>

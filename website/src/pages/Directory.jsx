@@ -49,7 +49,7 @@ export default function Directory() {
             <IconSearch size={18} className="dir-search-icon" />
             <input
               type="text"
-              placeholder="Search by name, PRC ID, company, specialty…"
+              placeholder="Search by name, company, specialty, address…"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="input dir-search"

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useApi } from '../hooks/useApi';
-import { IconArrowLeft, IconArrowRight, IconVerified, IconMapPin, IconCalendar, IconQrCode, IconBriefcase, getSocialLinkInfo } from '../components/Icons';
+import { IconArrowLeft, IconArrowRight, IconVerified, IconMapPin, IconQrCode, IconBriefcase, getSocialLinkInfo } from '../components/Icons';
 import './Profile.css';
 
 export default function Profile() {
@@ -89,10 +89,6 @@ export default function Profile() {
                   <span>{m.location}</span>
                 </span>
               )}
-              <span className="profile-meta-item">
-                <IconCalendar size={15} />
-                <span>PRC ID: <strong>{m.id_number}</strong></span>
-              </span>
             </div>
 
             {socialInfo && (
@@ -145,7 +141,6 @@ export default function Profile() {
             <h2 className="profile-section-title">Profile Details</h2>
             <dl className="profile-dl">
               <dt>Full Name</dt><dd>{m.name}</dd>
-              <dt>PRC ID No.</dt><dd>{m.id_number}</dd>
               {m.company_name && <><dt>Company / Firm</dt><dd>{m.company_name}</dd></>}
               {socialInfo && (
                 <>

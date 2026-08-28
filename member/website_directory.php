@@ -30,6 +30,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'save_
     } else {
         $name = trim($_POST['name'] ?? '');
         $idNumber = trim($_POST['id_number'] ?? '');
+        if ($idNumber === '') {
+            $uPr = $pdo->prepare("SELECT id_number FROM users WHERE id = ?");
+            $uPr->execute([$userId]);
+            $idNumber = $uPr->fetchColumn() ?: '';
+        }
         $role = trim($_POST['role_title'] ?? '');
         $specialty = trim($_POST['specialty'] ?? '');
         $location = trim($_POST['location'] ?? '');
@@ -428,21 +433,15 @@ include __DIR__ . '/../includes/header.php';
         </a>
       </div>
 
-      <div class="grid-2">
-        <div class="field">
-          <label>Full Name</label>
-          <input type="text" name="name" value="<?php echo htmlspecialchars($profile['name'] ?? ''); ?>" required>
-        </div>
-        <div class="field">
-          <label>PRC License Number</label>
-          <input type="text" name="id_number" value="<?php echo htmlspecialchars($profile['id_number'] ?? ''); ?>" required>
-        </div>
+      <div class="field">
+        <label>Full Name</label>
+        <input type="text" name="name" value="<?php echo htmlspecialchars($profile['name'] ?? ''); ?>" required>
       </div>
 
       <div class="grid-2">
         <div class="field">
-          <label>Role / Title</label>
-          <input type="text" name="role_title" value="<?php echo htmlspecialchars($profile['role_title'] ?? ''); ?>" placeholder="e.g. Principal Architect, Senior Architect" required>
+          <label>Company / Architectural Firm Name</label>
+          <input type="text" name="company_name" value="<?php echo htmlspecialchars($profile['company_name'] ?? ''); ?>" placeholder="e.g. Ting & Associates Architects, AESTRUKTURA Design Studio">
         </div>
         <div class="field">
           <label>Architectural Specialty</label>
@@ -452,11 +451,11 @@ include __DIR__ . '/../includes/header.php';
 
       <div class="grid-2">
         <div class="field">
-          <label>Company / Architectural Firm Name</label>
-          <input type="text" name="company_name" value="<?php echo htmlspecialchars($profile['company_name'] ?? ''); ?>" placeholder="e.g. Ting & Associates Architects, JLS Architecture Studio">
+          <label>Role / Title</label>
+          <input type="text" name="role_title" value="<?php echo htmlspecialchars($profile['role_title'] ?? ''); ?>" placeholder="e.g. Principal Architect, Project Architect, General Manager" required>
         </div>
         <div class="field">
-          <label>Company Address / Architect Address</label>
+          <label>Address</label>
           <input type="text" name="location" value="<?php echo htmlspecialchars($profile['location'] ?? ''); ?>" placeholder="e.g. Calapan City, Oriental Mindoro (or full office address)" required>
         </div>
       </div>

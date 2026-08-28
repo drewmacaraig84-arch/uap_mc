@@ -193,7 +193,7 @@ export default function ProjectDetail() {
                   </p>
                 )}
                 <p className="project-lead-architect">
-                  Principal Architect: <strong>{m.name}</strong> (PRC: {m.id_number})
+                  Principal Architect: <strong>{m.name}</strong>
                 </p>
               </div>
             </div>
