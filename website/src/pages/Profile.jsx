@@ -70,13 +70,17 @@ export default function Profile() {
             </div>
 
             <h1 className="profile-name display-2">{m.name}</h1>
-            <p className="profile-role">{m.role_title || 'Licensed Architect'}</p>
+            {m.company_name ? (
+              <p className="profile-company-highlight">{m.company_name}</p>
+            ) : (
+              <p className="profile-company-highlight">{m.role_title || 'Licensed Architect'}</p>
+            )}
 
             <div className="profile-meta">
-              {m.company_name && (
+              {m.company_name && m.role_title && (
                 <span className="profile-meta-item">
                   <IconBriefcase size={15} style={{ color: 'var(--c-gold)' }} />
-                  <span>{m.company_name}</span>
+                  <span>{m.role_title}</span>
                 </span>
               )}
               {m.location && (

@@ -74,24 +74,26 @@
   line-height: 1.2;
 }
 
-.arch-card-role {
-  font-size: 0.82rem;
-  color: var(--c-gold);
-  font-weight: 500;
+.arch-card-company-main {
+  font-size: 0.95rem;
+  color: var(--c-gold, #f5b800);
+  font-weight: 700;
+  line-height: 1.3;
+  margin-top: 1px;
 }
 
-.arch-card-company {
+.arch-card-role-sub {
   display: flex;
   align-items: center;
-  gap: 6px;
-  font-size: 0.82rem;
-  color: var(--c-text-1, #f1f5f9);
+  gap: 5px;
+  font-size: 0.8rem;
+  color: var(--c-text-2, #94a3b8);
   font-weight: 500;
   margin-top: 1px;
 }
 
-.arch-card-company svg {
-  color: var(--c-gold, #f5b800);
+.arch-card-role-sub svg {
+  color: var(--c-text-3, #64748b);
   flex-shrink: 0;
 }
 

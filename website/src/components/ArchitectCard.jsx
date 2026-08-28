@@ -41,13 +41,17 @@ export default function ArchitectCard({ member }) {
           )}
         </div>
         <h3 className="arch-card-name">{member.name}</h3>
-        <p className="arch-card-role">{member.role_title || 'Architect'}</p>
 
-        {member.company_name && (
-          <p className="arch-card-company">
-            <IconBriefcase size={13} />
-            <span>{member.company_name}</span>
-          </p>
+        {member.company_name ? (
+          <>
+            <p className="arch-card-company-main">{member.company_name}</p>
+            <p className="arch-card-role-sub">
+              <IconBriefcase size={12} />
+              <span>{member.role_title || 'Architect'}</span>
+            </p>
+          </>
+        ) : (
+          <p className="arch-card-company-main">{member.role_title || 'Architect'}</p>
         )}
 
         {socialInfo && (
