@@ -533,11 +533,8 @@ include __DIR__ . '/../includes/header.php';
             <p class="muted" style="font-size:12.5px; margin:4px 0 0;">Add completed architectural works with cover photo, team credits, and up to 5 photos per project.</p>
           </div>
           <div style="display: flex; align-items: center; gap: 8px;">
-            <button type="button" onclick="toggleAllProjects(true)" class="btn btn-sm btn-secondary" style="font-size:11.5px; padding: 5px 12px; border-radius: 6px; cursor: pointer;">
-              Expand All
-            </button>
-            <button type="button" onclick="toggleAllProjects(false)" class="btn btn-sm btn-secondary" style="font-size:11.5px; padding: 5px 12px; border-radius: 6px; cursor: pointer;">
-              Collapse All
+            <button type="button" id="btnToggleAllProjects" onclick="toggleAllProjects()" class="btn btn-sm btn-secondary" style="font-size:11.5px; padding: 5px 14px; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 5px;">
+              <span id="toggleAllIcon">▲</span> <span id="toggleAllText">Collapse All</span>
             </button>
           </div>
         </div>
@@ -706,6 +703,8 @@ include __DIR__ . '/../includes/header.php';
     (function() {
       var projectCount = <?php echo count($renderProjects); ?>;
 
+      var allExpanded = true;
+
       window.toggleProjectAccordion = function(header) {
         var card = header.closest('.project-card-item');
         if (!card) return;
@@ -720,17 +719,40 @@ include __DIR__ . '/../includes/header.php';
           body.style.display = 'none';
           if (chevron) chevron.style.transform = 'rotate(-90deg)';
         }
+
+        // Sync main toggle button text based on whether any bodies are visible
+        var bodies = document.querySelectorAll('.project-card-item .project-card-body');
+        var hasVisible = false;
+        bodies.forEach(function(b) {
+          if (b.style.display !== 'none') hasVisible = true;
+        });
+        allExpanded = hasVisible;
+        var textSpan = document.getElementById('toggleAllText');
+        var iconSpan = document.getElementById('toggleAllIcon');
+        if (textSpan) textSpan.textContent = allExpanded ? 'Collapse All' : 'Expand All';
+        if (iconSpan) iconSpan.textContent = allExpanded ? '▲' : '▼';
       };
 
-      window.toggleAllProjects = function(expand) {
+      window.toggleAllProjects = function() {
+        allExpanded = !allExpanded;
         var bodies = document.querySelectorAll('.project-card-item .project-card-body');
         var chevrons = document.querySelectorAll('.project-card-item .accordion-chevron');
+        var textSpan = document.getElementById('toggleAllText');
+        var iconSpan = document.getElementById('toggleAllIcon');
+
         bodies.forEach(function(b) {
-          b.style.display = expand ? 'block' : 'none';
+          b.style.display = allExpanded ? 'block' : 'none';
         });
         chevrons.forEach(function(c) {
-          c.style.transform = expand ? 'rotate(0deg)' : 'rotate(-90deg)';
+          c.style.transform = allExpanded ? 'rotate(0deg)' : 'rotate(-90deg)';
         });
+
+        if (textSpan) {
+          textSpan.textContent = allExpanded ? 'Collapse All' : 'Expand All';
+        }
+        if (iconSpan) {
+          iconSpan.textContent = allExpanded ? '▲' : '▼';
+        }
       };
 
       window.updateProjTitlePreview = function(input) {
