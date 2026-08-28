@@ -94,19 +94,32 @@ try {
         $decodedProjects = json_decode($member['projects_json'], true);
         if (is_array($decodedProjects)) {
             foreach ($decodedProjects as &$p) {
-                $p['cover_url'] = !empty($p['cover_photo']) ? $toUrl($p['cover_photo']) : null;
+                $coverUrl = !empty($p['cover_photo']) ? $toUrl($p['cover_photo']) : null;
+                $p['cover_url'] = $coverUrl;
+
                 $photoUrls = [];
+                // 1. Always include Cover Photo first in slideshow array
+                if (!empty($coverUrl)) {
+                    $photoUrls[] = $coverUrl;
+                }
+                // 2. Include all additional gallery photos
                 if (!empty($p['photos']) && is_array($p['photos'])) {
                     foreach ($p['photos'] as $ph) {
                         if (!empty($ph)) {
-                            $photoUrls[] = $toUrl($ph);
+                            $u = $toUrl($ph);
+                            if (!in_array($u, $photoUrls, true)) {
+                                $photoUrls[] = $u;
+                            }
                         }
                     }
                 }
-                if (empty($photoUrls) && !empty($p['cover_url'])) {
-                    $photoUrls[] = $p['cover_url'];
+                if (empty($photoUrls) && !empty($coverUrl)) {
+                    $photoUrls[] = $coverUrl;
                 }
                 $p['photos'] = $photoUrls;
+                if (empty($p['cover_url']) && !empty($photoUrls[0])) {
+                    $p['cover_url'] = $photoUrls[0];
+                }
             }
             $projects = $decodedProjects;
         }

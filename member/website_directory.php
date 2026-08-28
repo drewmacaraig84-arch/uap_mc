@@ -100,14 +100,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'save_
                 $deletePhotos = $pData['delete_photos'] ?? [];
 
                 // Filter existing photos
-                $photosList = [];
+                $coverPhoto = '';
+                $additionalPhotos = [];
+
                 if (!empty($existingCover) && !in_array('cover', $deletePhotos, true)) {
-                    $photosList[] = $existingCover;
+                    $coverPhoto = $existingCover;
                 }
                 if (is_array($existingPhotos)) {
                     foreach ($existingPhotos as $phIdx => $phPath) {
-                        if (!empty($phPath) && !in_array((string)$phIdx, $deletePhotos, true) && !in_array($phPath, $photosList, true)) {
-                            $photosList[] = $phPath;
+                        if (!empty($phPath) && !in_array((string)$phIdx, $deletePhotos, true)) {
+                            if ($phPath !== $coverPhoto && !in_array($phPath, $additionalPhotos, true)) {
+                                $additionalPhotos[] = $phPath;
+                            }
                         }
                     }
                 }
@@ -120,12 +124,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'save_
                         $uniqueName = 'proj_cover_' . $userId . '_' . time() . '_' . bin2hex(random_bytes(3)) . '.' . $cExt;
                         $targetPath = $uploadDir . $uniqueName;
                         if (move_uploaded_file($_FILES['projects']['tmp_name'][$pKey]['cover'], $targetPath)) {
-                            // Prepend or replace cover
-                            if (!empty($photosList)) {
-                                $photosList[0] = 'uploads/members/' . $uniqueName;
-                            } else {
-                                $photosList[] = 'uploads/members/' . $uniqueName;
-                            }
+                            $coverPhoto = 'uploads/members/' . $uniqueName;
                         }
                     }
                 }
@@ -133,28 +132,36 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'save_
                 // Handle Newly Uploaded Additional Photos (up to limit of 5 total photos)
                 if (isset($_FILES['projects']['name'][$pKey]['photos']) && is_array($_FILES['projects']['name'][$pKey]['photos'])) {
                     foreach ($_FILES['projects']['name'][$pKey]['photos'] as $fIdx => $filename) {
-                        if (count($photosList) >= 5) break; // Limit to 5 total photos including cover
+                        if (count($additionalPhotos) + (!empty($coverPhoto) ? 1 : 0) >= 5) break; // Limit to 5 total photos including cover
                         if (isset($_FILES['projects']['error'][$pKey]['photos'][$fIdx]) && $_FILES['projects']['error'][$pKey]['photos'][$fIdx] === UPLOAD_ERR_OK && !empty($filename)) {
                             $ext = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
                             if (in_array($ext, $allowedExts) && $_FILES['projects']['size'][$pKey]['photos'][$fIdx] <= 12 * 1024 * 1024) {
                                 $uniqueName = 'proj_photo_' . $userId . '_' . time() . '_' . $fIdx . '_' . bin2hex(random_bytes(3)) . '.' . $ext;
                                 $targetPath = $uploadDir . $uniqueName;
                                 if (move_uploaded_file($_FILES['projects']['tmp_name'][$pKey]['photos'][$fIdx], $targetPath)) {
-                                    if (count($photosList) < 5) {
-                                        $photosList[] = 'uploads/members/' . $uniqueName;
-                                    }
+                                    $additionalPhotos[] = 'uploads/members/' . $uniqueName;
                                 }
                             }
                         }
                     }
                 }
 
-                // Enforce max 5 photos total per project
-                $photosList = array_values(array_unique($photosList));
-                $photosList = array_slice($photosList, 0, 5);
+                // Combine: Cover photo is ALWAYS #1 in the photos array, followed by additional photos
+                $allPhotos = [];
+                if (!empty($coverPhoto)) {
+                    $allPhotos[] = $coverPhoto;
+                }
+                foreach ($additionalPhotos as $aph) {
+                    if (!in_array($aph, $allPhotos, true)) {
+                        $allPhotos[] = $aph;
+                    }
+                }
+                if (empty($coverPhoto) && !empty($allPhotos[0])) {
+                    $coverPhoto = $allPhotos[0];
+                }
+                $allPhotos = array_slice($allPhotos, 0, 5);
 
-                if (!empty($pTitle) || !empty($photosList)) {
-                    $coverPhoto = $photosList[0] ?? '';
+                if (!empty($pTitle) || !empty($allPhotos)) {
                     $projects[] = [
                         'id' => $pId,
                         'title' => $pTitle !== '' ? $pTitle : 'Completed Architectural Work',
@@ -163,7 +170,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'save_
                         'description' => $pDesc,
                         'project_team' => $pTeam,
                         'cover_photo' => $coverPhoto,
-                        'photos' => $photosList
+                        'photos' => $allPhotos
                     ];
                 }
             }

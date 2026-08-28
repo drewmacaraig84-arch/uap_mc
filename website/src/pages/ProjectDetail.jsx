@@ -15,9 +15,21 @@ export default function ProjectDetail() {
     (p, idx) => String(p.id) === String(projectId) || String(idx + 1) === String(projectId)
   ) || m?.projects?.[0];
 
-  const photos = project?.photos && project.photos.length > 0 
-    ? project.photos 
-    : (project?.cover_url ? [project.cover_url] : (m?.photo_url ? [m.photo_url] : []));
+  // Combine Cover Photo + All Gallery Photos into the slide show array (deduplicated in order)
+  const rawPhotos = [];
+  if (project?.cover_url) {
+    rawPhotos.push(project.cover_url);
+  }
+  if (project?.photos && Array.isArray(project.photos)) {
+    project.photos.forEach((ph) => {
+      if (ph && !rawPhotos.includes(ph)) {
+        rawPhotos.push(ph);
+      }
+    });
+  }
+  const photos = rawPhotos.length > 0 
+    ? rawPhotos 
+    : (project?.cover_photo ? [project.cover_photo] : (m?.photo_url ? [m.photo_url] : []));
 
   const totalPhotos = photos.length;
 
