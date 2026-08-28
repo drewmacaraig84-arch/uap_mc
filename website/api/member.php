@@ -40,8 +40,37 @@ try {
     }
     $member['photo_url'] = $toUrl($photo);
 
-    if (!empty($member['link_url']) && function_exists('detect_social_link_type')) {
-        $member['link_type'] = detect_social_link_type($member['link_url'], $member['link_type'] ?? 'auto');
+    // Decode multiple social links (up to 3 links)
+    $links = [];
+    if (!empty($member['links_json'])) {
+        $decodedLinks = json_decode($member['links_json'], true);
+        if (is_array($decodedLinks)) {
+            foreach ($decodedLinks as $lnk) {
+                if (!empty($lnk['url'])) {
+                    $u = trim($lnk['url']);
+                    if (!preg_match('#^https?://#i', $u)) $u = 'https://' . ltrim($u, '/');
+                    $t = function_exists('detect_social_link_type') ? detect_social_link_type($u, $lnk['type'] ?? 'auto') : ($lnk['type'] ?? 'website');
+                    $links[] = [
+                        'url' => $u,
+                        'type' => $t
+                    ];
+                }
+            }
+        }
+    }
+    if (empty($links) && !empty($member['link_url'])) {
+        $u = trim($member['link_url']);
+        if (!preg_match('#^https?://#i', $u)) $u = 'https://' . ltrim($u, '/');
+        $t = function_exists('detect_social_link_type') ? detect_social_link_type($u, $member['link_type'] ?? 'auto') : 'website';
+        $links[] = [
+            'url' => $u,
+            'type' => $t
+        ];
+    }
+    $member['links'] = $links;
+    if (!empty($links[0])) {
+        $member['link_url'] = $links[0]['url'];
+        $member['link_type'] = $links[0]['type'];
     }
 
     // Decode gallery JSON (legacy support)

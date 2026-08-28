@@ -91,79 +91,103 @@ export default function Profile() {
               )}
             </div>
 
-            {socialInfo && (
-              <div style={{ marginTop: 12 }}>
-                <a
-                  href={socialInfo.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className={`btn btn-sm arch-social-${socialInfo.type}`}
-                  style={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: 6,
-                    padding: '6px 14px',
-                    borderRadius: 8,
-                    fontSize: '0.85rem',
-                    fontWeight: 600,
-                    textDecoration: 'none'
-                  }}
-                >
-                  <socialInfo.Icon size={14} />
-                  <span>Visit {socialInfo.label} &rarr;</span>
-                </a>
-              </div>
-            )}
+            {/* Multiple Social Links */}
+            {(() => {
+              const socialLinksList = (m.links && m.links.length > 0)
+                ? m.links.map(l => getSocialLinkInfo(l.url, l.type)).filter(Boolean)
+                : (socialInfo ? [socialInfo] : []);
+
+              if (socialLinksList.length === 0) return null;
+
+              return (
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 12 }}>
+                  {socialLinksList.map((s, idx) => (
+                    <a
+                      key={idx}
+                      href={s.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className={`btn btn-sm arch-social-${s.type}`}
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 6,
+                        padding: '6px 14px',
+                        borderRadius: 8,
+                        fontSize: '0.85rem',
+                        fontWeight: 600,
+                        textDecoration: 'none'
+                      }}
+                    >
+                      <s.Icon size={14} />
+                      <span>Visit {s.label} &rarr;</span>
+                    </a>
+                  ))}
+                </div>
+              );
+            })()}
           </div>
         </div>
 
-        {/* Details Grid */}
+        {/* Top 2-Column Grid: Professional Background & Profile Details (Same Height) */}
         <div className="profile-details-grid reveal-stagger">
-          {/* About / Achievements */}
-          <div className="profile-section card">
+          {/* Professional Background */}
+          <div className="profile-section card profile-equal-card">
             <h2 className="profile-section-title">Professional Background</h2>
             {m.achievements ? (
-              <p className="muted" style={{ lineHeight: 1.75 }}>{m.achievements}</p>
+              <p className="muted" style={{ lineHeight: 1.75, whiteSpace: 'pre-line' }}>{m.achievements}</p>
             ) : (
               <p className="muted">No background information available.</p>
             )}
-
-            {m.awards && (
-              <>
-                <h3 className="profile-subsection-title" style={{ marginTop: 24 }}>Awards & Recognition</h3>
-                <p className="muted" style={{ lineHeight: 1.75 }}>{m.awards}</p>
-              </>
-            )}
           </div>
 
-          {/* Info card */}
-          <div className="profile-section card">
+          {/* Profile Details */}
+          <div className="profile-section card profile-equal-card">
             <h2 className="profile-section-title">Profile Details</h2>
             <dl className="profile-dl">
               <dt>Full Name</dt><dd>{m.name}</dd>
               {m.company_name && <><dt>Company / Firm</dt><dd>{m.company_name}</dd></>}
-              {socialInfo && (
-                <>
-                  <dt>Showcase Link</dt>
-                  <dd>
-                    <a
-                      href={socialInfo.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      style={{ color: 'var(--c-gold)', display: 'inline-flex', alignItems: 'center', gap: 5, textDecoration: 'none', fontWeight: 600 }}
-                    >
-                      <socialInfo.Icon size={14} />
-                      <span>{socialInfo.label} ({socialInfo.url.replace(/^https?:\/\//i, '').split('/')[0]}) &rarr;</span>
-                    </a>
-                  </dd>
-                </>
-              )}
+              {(() => {
+                const sList = (m.links && m.links.length > 0)
+                  ? m.links.map(l => getSocialLinkInfo(l.url, l.type)).filter(Boolean)
+                  : (socialInfo ? [socialInfo] : []);
+
+                if (sList.length === 0) return null;
+
+                return (
+                  <>
+                    <dt>Showcase {sList.length > 1 ? 'Links' : 'Link'}</dt>
+                    <dd style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                      {sList.map((s, idx) => (
+                        <a
+                          key={idx}
+                          href={s.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          style={{ color: 'var(--c-gold)', display: 'inline-flex', alignItems: 'center', gap: 5, textDecoration: 'none', fontWeight: 600 }}
+                        >
+                          <s.Icon size={14} />
+                          <span>{s.label} ({s.url.replace(/^https?:\/\//i, '').split('/')[0]}) &rarr;</span>
+                        </a>
+                      ))}
+                    </dd>
+                  </>
+                );
+              })()}
               {m.specialty && <><dt>Specialization</dt><dd>{m.specialty}</dd></>}
               {m.location  && <><dt>Company / Office Address</dt><dd>{m.location}</dd></>}
               {m.role_title && <><dt>Title / Role</dt><dd>{m.role_title}</dd></>}
             </dl>
           </div>
         </div>
+
+        {/* Honors, Distinctions & Awards (Landscape Card Underneath Combined Width) */}
+        {m.awards && (
+          <div className="profile-awards-landscape card reveal-pop">
+            <h2 className="profile-section-title" style={{ color: 'var(--c-gold)' }}>Honors, Distinctions &amp; Awards</h2>
+            <p className="muted" style={{ lineHeight: 1.75, fontSize: '0.95rem', whiteSpace: 'pre-line', margin: 0 }}>{m.awards}</p>
+          </div>
+        )}
 
         {/* COMPLETED WORKS */}
         {m.projects && m.projects.length > 0 && (

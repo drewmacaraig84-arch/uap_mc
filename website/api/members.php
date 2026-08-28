@@ -9,7 +9,7 @@ try {
         return '/' . ltrim($path, '/');
     };
 
-    $rows = $pdo->query("SELECT wm.id, wm.name, wm.id_number, wm.role_title, wm.specialty, wm.location, wm.company_name, wm.link_url, wm.link_type, wm.achievements, wm.awards, wm.user_id, COALESCE(NULLIF(u.profile_photo, ''), NULLIF(wm.photo_path, '')) as photo_path 
+    $rows = $pdo->query("SELECT wm.id, wm.name, wm.id_number, wm.role_title, wm.specialty, wm.location, wm.company_name, wm.link_url, wm.link_type, wm.links_json, wm.achievements, wm.awards, wm.user_id, COALESCE(NULLIF(u.profile_photo, ''), NULLIF(wm.photo_path, '')) as photo_path 
                            FROM website_members wm 
                            LEFT JOIN users u ON wm.user_id = u.id 
                            WHERE wm.is_published = 1 
@@ -29,9 +29,34 @@ try {
         }
         $m['photo_url'] = $toUrl($photo);
         unset($m['photo_path']);
-        if (!empty($m['link_url']) && function_exists('detect_social_link_type')) {
-            $m['link_type'] = detect_social_link_type($m['link_url'], $m['link_type'] ?? 'auto');
+
+        $links = [];
+        if (!empty($m['links_json'])) {
+            $decodedLinks = json_decode($m['links_json'], true);
+            if (is_array($decodedLinks)) {
+                foreach ($decodedLinks as $lnk) {
+                    if (!empty($lnk['url'])) {
+                        $u = trim($lnk['url']);
+                        if (!preg_match('#^https?://#i', $u)) $u = 'https://' . ltrim($u, '/');
+                        $t = function_exists('detect_social_link_type') ? detect_social_link_type($u, $lnk['type'] ?? 'auto') : ($lnk['type'] ?? 'website');
+                        $links[] = ['url' => $u, 'type' => $t];
+                    }
+                }
+            }
         }
+        if (empty($links) && !empty($m['link_url'])) {
+            $u = trim($m['link_url']);
+            if (!preg_match('#^https?://#i', $u)) $u = 'https://' . ltrim($u, '/');
+            $t = function_exists('detect_social_link_type') ? detect_social_link_type($u, $m['link_type'] ?? 'auto') : 'website';
+            $links[] = ['url' => $u, 'type' => $t];
+        }
+        $m['links'] = $links;
+        if (!empty($links[0])) {
+            $m['link_url'] = $links[0]['url'];
+            $m['link_type'] = $links[0]['type'];
+        }
+        unset($m['links_json']);
+
         $members[] = $m;
     }
     echo json_encode($members);

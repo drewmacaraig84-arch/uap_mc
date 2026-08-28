@@ -96,12 +96,20 @@
   padding: 4px;
 }
 
-/* Details Grid */
+/* Details Grid (Top Row - Matched Same Height 2 Columns) */
 .profile-details-grid {
   display: grid;
-  grid-template-columns: 1.6fr 1fr;
+  grid-template-columns: 1fr 1fr;
   gap: var(--space-5);
   margin-bottom: var(--space-5);
+  align-items: stretch;
+}
+
+.profile-equal-card {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  box-sizing: border-box;
 }
 
 .profile-section { padding: var(--space-5); }
@@ -132,6 +140,17 @@
 
 .profile-dl dt { color: var(--c-text-3); font-weight: 600; white-space: nowrap; }
 .profile-dl dd { color: var(--c-text); }
+
+/* Awards & Recognition Landscape Card (Underneath - Full Width) */
+.profile-awards-landscape {
+  width: 100%;
+  padding: var(--space-5);
+  border-radius: var(--r-xl, 16px);
+  background: var(--c-bg-2, #0c1122);
+  border: 1px solid var(--c-border, rgba(255, 255, 255, 0.08));
+  box-sizing: border-box;
+  margin-bottom: var(--space-5);
+}
 
 /* Completed Works Section (Matching Image 3) */
 .profile-completed-works-section {

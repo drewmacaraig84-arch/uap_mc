@@ -30,6 +30,10 @@ function ensure_user_profile_photo_column($pdo) {
             if (!$colLinkType) {
                 $pdo->exec("ALTER TABLE website_members ADD COLUMN link_type VARCHAR(50) NULL DEFAULT 'auto' AFTER link_url");
             }
+            $colLinksJson = $pdo->query("SHOW COLUMNS FROM website_members LIKE 'links_json'")->fetch();
+            if (!$colLinksJson) {
+                $pdo->exec("ALTER TABLE website_members ADD COLUMN links_json TEXT NULL AFTER link_type");
+            }
             // Auto-clean any project photos mistakenly set as member profile avatar
             $pdo->exec("UPDATE website_members SET photo_path = NULL WHERE photo_path LIKE '%proj_%'");
         }

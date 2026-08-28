@@ -54,21 +54,32 @@ export default function ArchitectCard({ member }) {
           <p className="arch-card-company-main">{member.role_title || 'Architect'}</p>
         )}
 
-        {socialInfo && (
-          <div className="arch-card-link-row">
-            <a
-              href={socialInfo.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className={`arch-card-social-pill arch-social-${socialInfo.type}`}
-              onClick={(e) => e.stopPropagation()}
-              title={`Visit ${socialInfo.label}: ${socialInfo.url}`}
-            >
-              <socialInfo.Icon size={12} />
-              <span>{socialInfo.label}</span>
-            </a>
-          </div>
-        )}
+        {(() => {
+          const sList = (member.links && member.links.length > 0)
+            ? member.links.map(l => getSocialLinkInfo(l.url, l.type)).filter(Boolean)
+            : (socialInfo ? [socialInfo] : []);
+
+          if (sList.length === 0) return null;
+
+          return (
+            <div className="arch-card-link-row">
+              {sList.map((s, idx) => (
+                <a
+                  key={idx}
+                  href={s.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={`arch-card-social-pill arch-social-${s.type}`}
+                  onClick={(e) => e.stopPropagation()}
+                  title={`Visit ${s.label}: ${s.url}`}
+                >
+                  <s.Icon size={12} />
+                  <span>{s.label}</span>
+                </a>
+              ))}
+            </div>
+          );
+        })()}
 
         <div className="arch-card-footer">
           {member.location ? (

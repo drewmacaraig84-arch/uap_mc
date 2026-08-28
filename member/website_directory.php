@@ -39,18 +39,46 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'save_
         $specialty = trim($_POST['specialty'] ?? '');
         $location = trim($_POST['location'] ?? '');
         $companyName = trim($_POST['company_name'] ?? '');
-        $linkUrl = trim($_POST['link_url'] ?? '');
-        $linkType = trim($_POST['link_type'] ?? 'auto');
-        if (!in_array($linkType, ['auto', 'facebook', 'instagram', 'linkedin', 'youtube', 'telegram', 'website'], true)) {
-            $linkType = 'auto';
+
+        // 1. Process up to 3 Website / Social Media Links
+        $links = [];
+        $rawLinks = $_POST['links'] ?? [];
+        if (is_array($rawLinks)) {
+            foreach ($rawLinks as $lnk) {
+                $u = trim($lnk['url'] ?? '');
+                $t = trim($lnk['type'] ?? 'auto');
+                if (!in_array($t, ['auto', 'facebook', 'instagram', 'linkedin', 'youtube', 'telegram', 'website'], true)) {
+                    $t = 'auto';
+                }
+                if ($u !== '') {
+                    if (!preg_match('#^https?://#i', $u)) {
+                        $u = 'https://' . ltrim($u, '/');
+                    }
+                    $links[] = [
+                        'url' => $u,
+                        'type' => $t
+                    ];
+                }
+            }
         }
-        if ($linkUrl !== '' && !preg_match('#^https?://#i', $linkUrl)) {
-            $linkUrl = 'https://' . ltrim($linkUrl, '/');
+        // Fallback to legacy single link inputs if rawLinks was empty
+        if (empty($links) && !empty($_POST['link_url'])) {
+            $u = trim($_POST['link_url']);
+            $t = trim($_POST['link_type'] ?? 'auto');
+            if ($u !== '') {
+                if (!preg_match('#^https?://#i', $u)) $u = 'https://' . ltrim($u, '/');
+                $links[] = ['url' => $u, 'type' => $t];
+            }
         }
+        $links = array_slice($links, 0, 3);
+        $linksJson = !empty($links) ? json_encode($links) : null;
+        $primaryLinkUrl = !empty($links[0]['url']) ? $links[0]['url'] : null;
+        $primaryLinkType = !empty($links[0]['type']) ? $links[0]['type'] : 'auto';
+
         $achievements = trim($_POST['achievements'] ?? '');
         $awards = trim($_POST['awards'] ?? '');
 
-        // 1. Process Completed Works Projects Portfolio
+        // 2. Process Completed Works Projects Portfolio
         $projects = [];
         $rawProjects = $_POST['projects'] ?? [];
         $uploadDir = __DIR__ . '/../uploads/members/';
@@ -165,8 +193,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'save_
 
         ensure_user_profile_photo_column($pdo);
         $stmt = $pdo->prepare("INSERT INTO website_members 
-            (user_id, name, id_number, role_title, specialty, location, company_name, link_url, link_type, achievements, awards, photo_path, photo_description, gallery_json, projects_json, is_published)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)
+            (user_id, name, id_number, role_title, specialty, location, company_name, link_url, link_type, links_json, achievements, awards, photo_path, photo_description, gallery_json, projects_json, is_published)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)
             ON DUPLICATE KEY UPDATE
                 name = VALUES(name),
                 id_number = VALUES(id_number),
@@ -176,6 +204,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'save_
                 company_name = VALUES(company_name),
                 link_url = VALUES(link_url),
                 link_type = VALUES(link_type),
+                links_json = VALUES(links_json),
                 achievements = VALUES(achievements),
                 awards = VALUES(awards),
                 photo_path = VALUES(photo_path),
@@ -191,8 +220,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'save_
             $specialty,
             $location,
             $companyName !== '' ? $companyName : null,
-            $linkUrl !== '' ? $linkUrl : null,
-            $linkType,
+            $primaryLinkUrl,
+            $primaryLinkType,
+            $linksJson,
             $achievements,
             $awards,
             $firstPhoto,
@@ -216,7 +246,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'save_
     }
 }
 
-// Fetch member's current profile record
+// Fetch Profile
 $record = $pdo->prepare("SELECT * FROM website_members WHERE user_id = ? LIMIT 1");
 $record->execute([$userId]);
 $profile = $record->fetch();
@@ -238,12 +268,29 @@ if (!$profile) {
         'company_name' => '',
         'link_url' => '',
         'link_type' => 'auto',
+        'links_json' => '',
         'achievements' => '',
         'awards' => '',
         'photo_path' => $userProfilePhoto,
         'gallery_json' => '',
         'projects_json' => ''
     ];
+}
+
+// Decode social links (up to 3 links)
+$socialLinks = [];
+if (!empty($profile['links_json'])) {
+    $decodedLinks = json_decode($profile['links_json'], true);
+    if (is_array($decodedLinks)) $socialLinks = $decodedLinks;
+}
+if (empty($socialLinks) && !empty($profile['link_url'])) {
+    $socialLinks[] = [
+        'url' => $profile['link_url'],
+        'type' => $profile['link_type'] ?? 'auto'
+    ];
+}
+while (count($socialLinks) < 3) {
+    $socialLinks[] = ['url' => '', 'type' => 'auto'];
 }
 
 // Decode Completed Works projects
@@ -277,124 +324,62 @@ include __DIR__ . '/../includes/header.php';
     <div class="alert alert-success" style="margin-bottom: 18px;"><?php echo htmlspecialchars($success); ?></div>
   <?php endif; ?>
 
-  <?php if (!$app): ?>
-    <!-- ================= STATE 1: NOT APPLIED YET ================= -->
-    <div style="background: var(--bg-secondary, rgba(0,0,0,0.15)); border: 1px solid var(--border-color, rgba(255,255,255,0.1)); border-radius: 14px; padding: 32px 24px; text-align: center; margin-top: 10px;">
-      <div style="width: 56px; height: 56px; border-radius: 14px; background: rgba(245,158,11,0.12); color: var(--accent-primary, #f5b800); display: inline-flex; align-items: center; justify-content: center; margin-bottom: 14px;">
-        <?php echo icon('building', '', 32); ?>
-      </div>
-      <h2 style="font-size: 20px; margin-bottom: 8px; color:var(--text-primary);">Apply to be Featured on the Website Directory</h2>
-      <p class="muted" style="max-width: 560px; margin: 0 auto 24px; font-size: 14px; line-height: 1.6;">
-        Promote your architectural profile, showcase multiple completed project photos, and reach clients looking for professional architects across Mindoro.
-      </p>
-      
-      <button type="button" onclick="openApplyModal()" class="btn btn-success" style="padding: 12px 32px; font-size: 15px; font-weight: 700;">
-        Apply to Website Directory &rarr;
-      </button>
-    </div>
-
-    <!-- Application Modal -->
-    <div id="applyDirectoryModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.75); z-index:99999; align-items:center; justify-content:center; padding:20px; backdrop-filter:blur(6px);">
-      <div style="background:var(--card-bg, #18243a); border:1px solid var(--border-color, rgba(255,255,255,0.15)); border-radius:14px; max-width:480px; width:100%; overflow:hidden; box-shadow:0 25px 50px -12px rgba(0,0,0,0.6); color:var(--text-primary);">
-        <div style="padding:24px;">
-          <div style="display:flex; align-items:center; gap:12px; margin-bottom:14px;">
-            <div style="width:40px; height:40px; border-radius:10px; display:flex; align-items:center; justify-content:center; background:rgba(245,158,11,0.15); color:#f5b800; flex-shrink:0;">
-              <?php echo icon('sparkles', '', 20); ?>
-            </div>
-            <h3 style="margin:0; font-size:18px; font-weight:700;">Directory Advertisement Application</h3>
-          </div>
-          <p style="font-size:14px; line-height:1.6; color:var(--text-secondary); margin-bottom:20px;">
-            Would you like to apply to be featured and advertised on the official UAP Mindoro Website Directory?
-            <br><br>
-            <strong>How it works:</strong>
-            <br>1. Submit your application.
-            <br>2. The Chapter Admin will review and set an advertising fee for you.
-            <br>3. Once you pay and the payment is verified, the feature will be unlocked immediately!
-          </p>
-          <div style="display:flex; justify-content:flex-end; gap:10px;">
-            <button type="button" onclick="closeApplyModal()" class="btn btn-sm" style="background:transparent; border:1px solid var(--border-color); color:var(--text-primary); padding:8px 16px;">Cancel</button>
-            <form method="post" style="display:inline;">
-              <?php echo csrf_field(); ?>
-              <input type="hidden" name="action" value="apply_directory">
-              <button type="submit" class="btn btn-sm btn-success" style="padding:8px 20px; font-weight:700;">Confirm & Apply</button>
-            </form>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <script>
-      function openApplyModal() { document.getElementById('applyDirectoryModal').style.display = 'flex'; }
-      function closeApplyModal() { document.getElementById('applyDirectoryModal').style.display = 'none'; }
-    </script>
-
-  <?php elseif ($app['status'] === 'pending_fee'): ?>
-    <!-- ================= STATE 2: PENDING ADMIN FEE ================= -->
-    <div style="background: var(--bg-secondary, rgba(0,0,0,0.15)); border: 1px solid rgba(245,158,11,0.3); border-radius: 14px; padding: 28px 24px; text-align: center; margin-top: 10px;">
-      <div style="width: 50px; height: 50px; border-radius: 14px; background: rgba(245,158,11,0.12); color: #f59e0b; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 12px;">
-        <?php echo icon('clock', '', 26); ?>
-      </div>
-      <h2 style="font-size: 19px; margin-bottom: 8px; color:var(--text-primary);">Application Under Review</h2>
-      <p class="muted" style="max-width: 540px; margin: 0 auto 16px; font-size: 14px; line-height: 1.6;">
-        Your application to be advertised on the Website Directory was submitted on <strong><?php echo date('M d, Y H:i', strtotime($app['created_at'])); ?></strong>.
-        The Chapter Admin will review your request and assign your directory advertising fee shortly.
-      </p>
-      <span class="badge badge-pending" style="font-size: 12px; padding: 5px 12px;">Status: Awaiting Admin Fee Assignment</span>
-    </div>
-
-  <?php elseif (!$isUnlocked): ?>
-    <!-- ================= STATE 3: FEE SET / PAYMENT PENDING ================= -->
-    <?php 
-      $feeAmount = (float)($app['fee_amount'] ?: $app['due_amount'] ?: 0);
-      $dueId = $app['member_due_id_val'] ?? $app['member_due_id'] ?? 0;
-      $paymentStatus = $app['payment_status'] ?? 'unpaid';
-    ?>
-    <div style="background: var(--bg-secondary, rgba(0,0,0,0.15)); border: 1px solid rgba(59,130,246,0.3); border-radius: 14px; padding: 28px 24px; text-align: center; margin-top: 10px;">
-      <?php if ($paymentStatus === 'pending'): ?>
-        <div style="width: 50px; height: 50px; border-radius: 14px; background: rgba(59,130,246,0.12); color: #3b82f6; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 12px;">
-          <?php echo icon('search', '', 26); ?>
-        </div>
-        <h2 style="font-size: 19px; margin-bottom: 8px; color:var(--text-primary);">Payment Proof Submitted & Under Verification</h2>
-        <p class="muted" style="max-width: 540px; margin: 0 auto 16px; font-size: 14px; line-height: 1.6;">
-          Your payment of <strong>₱<?php echo number_format($feeAmount, 2); ?></strong> for the Website Directory Advertising Fee is currently pending verification by the admin. Once approved, your profile editor will automatically unlock!
+  <?php if (!$isUnlocked): ?>
+    <!-- Application & Unlock Flow -->
+    <?php if (!$app): ?>
+      <div style="background: rgba(245,158,11,0.05); border: 1px dashed rgba(245,158,11,0.3); border-radius: 12px; padding: 24px; text-align: center;">
+        <div style="font-size: 32px; color: var(--accent-primary, #f5b800); margin-bottom: 8px;">★</div>
+        <h3 style="margin-bottom: 8px;">Unlock Your Official Website Directory Listing</h3>
+        <p class="muted" style="max-width: 540px; margin: 0 auto 20px; font-size: 14px;">
+          Promote your architectural practice, services, portfolio, and contact links directly on the public UAP Mindoro Website.
         </p>
-        <span class="badge badge-pending" style="font-size: 12px; padding: 5px 12px;">Verification in Progress</span>
-      <?php else: ?>
-        <div style="width: 50px; height: 50px; border-radius: 14px; background: rgba(245,158,11,0.12); color: #f59e0b; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 12px;">
-          <?php echo icon('wallet', '', 26); ?>
+        <form method="POST" style="display: inline-block;">
+          <?php echo csrf_field(); ?>
+          <input type="hidden" name="action" value="apply_directory">
+          <button class="btn btn-primary" type="submit" style="padding: 10px 24px; font-weight:700;">Apply for Directory Feature</button>
+        </form>
+      </div>
+
+    <?php elseif ($app['status'] === 'pending_fee'): ?>
+      <div class="alert alert-info" style="display: flex; gap: 14px; align-items: center;">
+        <div>
+          <strong>Application Received &amp; Under Review</strong>
+          <p style="margin: 4px 0 0; font-size: 13.5px;">Your application has been received. The Chapter Administrator will assign your advertising fee shortly. Please check back soon.</p>
         </div>
-        <h2 style="font-size: 19px; margin-bottom: 8px; color:var(--text-primary);">Advertising Fee Assigned</h2>
-        <p class="muted" style="max-width: 540px; margin: 0 auto 16px; font-size: 14px; line-height: 1.6;">
-          The Chapter Admin has approved your application and set the directory advertising fee to:
+      </div>
+
+    <?php elseif ($app['status'] === 'fee_set'): ?>
+      <div style="background: rgba(59,130,246,0.08); border: 1px solid rgba(59,130,246,0.3); border-radius: 12px; padding: 22px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:12px;">
+          <div>
+            <span class="badge badge-unpaid" style="font-size: 12px;">Payment Required</span>
+            <h3 style="margin: 6px 0 0;">Website Directory Advertising Fee: ₱<?php echo number_format($app['fee_amount'], 2); ?></h3>
+          </div>
+          <?php if (!empty($app['due_id'])): ?>
+            <a href="pay.php?id=<?php echo (int)$app['due_id']; ?>" class="btn btn-success" style="font-weight: 700; padding: 10px 20px;">
+              Pay Now &rarr;
+            </a>
+          <?php else: ?>
+            <a href="pay.php" class="btn btn-success" style="font-weight: 700; padding: 10px 20px;">
+              Go to Payments &rarr;
+            </a>
+          <?php endif; ?>
+        </div>
+        <p class="muted" style="margin:0; font-size:13px;">
+          Once your payment receipt is verified by the Chapter Treasurer, your website directory profile manager will be instantly activated.
         </p>
-        <div style="font-size: 28px; font-weight: 900; color:var(--accent-primary, #f5b800); margin-bottom: 18px;">
-          ₱<?php echo number_format($feeAmount, 2); ?>
-        </div>
-        <?php if ($dueId > 0): ?>
-          <a href="pay.php?member_due_id=<?php echo (int)$dueId; ?>" class="btn btn-success" style="padding: 12px 32px; font-size: 15px; font-weight: 700; text-decoration:none; display:inline-block;">
-            Pay ₱<?php echo number_format($feeAmount, 2); ?> to Unlock Feature &rarr;
-          </a>
-        <?php else: ?>
-          <a href="dashboard.php" class="btn" style="padding: 10px 24px;">View in My Dues</a>
-        <?php endif; ?>
-      <?php endif; ?>
-    </div>
+      </div>
+
+    <?php elseif ($app['status'] === 'rejected'): ?>
+      <div class="alert alert-error">
+        <strong>Application Declined:</strong> <?php echo htmlspecialchars($app['remarks'] ?? 'Please contact the chapter admin for more details.'); ?>
+      </div>
+    <?php endif; ?>
 
   <?php else: ?>
-    <!-- ================= STATE 4: UNLOCKED! FULL PROFILE & COMPLETED WORKS EDITOR ================= -->
-    <div style="margin-bottom: 16px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
-      <span class="muted" style="font-size:13px;">Manage your directory details and completed works portfolio below.</span>
-      <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
-        <a href="download_qr.php" class="btn btn-sm btn-primary" style="font-weight:700; display:inline-flex; align-items:center; gap:6px;">
-          <?php echo icon('download', '', 14); ?> <span>Download Public QR Code</span>
-        </a>
-        <a href="<?php echo BASE_URL; ?>/profile/<?php echo (int)($profile['id'] ?? 0); ?>" target="_blank" class="btn btn-sm" style="background:transparent; border:1px solid var(--accent-primary, #f5b800); color:var(--accent-primary, #f5b800); font-weight:700; display:inline-flex; align-items:center; gap:6px;">
-          <?php echo icon('eye', '', 14); ?> <span>View Public Profile</span>
-        </a>
-      </div>
-    </div>
 
-    <form method="post" enctype="multipart/form-data" style="margin-top: 10px;">
+    <!-- UNLOCKED: DIRECTORY PROFILE & PORTFOLIO FORM -->
+    <form method="POST" enctype="multipart/form-data">
       <?php echo csrf_field(); ?>
       <input type="hidden" name="action" value="save_profile">
 
@@ -433,11 +418,13 @@ include __DIR__ . '/../includes/header.php';
         </a>
       </div>
 
+      <!-- 1. FULL NAME -->
       <div class="field">
         <label>Full Name</label>
         <input type="text" name="name" value="<?php echo htmlspecialchars($profile['name'] ?? ''); ?>" required>
       </div>
 
+      <!-- 2. COMPANY & SPECIALTY -->
       <div class="grid-2">
         <div class="field">
           <label>Company / Architectural Firm Name</label>
@@ -449,6 +436,7 @@ include __DIR__ . '/../includes/header.php';
         </div>
       </div>
 
+      <!-- 3. ROLE / TITLE & ADDRESS -->
       <div class="grid-2">
         <div class="field">
           <label>Role / Title</label>
@@ -460,27 +448,58 @@ include __DIR__ . '/../includes/header.php';
         </div>
       </div>
 
-      <div class="grid-2">
-        <div class="field">
-          <label>Website / Social Media Link</label>
-          <input type="text" name="link_url" value="<?php echo htmlspecialchars($profile['link_url'] ?? ''); ?>" placeholder="https://facebook.com/..., https://instagram.com/..., https://myfirm.com">
+      <!-- 4. UP TO 3 WEBSITE / SOCIAL MEDIA LINKS -->
+      <div style="background: var(--bg-secondary, rgba(0,0,0,0.12)); border: 1px solid var(--border-color, rgba(255,255,255,0.08)); border-radius: 12px; padding: 18px; margin-bottom: 20px;">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+          <div>
+            <strong style="font-size: 14px; color: var(--text-primary); display: block;">Website &amp; Social Media Showcase Links</strong>
+            <span class="muted" style="font-size: 12px;">Add up to 3 links (Official Portfolio Website, Facebook, Instagram, LinkedIn, YouTube, Telegram)</span>
+          </div>
         </div>
-        <div class="field">
-          <label>Link Platform / Icon Style</label>
-          <?php $curType = $profile['link_type'] ?? 'auto'; ?>
-          <select name="link_type">
-            <option value="auto" <?php echo $curType === 'auto' ? 'selected' : ''; ?>>Auto-Detect Icon from URL</option>
-            <option value="facebook" <?php echo $curType === 'facebook' ? 'selected' : ''; ?>>Facebook</option>
-            <option value="instagram" <?php echo $curType === 'instagram' ? 'selected' : ''; ?>>Instagram</option>
-            <option value="linkedin" <?php echo $curType === 'linkedin' ? 'selected' : ''; ?>>LinkedIn</option>
-            <option value="youtube" <?php echo $curType === 'youtube' ? 'selected' : ''; ?>>YouTube</option>
-            <option value="telegram" <?php echo $curType === 'telegram' ? 'selected' : ''; ?>>Telegram</option>
-            <option value="website" <?php echo $curType === 'website' ? 'selected' : ''; ?>>Official Website / Portfolio</option>
-          </select>
+
+        <div style="display: flex; flex-direction: column; gap: 12px;">
+          <?php for ($lIdx = 0; $lIdx < 3; $lIdx++): 
+            $sLink = $socialLinks[$lIdx] ?? ['url' => '', 'type' => 'auto'];
+            $curUrl = $sLink['url'] ?? '';
+            $curType = $sLink['type'] ?? 'auto';
+          ?>
+            <div class="grid-2" style="gap: 12px; margin-bottom: 0; align-items: end; background: rgba(0,0,0,0.15); padding: 10px 14px; border-radius: 8px; border: 1px solid var(--border-color, rgba(255,255,255,0.05));">
+              <div class="field" style="margin-bottom: 0;">
+                <label style="font-size: 12px; font-weight: 700; color: var(--text-secondary);">
+                  Link #<?php echo $lIdx + 1; ?> <?php echo $lIdx === 0 ? '<span style="color:var(--accent-primary, #f5b800); font-weight:600;">(Primary Showcase)</span>' : '<span style="color:var(--text-muted); font-weight:normal;">(Optional)</span>'; ?>
+                </label>
+                <input type="text" name="links[<?php echo $lIdx; ?>][url]" value="<?php echo htmlspecialchars($curUrl); ?>" placeholder="<?php echo $lIdx === 0 ? 'https://myfirm.com or https://facebook.com/...' : 'https://instagram.com/... or https://linkedin.com/...'; ?>">
+              </div>
+              <div class="field" style="margin-bottom: 0;">
+                <label style="font-size: 12px; font-weight: 700; color: var(--text-secondary);">Platform / Icon Style</label>
+                <select name="links[<?php echo $lIdx; ?>][type]">
+                  <option value="auto" <?php echo $curType === 'auto' ? 'selected' : ''; ?>>Auto-Detect from URL</option>
+                  <option value="website" <?php echo $curType === 'website' ? 'selected' : ''; ?>>Official Website / Portfolio</option>
+                  <option value="facebook" <?php echo $curType === 'facebook' ? 'selected' : ''; ?>>Facebook</option>
+                  <option value="instagram" <?php echo $curType === 'instagram' ? 'selected' : ''; ?>>Instagram</option>
+                  <option value="linkedin" <?php echo $curType === 'linkedin' ? 'selected' : ''; ?>>LinkedIn</option>
+                  <option value="youtube" <?php echo $curType === 'youtube' ? 'selected' : ''; ?>>YouTube</option>
+                  <option value="telegram" <?php echo $curType === 'telegram' ? 'selected' : ''; ?>>Telegram</option>
+                </select>
+              </div>
+            </div>
+          <?php endfor; ?>
         </div>
       </div>
 
-      <!-- COMPLETED WORKS & PROJECT PORTFOLIO MANAGER -->
+      <!-- 5. CAREER ACHIEVEMENTS & PRACTICE (UNDER SOCIAL LINKS) -->
+      <div class="field" style="margin-top: 20px;">
+        <label style="font-weight: 700; font-size: 13.5px; color: var(--text-primary);">Career Achievements &amp; Practice</label>
+        <textarea name="achievements" rows="4" placeholder="Describe your architectural experience, milestones, design philosophy, or notable achievements..." style="font-size: 13.5px; line-height: 1.65;"><?php echo htmlspecialchars($profile['achievements'] ?? ''); ?></textarea>
+      </div>
+
+      <!-- 6. HONORS, DISTINCTIONS & AWARDS (UNDER ACHIEVEMENTS) -->
+      <div class="field" style="margin-bottom: 24px;">
+        <label style="font-weight: 700; font-size: 13.5px; color: var(--text-primary);">Honors, Distinctions &amp; Awards</label>
+        <textarea name="awards" rows="4" placeholder="List your professional design awards, chapter recognitions, or academic distinctions..." style="font-size: 13.5px; line-height: 1.65;"><?php echo htmlspecialchars($profile['awards'] ?? ''); ?></textarea>
+      </div>
+
+      <!-- 7. COMPLETED WORKS & PROJECTS PORTFOLIO (COLLAPSIBLE PER PROJECT) -->
       <div style="background: var(--bg-secondary, rgba(0,0,0,0.15)); border: 1px solid var(--border-color, rgba(255,255,255,0.1)); border-radius: 14px; padding: 22px; margin: 24px 0; width: 100%; box-sizing: border-box;">
         <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom: 16px;">
           <div>
@@ -488,6 +507,14 @@ include __DIR__ . '/../includes/header.php';
               <?php echo icon('camera', '', 20); ?> <span>Completed Works &amp; Projects Portfolio</span>
             </h3>
             <p class="muted" style="font-size:12.5px; margin:4px 0 0;">Add completed architectural works with cover photo, team credits, and up to 5 photos per project.</p>
+          </div>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <button type="button" onclick="toggleAllProjects(true)" class="btn btn-sm btn-secondary" style="font-size:11.5px; padding: 5px 12px; border-radius: 6px; cursor: pointer;">
+              Expand All
+            </button>
+            <button type="button" onclick="toggleAllProjects(false)" class="btn btn-sm btn-secondary" style="font-size:11.5px; padding: 5px 12px; border-radius: 6px; cursor: pointer;">
+              Collapse All
+            </button>
           </div>
         </div>
 
@@ -503,7 +530,7 @@ include __DIR__ . '/../includes/header.php';
           <p class="muted" style="font-size:12.5px; margin:0 auto; max-width:480px;">Click the <strong>"+ Add Completed Work / Project"</strong> button below to manually showcase your architectural projects with custom cover photos, narratives, and collaborators.</p>
         </div>
 
-        <div id="projectsContainer" style="display: flex; flex-direction: column; gap: 20px; width: 100%;">
+        <div id="projectsContainer" style="display: flex; flex-direction: column; gap: 14px; width: 100%;">
           <?php foreach ($renderProjects as $pIdx => $proj): ?>
             <?php 
               $coverPath = $proj['cover_photo'] ?? ($proj['photos'][0] ?? '');
@@ -512,101 +539,125 @@ include __DIR__ . '/../includes/header.php';
               }));
               $totalPhotosCount = (!empty($coverPath) ? 1 : 0) + count($otherPhotos);
             ?>
-            <div class="project-card-item" style="background: var(--field-bg, rgba(0,0,0,0.25)); border: 1px solid var(--border-color, rgba(255,255,255,0.12)); border-radius: 12px; padding: 18px; width: 100%; box-sizing: border-box;">
+            <div class="project-card-item" id="proj_card_<?php echo $pIdx; ?>" style="background: var(--field-bg, rgba(0,0,0,0.25)); border: 1px solid var(--border-color, rgba(255,255,255,0.12)); border-radius: 12px; overflow: hidden; width: 100%; box-sizing: border-box; transition: border-color 0.2s;">
               <input type="hidden" name="projects[<?php echo $pIdx; ?>][id]" value="<?php echo htmlspecialchars($proj['id'] ?? ('proj_' . $pIdx)); ?>">
               <input type="hidden" name="projects[<?php echo $pIdx; ?>][existing_cover]" value="<?php echo htmlspecialchars($coverPath); ?>">
 
-              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 14px; padding-bottom: 10px; border-bottom: 1px solid var(--border-color, rgba(255,255,255,0.08));">
-                <div style="display: flex; align-items: center; gap: 8px;">
-                  <span style="font-weight: 800; font-size: 14px; color: var(--accent-primary, #f5b800);">Completed Work #<?php echo $pIdx + 1; ?>:</span>
-                  <strong style="font-size: 14px; color: var(--text-primary);"><?php echo htmlspecialchars(!empty($proj['title']) ? $proj['title'] : 'New Architectural Work'); ?></strong>
-                </div>
-                <button type="button" onclick="removeProjectCard(this)" class="btn btn-sm btn-secondary" style="color: #ef4444; border-color: rgba(239,68,68,0.3); font-size: 11px; padding: 4px 10px; display: inline-flex; align-items: center; gap: 4px; cursor: pointer;">
-                  <?php echo icon('trash', '', 12); ?> <span>Delete Project</span>
-                </button>
-              </div>
-
-              <div class="grid-3" style="gap: 12px; margin-bottom: 12px;">
-                <div class="field" style="margin-bottom:0;">
-                  <label style="font-size:12px;">Project Title / Name *</label>
-                  <input type="text" name="projects[<?php echo $pIdx; ?>][title]" value="<?php echo htmlspecialchars($proj['title'] ?? ''); ?>" placeholder="e.g. Casa San Gregorio, DLSU-D Building" required>
-                </div>
-                <div class="field" style="margin-bottom:0;">
-                  <label style="font-size:12px;">Project Category</label>
-                  <input type="text" name="projects[<?php echo $pIdx; ?>][category]" value="<?php echo htmlspecialchars($proj['category'] ?? 'RESIDENTIAL'); ?>" placeholder="e.g. RESIDENTIAL, COMMERCIAL, INSTITUTIONAL">
-                </div>
-                <div class="field" style="margin-bottom:0;">
-                  <label style="font-size:12px;">Location</label>
-                  <input type="text" name="projects[<?php echo $pIdx; ?>][location]" value="<?php echo htmlspecialchars($proj['location'] ?? ''); ?>" placeholder="e.g. Makati, Manila">
-                </div>
-              </div>
-
-              <div class="grid-2" style="gap: 16px; margin-bottom: 16px;">
-                <div class="field" style="margin-bottom:0;">
-                  <label style="font-size:13px; font-weight:700; color:var(--text-primary);">Project Architectural Concept &amp; Narrative</label>
-                  <textarea name="projects[<?php echo $pIdx; ?>][description]" rows="7" placeholder="Describe the design philosophy, space planning, materials, volumetric form, and concept..." style="font-size:13.5px; line-height:1.65; min-height:160px; width:100%; box-sizing:border-box; resize:vertical;"><?php echo htmlspecialchars($proj['description'] ?? ''); ?></textarea>
-                </div>
-                <div class="field" style="margin-bottom:0;">
-                  <label style="font-size:13px; font-weight:700; color:var(--text-primary);">Project Team / Collaborators</label>
-                  <textarea name="projects[<?php echo $pIdx; ?>][project_team]" rows="7" placeholder="e.g. Ar. Anthony Nazareno&#10;Ar. Vladimir Banks&#10;IDr. Marielle Saguibo&#10;Engr. Juan Dela Cruz" style="font-size:13.5px; line-height:1.6; min-height:160px; width:100%; box-sizing:border-box; resize:vertical;"><?php echo htmlspecialchars($proj['project_team'] ?? ''); ?></textarea>
-                </div>
-              </div>
-
-              <!-- Photos Section (Cover + Additional, Limit to 5 total) -->
-              <div style="background: rgba(0,0,0,0.2); border-radius: 10px; padding: 14px; border: 1px solid var(--border-color, rgba(255,255,255,0.06));">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                  <strong style="font-size: 13px; color: var(--text-primary);">Project Photos (Max 5 photos total including Cover)</strong>
-                  <span style="font-size: 11.5px; color: var(--accent-primary, #f5b800); font-weight: 700;"><?php echo $totalPhotosCount; ?> / 5 Photos</span>
-                </div>
-
-                <!-- Cover Photo Block -->
-                <div style="margin-bottom: 12px; padding: 10px; background: rgba(245,158,11,0.05); border: 1px solid rgba(245,158,11,0.25); border-radius: 8px;">
-                  <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
-                    <span style="font-size: 12px; font-weight: 700; color: var(--accent-primary, #f5b800);">★ Cover Photo (Front Thumbnail on Directory Grid)</span>
-                    <?php if ($coverPath): ?>
-                      <label style="font-size: 11.5px; color: #ef4444; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;">
-                        <input type="checkbox" name="projects[<?php echo $pIdx; ?>][delete_photos][]" value="cover"> Remove Cover
-                      </label>
-                    <?php endif; ?>
-                  </div>
-
+              <!-- Accordion Header Bar (Clickable) -->
+              <div class="project-card-header" onclick="toggleProjectAccordion(this)" style="display:flex; justify-content:space-between; align-items:center; padding: 12px 16px; background: rgba(255,255,255,0.03); cursor: pointer; user-select: none; border-bottom: 1px solid var(--border-color, rgba(255,255,255,0.08));">
+                <div style="display: flex; align-items: center; gap: 12px; min-width: 0;">
+                  <span class="accordion-chevron" style="display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 50%; background: rgba(245,158,11,0.15); color: var(--accent-primary, #f5b800); font-size: 10px; font-weight: 900; transition: transform 0.25s ease;">▼</span>
+                  
                   <?php if ($coverPath): ?>
-                    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
-                      <div style="width: 90px; height: 60px; border-radius: 6px; overflow: hidden; background: #000; flex-shrink: 0;">
-                        <img src="<?php echo htmlspecialchars(media_url($coverPath)); ?>" alt="Cover" style="width: 100%; height: 100%; object-fit: cover;">
-                      </div>
-                      <span class="muted" style="font-size: 11.5px;">Current cover photo</span>
+                    <div style="width: 36px; height: 36px; border-radius: 6px; overflow: hidden; background: #000; flex-shrink: 0; border: 1px solid rgba(255,255,255,0.1);">
+                      <img src="<?php echo htmlspecialchars(media_url($coverPath)); ?>" alt="Thumb" style="width: 100%; height: 100%; object-fit: cover;">
                     </div>
                   <?php endif; ?>
 
-                  <input type="file" name="projects[<?php echo $pIdx; ?>][cover]" accept=".jpg,.jpeg,.png,.webp" style="font-size: 12px;">
+                  <div style="min-width: 0;">
+                    <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                      <span style="font-weight: 800; font-size: 13.5px; color: var(--accent-primary, #f5b800);">Completed Work #<?php echo $pIdx + 1; ?>:</span>
+                      <strong class="proj-title-preview" style="font-size: 13.5px; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 320px;"><?php echo htmlspecialchars(!empty($proj['title']) ? $proj['title'] : 'New Architectural Work'); ?></strong>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 6px; margin-top: 2px; font-size: 11px; color: var(--text-secondary);">
+                      <span class="proj-cat-preview"><?php echo htmlspecialchars(!empty($proj['category']) ? $proj['category'] : 'RESIDENTIAL'); ?></span>
+                      <span>•</span>
+                      <span><?php echo $totalPhotosCount; ?> / 5 Photos</span>
+                    </div>
+                  </div>
                 </div>
 
-                <!-- Existing Additional Photos -->
-                <?php if (!empty($otherPhotos)): ?>
-                  <label style="font-size: 12px; color: var(--text-secondary); display: block; margin-bottom: 6px;">Additional Gallery Photos:</label>
-                  <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; margin-bottom: 12px;">
-                    <?php foreach ($otherPhotos as $oIdx => $oPath): ?>
-                      <div style="background: rgba(0,0,0,0.3); border: 1px solid var(--border-color, rgba(255,255,255,0.1)); border-radius: 6px; padding: 6px; display: flex; flex-direction: column; gap: 4px;">
-                        <input type="hidden" name="projects[<?php echo $pIdx; ?>][existing_photos][<?php echo $oIdx; ?>]" value="<?php echo htmlspecialchars($oPath); ?>">
-                        <div style="width: 100%; height: 75px; border-radius: 4px; overflow: hidden; background: #000;">
-                          <img src="<?php echo htmlspecialchars(media_url($oPath)); ?>" alt="Photo" style="width: 100%; height: 100%; object-fit: cover;">
-                        </div>
-                        <label style="font-size: 11px; color: #ef4444; display: flex; align-items: center; gap: 4px; cursor: pointer;">
-                          <input type="checkbox" name="projects[<?php echo $pIdx; ?>][delete_photos][]" value="<?php echo $oIdx; ?>"> Delete
-                        </label>
-                      </div>
-                    <?php endforeach; ?>
-                  </div>
-                <?php endif; ?>
+                <div style="display: flex; align-items: center; gap: 8px;" onclick="event.stopPropagation()">
+                  <button type="button" onclick="removeProjectCard(this)" class="btn btn-sm btn-secondary" style="color: #ef4444; border-color: rgba(239,68,68,0.3); font-size: 11px; padding: 4px 10px; display: inline-flex; align-items: center; gap: 4px; cursor: pointer;">
+                    <?php echo icon('trash', '', 12); ?> <span>Delete Project</span>
+                  </button>
+                </div>
+              </div>
 
-                <!-- Add More Photos File Input -->
-                <?php if ($totalPhotosCount < 5): ?>
+              <!-- Collapsible Body Content -->
+              <div class="project-card-body" style="padding: 18px; display: block;">
+                <div class="grid-3" style="gap: 12px; margin-bottom: 12px;">
                   <div class="field" style="margin-bottom:0;">
-                    <label style="font-size: 12px;">Upload Additional Photos (Up to <?php echo 5 - $totalPhotosCount; ?> more files):</label>
-                    <input type="file" name="projects[<?php echo $pIdx; ?>][photos][]" accept=".jpg,.jpeg,.png,.webp" multiple style="font-size: 12px;">
+                    <label style="font-size:12px;">Project Title / Name *</label>
+                    <input type="text" name="projects[<?php echo $pIdx; ?>][title]" value="<?php echo htmlspecialchars($proj['title'] ?? ''); ?>" placeholder="e.g. Casa San Gregorio, DLSU-D Building" required oninput="updateProjTitlePreview(this)">
                   </div>
-                <?php endif; ?>
+                  <div class="field" style="margin-bottom:0;">
+                    <label style="font-size:12px;">Project Category</label>
+                    <input type="text" name="projects[<?php echo $pIdx; ?>][category]" value="<?php echo htmlspecialchars($proj['category'] ?? 'RESIDENTIAL'); ?>" placeholder="e.g. RESIDENTIAL, COMMERCIAL, INSTITUTIONAL" oninput="updateProjCatPreview(this)">
+                  </div>
+                  <div class="field" style="margin-bottom:0;">
+                    <label style="font-size:12px;">Location</label>
+                    <input type="text" name="projects[<?php echo $pIdx; ?>][location]" value="<?php echo htmlspecialchars($proj['location'] ?? ''); ?>" placeholder="e.g. Makati, Manila">
+                  </div>
+                </div>
+
+                <div class="grid-2" style="gap: 16px; margin-bottom: 16px;">
+                  <div class="field" style="margin-bottom:0;">
+                    <label style="font-size:13px; font-weight:700; color:var(--text-primary);">Project Architectural Concept &amp; Narrative</label>
+                    <textarea name="projects[<?php echo $pIdx; ?>][description]" rows="7" placeholder="Describe the design philosophy, space planning, materials, volumetric form, and concept..." style="font-size:13.5px; line-height:1.65; min-height:160px; width:100%; box-sizing:border-box; resize:vertical;"><?php echo htmlspecialchars($proj['description'] ?? ''); ?></textarea>
+                  </div>
+                  <div class="field" style="margin-bottom:0;">
+                    <label style="font-size:13px; font-weight:700; color:var(--text-primary);">Project Team / Collaborators</label>
+                    <textarea name="projects[<?php echo $pIdx; ?>][project_team]" rows="7" placeholder="e.g. Ar. Anthony Nazareno&#10;Ar. Vladimir Banks&#10;IDr. Marielle Saguibo&#10;Engr. Juan Dela Cruz" style="font-size:13.5px; line-height:1.6; min-height:160px; width:100%; box-sizing:border-box; resize:vertical;"><?php echo htmlspecialchars($proj['project_team'] ?? ''); ?></textarea>
+                  </div>
+                </div>
+
+                <!-- Photos Section (Cover + Additional, Limit to 5 total) -->
+                <div style="background: rgba(0,0,0,0.2); border-radius: 10px; padding: 14px; border: 1px solid var(--border-color, rgba(255,255,255,0.06));">
+                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                    <strong style="font-size: 13px; color: var(--text-primary);">Project Photos (Max 5 photos total including Cover)</strong>
+                    <span style="font-size: 11.5px; color: var(--accent-primary, #f5b800); font-weight: 700;"><?php echo $totalPhotosCount; ?> / 5 Photos</span>
+                  </div>
+
+                  <!-- Cover Photo Block -->
+                  <div style="margin-bottom: 12px; padding: 10px; background: rgba(245,158,11,0.05); border: 1px solid rgba(245,158,11,0.25); border-radius: 8px;">
+                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
+                      <span style="font-size: 12px; font-weight: 700; color: var(--accent-primary, #f5b800);">★ Cover Photo (Front Thumbnail on Directory Grid)</span>
+                      <?php if ($coverPath): ?>
+                        <label style="font-size: 11.5px; color: #ef4444; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;">
+                          <input type="checkbox" name="projects[<?php echo $pIdx; ?>][delete_photos][]" value="cover"> Remove Cover
+                        </label>
+                      <?php endif; ?>
+                    </div>
+
+                    <?php if ($coverPath): ?>
+                      <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
+                        <div style="width: 90px; height: 60px; border-radius: 6px; overflow: hidden; background: #000; flex-shrink: 0;">
+                          <img src="<?php echo htmlspecialchars(media_url($coverPath)); ?>" alt="Cover" style="width: 100%; height: 100%; object-fit: cover;">
+                        </div>
+                        <span class="muted" style="font-size: 11.5px;">Current cover photo</span>
+                      </div>
+                    <?php endif; ?>
+
+                    <input type="file" name="projects[<?php echo $pIdx; ?>][cover]" accept=".jpg,.jpeg,.png,.webp" style="font-size: 12px;">
+                  </div>
+
+                  <!-- Existing Additional Photos -->
+                  <?php if (!empty($otherPhotos)): ?>
+                    <label style="font-size: 12px; color: var(--text-secondary); display: block; margin-bottom: 6px;">Additional Gallery Photos:</label>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; margin-bottom: 12px;">
+                      <?php foreach ($otherPhotos as $oIdx => $oPath): ?>
+                        <div style="background: rgba(0,0,0,0.3); border: 1px solid var(--border-color, rgba(255,255,255,0.1)); border-radius: 6px; padding: 6px; display: flex; flex-direction: column; gap: 4px;">
+                          <input type="hidden" name="projects[<?php echo $pIdx; ?>][existing_photos][<?php echo $oIdx; ?>]" value="<?php echo htmlspecialchars($oPath); ?>">
+                          <div style="width: 100%; height: 75px; border-radius: 4px; overflow: hidden; background: #000;">
+                            <img src="<?php echo htmlspecialchars(media_url($oPath)); ?>" alt="Photo" style="width: 100%; height: 100%; object-fit: cover;">
+                          </div>
+                          <label style="font-size: 11px; color: #ef4444; display: flex; align-items: center; gap: 4px; cursor: pointer;">
+                            <input type="checkbox" name="projects[<?php echo $pIdx; ?>][delete_photos][]" value="<?php echo $oIdx; ?>"> Delete
+                          </label>
+                        </div>
+                      <?php endforeach; ?>
+                    </div>
+                  <?php endif; ?>
+
+                  <!-- Add More Photos File Input -->
+                  <?php if ($totalPhotosCount < 5): ?>
+                    <div class="field" style="margin-bottom:0;">
+                      <label style="font-size: 12px;">Upload Additional Photos (Up to <?php echo 5 - $totalPhotosCount; ?> more files):</label>
+                      <input type="file" name="projects[<?php echo $pIdx; ?>][photos][]" accept=".jpg,.jpeg,.png,.webp" multiple style="font-size: 12px;">
+                    </div>
+                  <?php endif; ?>
+                </div>
               </div>
             </div>
           <?php endforeach; ?>
@@ -619,16 +670,7 @@ include __DIR__ . '/../includes/header.php';
         </div>
       </div>
 
-      <div class="field" style="margin-top: 20px;">
-        <label>Career Achievements &amp; Practice</label>
-        <textarea name="achievements" rows="3" placeholder="Describe your architectural experience, publications, or notable milestones..."><?php echo htmlspecialchars($profile['achievements'] ?? ''); ?></textarea>
-      </div>
-
-      <div class="field">
-        <label>Honors, Distinctions &amp; Awards</label>
-        <textarea name="awards" rows="3" placeholder="List your professional design awards or chapter recognitions..."><?php echo htmlspecialchars($profile['awards'] ?? ''); ?></textarea>
-      </div>
-
+      <!-- 8. SAVE BUTTON -->
       <div style="margin-top: 24px;">
         <button class="btn btn-success" type="submit" style="padding: 12px 28px; font-weight:700; font-size:15px;">Save Completed Works &amp; Profile</button>
       </div>
@@ -637,6 +679,51 @@ include __DIR__ . '/../includes/header.php';
     <script>
     (function() {
       var projectCount = <?php echo count($renderProjects); ?>;
+
+      window.toggleProjectAccordion = function(header) {
+        var card = header.closest('.project-card-item');
+        if (!card) return;
+        var body = card.querySelector('.project-card-body');
+        var chevron = card.querySelector('.accordion-chevron');
+        if (!body) return;
+
+        if (body.style.display === 'none') {
+          body.style.display = 'block';
+          if (chevron) chevron.style.transform = 'rotate(0deg)';
+        } else {
+          body.style.display = 'none';
+          if (chevron) chevron.style.transform = 'rotate(-90deg)';
+        }
+      };
+
+      window.toggleAllProjects = function(expand) {
+        var bodies = document.querySelectorAll('.project-card-item .project-card-body');
+        var chevrons = document.querySelectorAll('.project-card-item .accordion-chevron');
+        bodies.forEach(function(b) {
+          b.style.display = expand ? 'block' : 'none';
+        });
+        chevrons.forEach(function(c) {
+          c.style.transform = expand ? 'rotate(0deg)' : 'rotate(-90deg)';
+        });
+      };
+
+      window.updateProjTitlePreview = function(input) {
+        var card = input.closest('.project-card-item');
+        if (!card) return;
+        var preview = card.querySelector('.proj-title-preview');
+        if (preview) {
+          preview.textContent = input.value.trim() || 'New Architectural Work';
+        }
+      };
+
+      window.updateProjCatPreview = function(input) {
+        var card = input.closest('.project-card-item');
+        if (!card) return;
+        var preview = card.querySelector('.proj-cat-preview');
+        if (preview) {
+          preview.textContent = input.value.trim().toUpperCase() || 'RESIDENTIAL';
+        }
+      };
 
       window.removeProjectCard = function(btn) {
         var card = btn.closest('.project-card-item');
@@ -667,51 +754,66 @@ include __DIR__ . '/../includes/header.php';
 
           var div = document.createElement('div');
           div.className = 'project-card-item';
-          div.style.cssText = 'background: var(--field-bg, rgba(0,0,0,0.25)); border: 1px dashed var(--border-color-gold, rgba(245,158,11,0.35)); border-radius: 12px; padding: 18px; width: 100%; box-sizing: border-box;';
+          div.id = 'proj_card_' + pIdx;
+          div.style.cssText = 'background: var(--field-bg, rgba(0,0,0,0.25)); border: 1px dashed var(--border-color-gold, rgba(245,158,11,0.35)); border-radius: 12px; margin-bottom: 16px; overflow: hidden; width: 100%; box-sizing: border-box;';
           
           div.innerHTML = [
             '<input type="hidden" name="projects[' + pIdx + '][id]" value="proj_' + timestamp + '">',
-            '<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 14px; padding-bottom: 10px; border-bottom: 1px solid var(--border-color, rgba(255,255,255,0.08));">',
-            '  <div style="display: flex; align-items: center; gap: 8px;">',
-            '    <span style="font-weight: 800; font-size: 14px; color: var(--accent-primary, #f5b800);">New Completed Work #' + projectCount + ':</span>',
-            '    <span class="muted" style="font-size: 13px;">(Unsaved)</span>',
+            '<div class="project-card-header" onclick="toggleProjectAccordion(this)" style="display:flex; justify-content:space-between; align-items:center; padding: 12px 16px; background: rgba(255,255,255,0.03); cursor: pointer; user-select: none; border-bottom: 1px solid var(--border-color, rgba(255,255,255,0.08));">',
+            '  <div style="display: flex; align-items: center; gap: 12px; min-width: 0;">',
+            '    <span class="accordion-chevron" style="display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 50%; background: rgba(245,158,11,0.15); color: var(--accent-primary, #f5b800); font-size: 10px; font-weight: 900; transition: transform 0.25s ease;">▼</span>',
+            '    <div style="min-width: 0;">',
+            '      <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">',
+            '        <span style="font-weight: 800; font-size: 13.5px; color: var(--accent-primary, #f5b800);">New Completed Work #' + projectCount + ':</span>',
+            '        <strong class="proj-title-preview" style="font-size: 13.5px; color: var(--text-primary);">(Unsaved New Project)</strong>',
+            '      </div>',
+            '      <div style="display: flex; align-items: center; gap: 6px; margin-top: 2px; font-size: 11px; color: var(--text-secondary);">',
+            '        <span class="proj-cat-preview">RESIDENTIAL</span>',
+            '        <span>•</span>',
+            '        <span>0 / 5 Photos</span>',
+            '      </div>',
+            '    </div>',
             '  </div>',
-            '  <button type="button" onclick="removeProjectCard(this)" class="btn btn-sm btn-secondary" style="color: #ef4444; border-color: rgba(239,68,68,0.3); font-size: 11px; padding: 4px 10px; display: inline-flex; align-items: center; gap: 4px; cursor: pointer;">',
-            '    <span>Delete Project</span>',
-            '  </button>',
-            '</div>',
-            '<div class="grid-3" style="gap: 12px; margin-bottom: 12px;">',
-            '  <div class="field" style="margin-bottom:0;">',
-            '    <label style="font-size:12px;">Project Title / Name *</label>',
-            '    <input type="text" name="projects[' + pIdx + '][title]" placeholder="e.g. Casa San Gregorio, DLSU-D Building" required>',
-            '  </div>',
-            '  <div class="field" style="margin-bottom:0;">',
-            '    <label style="font-size:12px;">Project Category</label>',
-            '    <input type="text" name="projects[' + pIdx + '][category]" placeholder="e.g. RESIDENTIAL, COMMERCIAL, INSTITUTIONAL" value="RESIDENTIAL">',
-            '  </div>',
-            '  <div class="field" style="margin-bottom:0;">',
-            '    <label style="font-size:12px;">Location</label>',
-            '    <input type="text" name="projects[' + pIdx + '][location]" placeholder="e.g. Makati, Manila">',
+            '  <div style="display: flex; align-items: center; gap: 8px;" onclick="event.stopPropagation()">',
+            '    <button type="button" onclick="removeProjectCard(this)" class="btn btn-sm btn-secondary" style="color: #ef4444; border-color: rgba(239,68,68,0.3); font-size: 11px; padding: 4px 10px; display: inline-flex; align-items: center; gap: 4px; cursor: pointer;">',
+            '      <span>Delete Project</span>',
+            '    </button>',
             '  </div>',
             '</div>',
-            '<div class="grid-2" style="gap: 16px; margin-bottom: 16px;">',
-            '  <div class="field" style="margin-bottom:0;">',
-            '    <label style="font-size:13px; font-weight:700; color:var(--text-primary);">Project Architectural Concept &amp; Narrative</label>',
-            '    <textarea name="projects[' + pIdx + '][description]" rows="7" placeholder="Describe the design philosophy, space planning, materials, volumetric form, and concept..." style="font-size:13.5px; line-height:1.65; min-height:160px; width:100%; box-sizing:border-box; resize:vertical;"></textarea>',
+            '<div class="project-card-body" style="padding: 18px; display: block;">',
+            '  <div class="grid-3" style="gap: 12px; margin-bottom: 12px;">',
+            '    <div class="field" style="margin-bottom:0;">',
+            '      <label style="font-size:12px;">Project Title / Name *</label>',
+            '      <input type="text" name="projects[' + pIdx + '][title]" placeholder="e.g. Casa San Gregorio, DLSU-D Building" required oninput="updateProjTitlePreview(this)">',
+            '    </div>',
+            '    <div class="field" style="margin-bottom:0;">',
+            '      <label style="font-size:12px;">Project Category</label>',
+            '      <input type="text" name="projects[' + pIdx + '][category]" placeholder="e.g. RESIDENTIAL, COMMERCIAL, INSTITUTIONAL" value="RESIDENTIAL" oninput="updateProjCatPreview(this)">',
+            '    </div>',
+            '    <div class="field" style="margin-bottom:0;">',
+            '      <label style="font-size:12px;">Location</label>',
+            '      <input type="text" name="projects[' + pIdx + '][location]" placeholder="e.g. Makati, Manila">',
+            '    </div>',
             '  </div>',
-            '  <div class="field" style="margin-bottom:0;">',
-            '    <label style="font-size:13px; font-weight:700; color:var(--text-primary);">Project Team / Collaborators</label>',
-            '    <textarea name="projects[' + pIdx + '][project_team]" rows="7" placeholder="e.g. Ar. Anthony Nazareno&#10;Ar. Vladimir Banks&#10;IDr. Marielle Saguibo&#10;Engr. Juan Dela Cruz" style="font-size:13.5px; line-height:1.6; min-height:160px; width:100%; box-sizing:border-box; resize:vertical;"></textarea>',
+            '  <div class="grid-2" style="gap: 16px; margin-bottom: 16px;">',
+            '    <div class="field" style="margin-bottom:0;">',
+            '      <label style="font-size:13px; font-weight:700; color:var(--text-primary);">Project Architectural Concept &amp; Narrative</label>',
+            '      <textarea name="projects[' + pIdx + '][description]" rows="7" placeholder="Describe the design philosophy, space planning, materials, volumetric form, and concept..." style="font-size:13.5px; line-height:1.65; min-height:160px; width:100%; box-sizing:border-box; resize:vertical;"></textarea>',
+            '    </div>',
+            '    <div class="field" style="margin-bottom:0;">',
+            '      <label style="font-size:13px; font-weight:700; color:var(--text-primary);">Project Team / Collaborators</label>',
+            '      <textarea name="projects[' + pIdx + '][project_team]" rows="7" placeholder="e.g. Ar. Anthony Nazareno&#10;Ar. Vladimir Banks&#10;IDr. Marielle Saguibo&#10;Engr. Juan Dela Cruz" style="font-size:13.5px; line-height:1.6; min-height:160px; width:100%; box-sizing:border-box; resize:vertical;"></textarea>',
+            '    </div>',
             '  </div>',
-            '</div>',
-            '<div style="background: rgba(0,0,0,0.2); border-radius: 10px; padding: 14px; border: 1px solid var(--border-color, rgba(255,255,255,0.06));">',
-            '  <div style="margin-bottom: 12px; padding: 10px; background: rgba(245,158,11,0.05); border: 1px solid rgba(245,158,11,0.25); border-radius: 8px;">',
-            '    <span style="font-size: 12px; font-weight: 700; color: var(--accent-primary, #f5b800); display: block; margin-bottom: 6px;">★ Cover Photo (Front Thumbnail on Directory Grid) *</span>',
-            '    <input type="file" name="projects[' + pIdx + '][cover]" accept=".jpg,.jpeg,.png,.webp" required style="font-size: 12px;">',
-            '  </div>',
-            '  <div class="field" style="margin-bottom:0;">',
-            '    <label style="font-size: 12px;">Upload Additional Photos (Up to 4 more files, max 5 total photos):</label>',
-            '    <input type="file" name="projects[' + pIdx + '][photos][]" accept=".jpg,.jpeg,.png,.webp" multiple style="font-size: 12px;">',
+            '  <div style="background: rgba(0,0,0,0.2); border-radius: 10px; padding: 14px; border: 1px solid var(--border-color, rgba(255,255,255,0.06));">',
+            '    <div style="margin-bottom: 12px; padding: 10px; background: rgba(245,158,11,0.05); border: 1px solid rgba(245,158,11,0.25); border-radius: 8px;">',
+            '      <span style="font-size: 12px; font-weight: 700; color: var(--accent-primary, #f5b800); display: block; margin-bottom: 6px;">★ Cover Photo (Front Thumbnail on Directory Grid) *</span>',
+            '      <input type="file" name="projects[' + pIdx + '][cover]" accept=".jpg,.jpeg,.png,.webp" required style="font-size: 12px;">',
+            '    </div>',
+            '    <div class="field" style="margin-bottom:0;">',
+            '      <label style="font-size: 12px;">Upload Additional Photos (Up to 4 more files, max 5 total photos):</label>',
+            '      <input type="file" name="projects[' + pIdx + '][photos][]" accept=".jpg,.jpeg,.png,.webp" multiple style="font-size: 12px;">',
+            '    </div>',
             '  </div>',
             '</div>'
           ].join('');
