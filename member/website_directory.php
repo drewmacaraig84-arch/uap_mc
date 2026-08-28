@@ -21,8 +21,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'apply
     }
 }
 
-// Handle Profile Save (Only if unlocked)
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'save_profile') {
+// 1. Handle Profile Details Save (Only if unlocked)
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'save_profile_details') {
     require_csrf();
     
     if (!$isUnlocked) {
@@ -40,7 +40,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'save_
         $location = trim($_POST['location'] ?? '');
         $companyName = trim($_POST['company_name'] ?? '');
 
-        // 1. Process up to 3 Website / Social Media Links
+        // Process up to 3 Website / Social Media Links
         $links = [];
         $rawLinks = $_POST['links'] ?? [];
         if (is_array($rawLinks)) {
@@ -78,130 +78,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'save_
         $achievements = trim($_POST['achievements'] ?? '');
         $awards = trim($_POST['awards'] ?? '');
 
-        // 2. Process Completed Works Projects Portfolio
-        $projects = [];
-        $rawProjects = $_POST['projects'] ?? [];
-        $uploadDir = __DIR__ . '/../uploads/members/';
-        if (!is_dir($uploadDir)) {
-            mkdir($uploadDir, 0755, true);
-        }
-        $allowedExts = ['jpg', 'jpeg', 'png', 'webp'];
-
-        if (is_array($rawProjects)) {
-            foreach ($rawProjects as $pKey => $pData) {
-                $pTitle = trim($pData['title'] ?? '');
-                $pId = !empty($pData['id']) ? trim($pData['id']) : ('proj_' . time() . '_' . bin2hex(random_bytes(3)));
-                $pCat = trim($pData['category'] ?? 'RESIDENTIAL');
-                $pLoc = trim($pData['location'] ?? '');
-                $pDesc = trim($pData['description'] ?? '');
-                $pTeam = trim($pData['project_team'] ?? '');
-                $existingCover = trim($pData['existing_cover'] ?? '');
-                $existingPhotos = $pData['existing_photos'] ?? [];
-                $deletePhotos = $pData['delete_photos'] ?? [];
-
-                // Filter existing photos
-                $coverPhoto = '';
-                $additionalPhotos = [];
-
-                if (!empty($existingCover) && !in_array('cover', $deletePhotos, true)) {
-                    $coverPhoto = $existingCover;
-                }
-                if (is_array($existingPhotos)) {
-                    foreach ($existingPhotos as $phIdx => $phPath) {
-                        if (!empty($phPath) && !in_array((string)$phIdx, $deletePhotos, true)) {
-                            if ($phPath !== $coverPhoto && !in_array($phPath, $additionalPhotos, true)) {
-                                $additionalPhotos[] = $phPath;
-                            }
-                        }
-                    }
-                }
-
-                // Handle Newly Uploaded Cover Photo
-                if (isset($_FILES['projects']['name'][$pKey]['cover']) && $_FILES['projects']['error'][$pKey]['cover'] === UPLOAD_ERR_OK) {
-                    $cName = $_FILES['projects']['name'][$pKey]['cover'];
-                    $cExt = strtolower(pathinfo($cName, PATHINFO_EXTENSION));
-                    if (in_array($cExt, $allowedExts) && $_FILES['projects']['size'][$pKey]['cover'] <= 12 * 1024 * 1024) {
-                        $uniqueName = 'proj_cover_' . $userId . '_' . time() . '_' . bin2hex(random_bytes(3)) . '.' . $cExt;
-                        $targetPath = $uploadDir . $uniqueName;
-                        if (move_uploaded_file($_FILES['projects']['tmp_name'][$pKey]['cover'], $targetPath)) {
-                            $coverPhoto = 'uploads/members/' . $uniqueName;
-                        }
-                    }
-                }
-
-                // Handle Newly Uploaded Additional Photos (up to limit of 5 total photos)
-                if (isset($_FILES['projects']['name'][$pKey]['photos']) && is_array($_FILES['projects']['name'][$pKey]['photos'])) {
-                    foreach ($_FILES['projects']['name'][$pKey]['photos'] as $fIdx => $filename) {
-                        if (count($additionalPhotos) + (!empty($coverPhoto) ? 1 : 0) >= 5) break; // Limit to 5 total photos including cover
-                        if (isset($_FILES['projects']['error'][$pKey]['photos'][$fIdx]) && $_FILES['projects']['error'][$pKey]['photos'][$fIdx] === UPLOAD_ERR_OK && !empty($filename)) {
-                            $ext = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
-                            if (in_array($ext, $allowedExts) && $_FILES['projects']['size'][$pKey]['photos'][$fIdx] <= 12 * 1024 * 1024) {
-                                $uniqueName = 'proj_photo_' . $userId . '_' . time() . '_' . $fIdx . '_' . bin2hex(random_bytes(3)) . '.' . $ext;
-                                $targetPath = $uploadDir . $uniqueName;
-                                if (move_uploaded_file($_FILES['projects']['tmp_name'][$pKey]['photos'][$fIdx], $targetPath)) {
-                                    $additionalPhotos[] = 'uploads/members/' . $uniqueName;
-                                }
-                            }
-                        }
-                    }
-                }
-
-                // Combine: Cover photo is ALWAYS #1 in the photos array, followed by additional photos
-                $allPhotos = [];
-                if (!empty($coverPhoto)) {
-                    $allPhotos[] = $coverPhoto;
-                }
-                foreach ($additionalPhotos as $aph) {
-                    if (!in_array($aph, $allPhotos, true)) {
-                        $allPhotos[] = $aph;
-                    }
-                }
-                if (empty($coverPhoto) && !empty($allPhotos[0])) {
-                    $coverPhoto = $allPhotos[0];
-                }
-                $allPhotos = array_slice($allPhotos, 0, 5);
-
-                if (!empty($pTitle) || !empty($allPhotos)) {
-                    $projects[] = [
-                        'id' => $pId,
-                        'title' => $pTitle !== '' ? $pTitle : 'Completed Architectural Work',
-                        'category' => $pCat !== '' ? strtoupper($pCat) : 'RESIDENTIAL',
-                        'location' => $pLoc !== '' ? $pLoc : $location,
-                        'description' => $pDesc,
-                        'project_team' => $pTeam,
-                        'cover_photo' => $coverPhoto,
-                        'photos' => $allPhotos
-                    ];
-                }
-            }
-        }
-
-        $projectsJson = json_encode($projects);
-
-        // Build flat gallery for legacy consumers
-        $gallery = [];
-        foreach ($projects as $proj) {
-            foreach ($proj['photos'] as $ph) {
-                $gallery[] = [
-                    'path' => $ph,
-                    'description' => $proj['title']
-                ];
-            }
-        }
-        $galleryJson = json_encode($gallery);
-
         // Check if user has an existing profile photo in users table
         $uStmt = $pdo->prepare("SELECT profile_photo FROM users WHERE id = ?");
         $uStmt->execute([$userId]);
         $userPhoto = $uStmt->fetchColumn();
-        // STRICT: Never use project cover photos for the member's profile avatar
         $firstPhoto = !empty($userPhoto) ? $userPhoto : null;
-        $firstDesc = null;
 
         ensure_user_profile_photo_column($pdo);
         $stmt = $pdo->prepare("INSERT INTO website_members 
-            (user_id, name, id_number, role_title, specialty, location, company_name, link_url, link_type, links_json, achievements, awards, photo_path, photo_description, gallery_json, projects_json, is_published)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)
+            (user_id, name, id_number, role_title, specialty, location, company_name, link_url, link_type, links_json, achievements, awards, photo_path, is_published)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)
             ON DUPLICATE KEY UPDATE
                 name = VALUES(name),
                 id_number = VALUES(id_number),
@@ -215,9 +101,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'save_
                 achievements = VALUES(achievements),
                 awards = VALUES(awards),
                 photo_path = VALUES(photo_path),
-                photo_description = VALUES(photo_description),
-                gallery_json = VALUES(gallery_json),
-                projects_json = VALUES(projects_json),
                 is_published = 1");
         $stmt->execute([
             $userId,
@@ -232,10 +115,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'save_
             $linksJson,
             $achievements,
             $awards,
-            $firstPhoto,
-            $firstDesc,
-            $galleryJson,
-            $projectsJson
+            $firstPhoto
         ]);
 
         // Automatically generate public QR code for this website directory member
@@ -249,7 +129,182 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'save_
             }
         }
 
-        $success = 'Your website directory profile & completed works portfolio have been published!';
+        $success = 'Directory profile details saved successfully!';
+    }
+}
+
+// 2. Handle Individual Project Save
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'save_project') {
+    require_csrf();
+
+    if (!$isUnlocked) {
+        $error = 'You must complete and verify your directory advertising payment to unlock this feature.';
+    } else {
+        // Fetch current projects
+        $currStmt = $pdo->prepare("SELECT projects_json FROM website_members WHERE user_id = ?");
+        $currStmt->execute([$userId]);
+        $currJson = $currStmt->fetchColumn();
+        $projectsList = [];
+        if (!empty($currJson)) {
+            $dec = json_decode($currJson, true);
+            if (is_array($dec)) $projectsList = $dec;
+        }
+
+        $pId = trim($_POST['project_id'] ?? '');
+        if ($pId === '' || str_starts_with($pId, 'new_')) {
+            $pId = 'proj_' . time() . '_' . bin2hex(random_bytes(3));
+        }
+        $pTitle = trim($_POST['title'] ?? '');
+        $pCat = trim($_POST['category'] ?? 'RESIDENTIAL');
+        $pLoc = trim($_POST['location'] ?? '');
+        $pDesc = trim($_POST['description'] ?? '');
+        $pTeam = trim($_POST['project_team'] ?? '');
+        $existingCover = trim($_POST['existing_cover'] ?? '');
+        $existingPhotos = $_POST['existing_photos'] ?? [];
+        $deletePhotos = $_POST['delete_photos'] ?? [];
+
+        $uploadDir = __DIR__ . '/../uploads/members/';
+        if (!is_dir($uploadDir)) mkdir($uploadDir, 0755, true);
+        $allowedExts = ['jpg', 'jpeg', 'png', 'webp'];
+
+        $coverPhoto = '';
+        $additionalPhotos = [];
+
+        if (!empty($existingCover) && !in_array('cover', $deletePhotos, true)) {
+            $coverPhoto = $existingCover;
+        }
+        if (is_array($existingPhotos)) {
+            foreach ($existingPhotos as $phIdx => $phPath) {
+                if (!empty($phPath) && !in_array((string)$phIdx, $deletePhotos, true)) {
+                    if ($phPath !== $coverPhoto && !in_array($phPath, $additionalPhotos, true)) {
+                        $additionalPhotos[] = $phPath;
+                    }
+                }
+            }
+        }
+
+        // Handle Newly Uploaded Cover Photo
+        if (isset($_FILES['cover']['name']) && $_FILES['cover']['error'] === UPLOAD_ERR_OK) {
+            $cName = $_FILES['cover']['name'];
+            $cExt = strtolower(pathinfo($cName, PATHINFO_EXTENSION));
+            if (in_array($cExt, $allowedExts) && $_FILES['cover']['size'] <= 12 * 1024 * 1024) {
+                $uniqueName = 'proj_cover_' . $userId . '_' . time() . '_' . bin2hex(random_bytes(3)) . '.' . $cExt;
+                $targetPath = $uploadDir . $uniqueName;
+                if (move_uploaded_file($_FILES['cover']['tmp_name'], $targetPath)) {
+                    $coverPhoto = 'uploads/members/' . $uniqueName;
+                }
+            }
+        }
+
+        // Handle Newly Uploaded Additional Photos
+        if (isset($_FILES['photos']['name']) && is_array($_FILES['photos']['name'])) {
+            foreach ($_FILES['photos']['name'] as $fIdx => $filename) {
+                if (count($additionalPhotos) + (!empty($coverPhoto) ? 1 : 0) >= 5) break;
+                if (isset($_FILES['photos']['error'][$fIdx]) && $_FILES['photos']['error'][$fIdx] === UPLOAD_ERR_OK && !empty($filename)) {
+                    $ext = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
+                    if (in_array($ext, $allowedExts) && $_FILES['photos']['size'][$fIdx] <= 12 * 1024 * 1024) {
+                        $uniqueName = 'proj_photo_' . $userId . '_' . time() . '_' . $fIdx . '_' . bin2hex(random_bytes(3)) . '.' . $ext;
+                        $targetPath = $uploadDir . $uniqueName;
+                        if (move_uploaded_file($_FILES['photos']['tmp_name'][$fIdx], $targetPath)) {
+                            $additionalPhotos[] = 'uploads/members/' . $uniqueName;
+                        }
+                    }
+                }
+            }
+        }
+
+        // Combine: Cover photo is ALWAYS #1 in the photos array
+        $allPhotos = [];
+        if (!empty($coverPhoto)) {
+            $allPhotos[] = $coverPhoto;
+        }
+        foreach ($additionalPhotos as $aph) {
+            if (!in_array($aph, $allPhotos, true)) {
+                $allPhotos[] = $aph;
+            }
+        }
+        if (empty($coverPhoto) && !empty($allPhotos[0])) {
+            $coverPhoto = $allPhotos[0];
+        }
+        $allPhotos = array_slice($allPhotos, 0, 5);
+
+        $projectObj = [
+            'id' => $pId,
+            'title' => $pTitle !== '' ? $pTitle : 'Completed Architectural Work',
+            'category' => $pCat !== '' ? strtoupper($pCat) : 'RESIDENTIAL',
+            'location' => $pLoc !== '' ? $pLoc : '',
+            'description' => $pDesc,
+            'project_team' => $pTeam,
+            'cover_photo' => $coverPhoto,
+            'photos' => $allPhotos
+        ];
+
+        // Find index of existing project or append new
+        $found = false;
+        foreach ($projectsList as $idx => $existingProj) {
+            if (($existingProj['id'] ?? '') === $pId) {
+                $projectsList[$idx] = $projectObj;
+                $found = true;
+                break;
+            }
+        }
+        if (!$found) {
+            $projectsList[] = $projectObj;
+        }
+
+        $projectsJson = json_encode(array_values($projectsList));
+
+        // Build flat gallery for legacy consumers
+        $gallery = [];
+        foreach ($projectsList as $pr) {
+            foreach ($pr['photos'] as $ph) {
+                $gallery[] = [
+                    'path' => $ph,
+                    'description' => $pr['title']
+                ];
+            }
+        }
+        $galleryJson = json_encode($gallery);
+
+        ensure_user_profile_photo_column($pdo);
+        $uStmt = $pdo->prepare("UPDATE website_members SET projects_json = ?, gallery_json = ?, is_published = 1 WHERE user_id = ?");
+        $uStmt->execute([$projectsJson, $galleryJson, $userId]);
+
+        $success = 'Project "' . htmlspecialchars($projectObj['title']) . '" saved successfully!';
+    }
+}
+
+// 3. Handle Individual Project Deletion
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'delete_project') {
+    require_csrf();
+    $pId = trim($_POST['project_id'] ?? '');
+    if ($pId !== '') {
+        $currStmt = $pdo->prepare("SELECT projects_json FROM website_members WHERE user_id = ?");
+        $currStmt->execute([$userId]);
+        $currJson = $currStmt->fetchColumn();
+        $projectsList = [];
+        if (!empty($currJson)) {
+            $dec = json_decode($currJson, true);
+            if (is_array($dec)) $projectsList = $dec;
+        }
+        $projectsList = array_values(array_filter($projectsList, function($p) use ($pId) {
+            return ($p['id'] ?? '') !== $pId;
+        }));
+        $projectsJson = json_encode($projectsList);
+
+        $gallery = [];
+        foreach ($projectsList as $pr) {
+            foreach ($pr['photos'] as $ph) {
+                $gallery[] = [
+                    'path' => $ph,
+                    'description' => $pr['title']
+                ];
+            }
+        }
+        $galleryJson = json_encode($gallery);
+
+        $pdo->prepare("UPDATE website_members SET projects_json = ?, gallery_json = ? WHERE user_id = ?")->execute([$projectsJson, $galleryJson, $userId]);
+        $success = 'Project deleted successfully!';
     }
 }
 
@@ -385,10 +440,10 @@ include __DIR__ . '/../includes/header.php';
 
   <?php else: ?>
 
-    <!-- UNLOCKED: DIRECTORY PROFILE & PORTFOLIO FORM -->
-    <form method="POST" enctype="multipart/form-data">
+    <!-- 1. DIRECTORY PROFILE DETAILS FORM -->
+    <form method="POST">
       <?php echo csrf_field(); ?>
-      <input type="hidden" name="action" value="save_profile">
+      <input type="hidden" name="action" value="save_profile_details">
 
       <!-- PROFILE PHOTO LINKED TO MY PROFILE -->
       <div style="background: var(--bg-secondary, rgba(0,0,0,0.15)); border: 1px solid var(--border-color, rgba(255,255,255,0.1)); border-radius: 12px; padding: 18px; margin-bottom: 22px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px;">
@@ -501,54 +556,66 @@ include __DIR__ . '/../includes/header.php';
       </div>
 
       <!-- 6. HONORS, DISTINCTIONS & AWARDS (UNDER ACHIEVEMENTS) -->
-      <div class="field" style="margin-bottom: 24px;">
+      <div class="field" style="margin-bottom: 20px;">
         <label style="font-weight: 700; font-size: 13.5px; color: var(--text-primary);">Honors, Distinctions &amp; Awards</label>
         <textarea name="awards" rows="4" placeholder="List your professional design awards, chapter recognitions, or academic distinctions..." style="font-size: 13.5px; line-height: 1.65;"><?php echo htmlspecialchars($profile['awards'] ?? ''); ?></textarea>
       </div>
 
-      <!-- 7. COMPLETED WORKS & PROJECTS PORTFOLIO (COLLAPSIBLE PER PROJECT) -->
-      <div style="background: var(--bg-secondary, rgba(0,0,0,0.15)); border: 1px solid var(--border-color, rgba(255,255,255,0.1)); border-radius: 14px; padding: 22px; margin: 24px 0; width: 100%; box-sizing: border-box;">
-        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom: 16px;">
-          <div>
-            <h3 style="margin:0; font-size:18px; color:var(--accent-primary, #f5b800); display:inline-flex; align-items:center; gap:8px;">
-              <?php echo icon('camera', '', 20); ?> <span>Completed Works &amp; Projects Portfolio</span>
-            </h3>
-            <p class="muted" style="font-size:12.5px; margin:4px 0 0;">Add completed architectural works with cover photo, team credits, and up to 5 photos per project.</p>
-          </div>
-          <div style="display: flex; align-items: center; gap: 8px;">
-            <button type="button" onclick="toggleAllProjects(true)" class="btn btn-sm btn-secondary" style="font-size:11.5px; padding: 5px 12px; border-radius: 6px; cursor: pointer;">
-              Expand All
-            </button>
-            <button type="button" onclick="toggleAllProjects(false)" class="btn btn-sm btn-secondary" style="font-size:11.5px; padding: 5px 12px; border-radius: 6px; cursor: pointer;">
-              Collapse All
-            </button>
-          </div>
+      <!-- SAVE PROFILE DETAILS BUTTON (Placed under Honors, Distinctions & Awards) -->
+      <div style="margin-bottom: 32px; padding-bottom: 24px; border-bottom: 1px solid var(--border-color, rgba(255,255,255,0.1));">
+        <button class="btn btn-success" type="submit" style="padding: 12px 28px; font-weight:700; font-size:14.5px; display:inline-flex; align-items:center; gap:8px; cursor: pointer;">
+          <?php echo icon('check', '', 16); ?> <span>Save Profile Details</span>
+        </button>
+      </div>
+    </form>
+
+    <!-- 2. COMPLETED WORKS & PROJECTS PORTFOLIO (WITH PER-PROJECT SAVE) -->
+    <div style="background: var(--bg-secondary, rgba(0,0,0,0.15)); border: 1px solid var(--border-color, rgba(255,255,255,0.1)); border-radius: 14px; padding: 22px; margin: 24px 0; width: 100%; box-sizing: border-box;">
+      <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom: 16px;">
+        <div>
+          <h3 style="margin:0; font-size:18px; color:var(--accent-primary, #f5b800); display:inline-flex; align-items:center; gap:8px;">
+            <?php echo icon('camera', '', 20); ?> <span>Completed Works &amp; Projects Portfolio</span>
+          </h3>
+          <p class="muted" style="font-size:12.5px; margin:4px 0 0;">Add completed architectural works with cover photo, team credits, and up to 5 photos per project. Save each project individually.</p>
         </div>
-
-        <?php 
-          $renderProjects = !empty($projects) ? $projects : [];
-        ?>
-
-        <div id="noProjectsNotice" style="<?php echo empty($renderProjects) ? 'display:block;' : 'display:none;'; ?> padding: 28px 20px; text-align: center; background: var(--field-bg, rgba(0,0,0,0.18)); border: 1px dashed var(--border-color, rgba(255,255,255,0.15)); border-radius: 12px; margin-bottom: 16px;">
-          <div style="width: 44px; height: 44px; border-radius: 50%; background: rgba(245,158,11,0.12); color: var(--accent-primary, #f5b800); display: inline-flex; align-items: center; justify-content: center; margin-bottom: 10px;">
-            <?php echo icon('camera', '', 20); ?>
-          </div>
-          <strong style="display:block; font-size:14px; color:var(--text-primary); margin-bottom:4px;">No completed works added yet</strong>
-          <p class="muted" style="font-size:12.5px; margin:0 auto; max-width:480px;">Click the <strong>"+ Add Completed Work / Project"</strong> button below to manually showcase your architectural projects with custom cover photos, narratives, and collaborators.</p>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <button type="button" onclick="toggleAllProjects(true)" class="btn btn-sm btn-secondary" style="font-size:11.5px; padding: 5px 12px; border-radius: 6px; cursor: pointer;">
+            Expand All
+          </button>
+          <button type="button" onclick="toggleAllProjects(false)" class="btn btn-sm btn-secondary" style="font-size:11.5px; padding: 5px 12px; border-radius: 6px; cursor: pointer;">
+            Collapse All
+          </button>
         </div>
+      </div>
 
-        <div id="projectsContainer" style="display: flex; flex-direction: column; gap: 14px; width: 100%;">
-          <?php foreach ($renderProjects as $pIdx => $proj): ?>
-            <?php 
-              $coverPath = $proj['cover_photo'] ?? ($proj['photos'][0] ?? '');
-              $otherPhotos = array_values(array_filter($proj['photos'] ?? [], function($ph) use ($coverPath) {
-                  return $ph !== $coverPath;
-              }));
-              $totalPhotosCount = (!empty($coverPath) ? 1 : 0) + count($otherPhotos);
-            ?>
-            <div class="project-card-item" id="proj_card_<?php echo $pIdx; ?>" style="background: var(--field-bg, rgba(0,0,0,0.25)); border: 1px solid var(--border-color, rgba(255,255,255,0.12)); border-radius: 12px; overflow: hidden; width: 100%; box-sizing: border-box; transition: border-color 0.2s;">
-              <input type="hidden" name="projects[<?php echo $pIdx; ?>][id]" value="<?php echo htmlspecialchars($proj['id'] ?? ('proj_' . $pIdx)); ?>">
-              <input type="hidden" name="projects[<?php echo $pIdx; ?>][existing_cover]" value="<?php echo htmlspecialchars($coverPath); ?>">
+      <?php 
+        $renderProjects = !empty($projects) ? $projects : [];
+      ?>
+
+      <div id="noProjectsNotice" style="<?php echo empty($renderProjects) ? 'display:block;' : 'display:none;'; ?> padding: 28px 20px; text-align: center; background: var(--field-bg, rgba(0,0,0,0.18)); border: 1px dashed var(--border-color, rgba(255,255,255,0.15)); border-radius: 12px; margin-bottom: 16px;">
+        <div style="width: 44px; height: 44px; border-radius: 50%; background: rgba(245,158,11,0.12); color: var(--accent-primary, #f5b800); display: inline-flex; align-items: center; justify-content: center; margin-bottom: 10px;">
+          <?php echo icon('camera', '', 20); ?>
+        </div>
+        <strong style="display:block; font-size:14px; color:var(--text-primary); margin-bottom:4px;">No completed works added yet</strong>
+        <p class="muted" style="font-size:12.5px; margin:0 auto; max-width:480px;">Click the <strong>"+ Add Completed Work / Project"</strong> button below to manually showcase your architectural projects with custom cover photos, narratives, and collaborators.</p>
+      </div>
+
+      <div id="projectsContainer" style="display: flex; flex-direction: column; gap: 16px; width: 100%;">
+        <?php foreach ($renderProjects as $pIdx => $proj): ?>
+          <?php 
+            $coverPath = $proj['cover_photo'] ?? ($proj['photos'][0] ?? '');
+            $otherPhotos = array_values(array_filter($proj['photos'] ?? [], function($ph) use ($coverPath) {
+                return $ph !== $coverPath;
+            }));
+            $totalPhotosCount = (!empty($coverPath) ? 1 : 0) + count($otherPhotos);
+            $pId = $proj['id'] ?? ('proj_' . $pIdx);
+          ?>
+          <div class="project-card-item" id="proj_card_<?php echo $pIdx; ?>" style="background: var(--field-bg, rgba(0,0,0,0.25)); border: 1px solid var(--border-color, rgba(255,255,255,0.12)); border-radius: 12px; overflow: hidden; width: 100%; box-sizing: border-box; transition: border-color 0.2s;">
+            <form method="POST" enctype="multipart/form-data">
+              <?php echo csrf_field(); ?>
+              <input type="hidden" name="action" value="save_project">
+              <input type="hidden" name="project_id" value="<?php echo htmlspecialchars($pId); ?>">
+              <input type="hidden" name="existing_cover" value="<?php echo htmlspecialchars($coverPath); ?>">
 
               <!-- Accordion Header Bar (Clickable) -->
               <div class="project-card-header" onclick="toggleProjectAccordion(this)" style="display:flex; justify-content:space-between; align-items:center; padding: 12px 16px; background: rgba(255,255,255,0.03); cursor: pointer; user-select: none; border-bottom: 1px solid var(--border-color, rgba(255,255,255,0.08));">
@@ -575,7 +642,7 @@ include __DIR__ . '/../includes/header.php';
                 </div>
 
                 <div style="display: flex; align-items: center; gap: 8px;" onclick="event.stopPropagation()">
-                  <button type="button" onclick="removeProjectCard(this)" class="btn btn-sm btn-secondary" style="color: #ef4444; border-color: rgba(239,68,68,0.3); font-size: 11px; padding: 4px 10px; display: inline-flex; align-items: center; gap: 4px; cursor: pointer;">
+                  <button type="submit" form="del_form_<?php echo $pIdx; ?>" class="btn btn-sm btn-secondary" style="color: #ef4444; border-color: rgba(239,68,68,0.3); font-size: 11px; padding: 4px 10px; display: inline-flex; align-items: center; gap: 4px; cursor: pointer;" onclick="return confirm('Are you sure you want to delete this project?');">
                     <?php echo icon('trash', '', 12); ?> <span>Delete Project</span>
                   </button>
                 </div>
@@ -586,26 +653,26 @@ include __DIR__ . '/../includes/header.php';
                 <div class="grid-3" style="gap: 12px; margin-bottom: 12px;">
                   <div class="field" style="margin-bottom:0;">
                     <label style="font-size:12px;">Project Title / Name *</label>
-                    <input type="text" name="projects[<?php echo $pIdx; ?>][title]" value="<?php echo htmlspecialchars($proj['title'] ?? ''); ?>" placeholder="e.g. Casa San Gregorio, DLSU-D Building" required oninput="updateProjTitlePreview(this)">
+                    <input type="text" name="title" value="<?php echo htmlspecialchars($proj['title'] ?? ''); ?>" placeholder="e.g. Casa San Gregorio, DLSU-D Building" required oninput="updateProjTitlePreview(this)">
                   </div>
                   <div class="field" style="margin-bottom:0;">
                     <label style="font-size:12px;">Project Category</label>
-                    <input type="text" name="projects[<?php echo $pIdx; ?>][category]" value="<?php echo htmlspecialchars($proj['category'] ?? 'RESIDENTIAL'); ?>" placeholder="e.g. RESIDENTIAL, COMMERCIAL, INSTITUTIONAL" oninput="updateProjCatPreview(this)">
+                    <input type="text" name="category" value="<?php echo htmlspecialchars($proj['category'] ?? 'RESIDENTIAL'); ?>" placeholder="e.g. RESIDENTIAL, COMMERCIAL, INSTITUTIONAL" oninput="updateProjCatPreview(this)">
                   </div>
                   <div class="field" style="margin-bottom:0;">
                     <label style="font-size:12px;">Location</label>
-                    <input type="text" name="projects[<?php echo $pIdx; ?>][location]" value="<?php echo htmlspecialchars($proj['location'] ?? ''); ?>" placeholder="e.g. Makati, Manila">
+                    <input type="text" name="location" value="<?php echo htmlspecialchars($proj['location'] ?? ''); ?>" placeholder="e.g. Makati, Manila">
                   </div>
                 </div>
 
                 <div class="grid-2" style="gap: 16px; margin-bottom: 16px;">
                   <div class="field" style="margin-bottom:0;">
                     <label style="font-size:13px; font-weight:700; color:var(--text-primary);">Project Architectural Concept &amp; Narrative</label>
-                    <textarea name="projects[<?php echo $pIdx; ?>][description]" rows="7" placeholder="Describe the design philosophy, space planning, materials, volumetric form, and concept..." style="font-size:13.5px; line-height:1.65; min-height:160px; width:100%; box-sizing:border-box; resize:vertical;"><?php echo htmlspecialchars($proj['description'] ?? ''); ?></textarea>
+                    <textarea name="description" rows="7" placeholder="Describe the design philosophy, space planning, materials, volumetric form, and concept..." style="font-size:13.5px; line-height:1.65; min-height:160px; width:100%; box-sizing:border-box; resize:vertical;"><?php echo htmlspecialchars($proj['description'] ?? ''); ?></textarea>
                   </div>
                   <div class="field" style="margin-bottom:0;">
                     <label style="font-size:13px; font-weight:700; color:var(--text-primary);">Project Team / Collaborators</label>
-                    <textarea name="projects[<?php echo $pIdx; ?>][project_team]" rows="7" placeholder="e.g. Ar. Anthony Nazareno&#10;Ar. Vladimir Banks&#10;IDr. Marielle Saguibo&#10;Engr. Juan Dela Cruz" style="font-size:13.5px; line-height:1.6; min-height:160px; width:100%; box-sizing:border-box; resize:vertical;"><?php echo htmlspecialchars($proj['project_team'] ?? ''); ?></textarea>
+                    <textarea name="project_team" rows="7" placeholder="e.g. Ar. Anthony Nazareno&#10;Ar. Vladimir Banks&#10;IDr. Marielle Saguibo&#10;Engr. Juan Dela Cruz" style="font-size:13.5px; line-height:1.6; min-height:160px; width:100%; box-sizing:border-box; resize:vertical;"><?php echo htmlspecialchars($proj['project_team'] ?? ''); ?></textarea>
                   </div>
                 </div>
 
@@ -622,7 +689,7 @@ include __DIR__ . '/../includes/header.php';
                       <span style="font-size: 12px; font-weight: 700; color: var(--accent-primary, #f5b800);">★ Cover Photo (Front Thumbnail on Directory Grid)</span>
                       <?php if ($coverPath): ?>
                         <label style="font-size: 11.5px; color: #ef4444; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;">
-                          <input type="checkbox" name="projects[<?php echo $pIdx; ?>][delete_photos][]" value="cover"> Remove Cover
+                          <input type="checkbox" name="delete_photos[]" value="cover"> Remove Cover
                         </label>
                       <?php endif; ?>
                     </div>
@@ -636,7 +703,7 @@ include __DIR__ . '/../includes/header.php';
                       </div>
                     <?php endif; ?>
 
-                    <input type="file" name="projects[<?php echo $pIdx; ?>][cover]" accept=".jpg,.jpeg,.png,.webp" style="font-size: 12px;">
+                    <input type="file" name="cover" accept=".jpg,.jpeg,.png,.webp" style="font-size: 12px;">
                   </div>
 
                   <!-- Existing Additional Photos -->
@@ -645,12 +712,12 @@ include __DIR__ . '/../includes/header.php';
                     <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; margin-bottom: 12px;">
                       <?php foreach ($otherPhotos as $oIdx => $oPath): ?>
                         <div style="background: rgba(0,0,0,0.3); border: 1px solid var(--border-color, rgba(255,255,255,0.1)); border-radius: 6px; padding: 6px; display: flex; flex-direction: column; gap: 4px;">
-                          <input type="hidden" name="projects[<?php echo $pIdx; ?>][existing_photos][<?php echo $oIdx; ?>]" value="<?php echo htmlspecialchars($oPath); ?>">
+                          <input type="hidden" name="existing_photos[<?php echo $oIdx; ?>]" value="<?php echo htmlspecialchars($oPath); ?>">
                           <div style="width: 100%; height: 75px; border-radius: 4px; overflow: hidden; background: #000;">
                             <img src="<?php echo htmlspecialchars(media_url($oPath)); ?>" alt="Photo" style="width: 100%; height: 100%; object-fit: cover;">
                           </div>
                           <label style="font-size: 11px; color: #ef4444; display: flex; align-items: center; gap: 4px; cursor: pointer;">
-                            <input type="checkbox" name="projects[<?php echo $pIdx; ?>][delete_photos][]" value="<?php echo $oIdx; ?>"> Delete
+                            <input type="checkbox" name="delete_photos[]" value="<?php echo $oIdx; ?>"> Delete
                           </label>
                         </div>
                       <?php endforeach; ?>
@@ -661,27 +728,36 @@ include __DIR__ . '/../includes/header.php';
                   <?php if ($totalPhotosCount < 5): ?>
                     <div class="field" style="margin-bottom:0;">
                       <label style="font-size: 12px;">Upload Additional Photos (Up to <?php echo 5 - $totalPhotosCount; ?> more files):</label>
-                      <input type="file" name="projects[<?php echo $pIdx; ?>][photos][]" accept=".jpg,.jpeg,.png,.webp" multiple style="font-size: 12px;">
+                      <input type="file" name="photos[]" accept=".jpg,.jpeg,.png,.webp" multiple style="font-size: 12px;">
                     </div>
                   <?php endif; ?>
                 </div>
+
+                <!-- SAVE THIS PROJECT BUTTON (Per Project) -->
+                <div style="margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--border-color, rgba(255,255,255,0.08)); display: flex; justify-content: flex-end; gap: 10px;">
+                  <button type="submit" class="btn btn-primary btn-sm" style="padding: 9px 22px; font-weight: 700; font-size: 13px; display: inline-flex; align-items: center; gap: 6px; cursor: pointer;">
+                    <?php echo icon('check', '', 14); ?> <span>Save This Project</span>
+                  </button>
+                </div>
               </div>
-            </div>
-          <?php endforeach; ?>
-        </div>
+            </form>
 
-        <div style="margin-top: 18px;">
-          <button type="button" id="btnAddProject" class="btn btn-sm" style="background: rgba(245,158,11,0.08); border: 1px dashed var(--accent-primary, #f5b800); color: var(--accent-primary, #f5b800); font-weight: 700; padding: 10px 18px; display: inline-flex; align-items: center; gap: 6px; cursor: pointer;">
-            <?php echo icon('plus', '', 14); ?> <span>Add Another Completed Work Project</span>
-          </button>
-        </div>
+            <!-- Hidden Delete Form -->
+            <form id="del_form_<?php echo $pIdx; ?>" method="POST" style="display:none;">
+              <?php echo csrf_field(); ?>
+              <input type="hidden" name="action" value="delete_project">
+              <input type="hidden" name="project_id" value="<?php echo htmlspecialchars($pId); ?>">
+            </form>
+          </div>
+        <?php endforeach; ?>
       </div>
 
-      <!-- 8. SAVE BUTTON -->
-      <div style="margin-top: 24px;">
-        <button class="btn btn-success" type="submit" style="padding: 12px 28px; font-weight:700; font-size:15px;">Save Completed Works &amp; Profile</button>
+      <div style="margin-top: 18px;">
+        <button type="button" id="btnAddProject" class="btn btn-sm" style="background: rgba(245,158,11,0.08); border: 1px dashed var(--accent-primary, #f5b800); color: var(--accent-primary, #f5b800); font-weight: 700; padding: 10px 18px; display: inline-flex; align-items: center; gap: 6px; cursor: pointer;">
+          <?php echo icon('plus', '', 14); ?> <span>Add Another Completed Work Project</span>
+        </button>
       </div>
-    </form>
+    </div>
 
     <script>
     (function() {
@@ -732,7 +808,7 @@ include __DIR__ . '/../includes/header.php';
         }
       };
 
-      window.removeProjectCard = function(btn) {
+      window.removeUnsavedProjectCard = function(btn) {
         var card = btn.closest('.project-card-item');
         if (card) {
           card.remove();
@@ -765,64 +841,73 @@ include __DIR__ . '/../includes/header.php';
           div.style.cssText = 'background: var(--field-bg, rgba(0,0,0,0.25)); border: 1px dashed var(--border-color-gold, rgba(245,158,11,0.35)); border-radius: 12px; margin-bottom: 16px; overflow: hidden; width: 100%; box-sizing: border-box;';
           
           div.innerHTML = [
-            '<input type="hidden" name="projects[' + pIdx + '][id]" value="proj_' + timestamp + '">',
-            '<div class="project-card-header" onclick="toggleProjectAccordion(this)" style="display:flex; justify-content:space-between; align-items:center; padding: 12px 16px; background: rgba(255,255,255,0.03); cursor: pointer; user-select: none; border-bottom: 1px solid var(--border-color, rgba(255,255,255,0.08));">',
-            '  <div style="display: flex; align-items: center; gap: 12px; min-width: 0;">',
-            '    <span class="accordion-chevron" style="display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 50%; background: rgba(245,158,11,0.15); color: var(--accent-primary, #f5b800); font-size: 10px; font-weight: 900; transition: transform 0.25s ease;">▼</span>',
-            '    <div style="min-width: 0;">',
-            '      <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">',
-            '        <span style="font-weight: 800; font-size: 13.5px; color: var(--accent-primary, #f5b800);">New Completed Work #' + projectCount + ':</span>',
-            '        <strong class="proj-title-preview" style="font-size: 13.5px; color: var(--text-primary);">(Unsaved New Project)</strong>',
+            '<form method="POST" enctype="multipart/form-data">',
+            '  <input type="hidden" name="_csrf_token" value="<?php echo generate_csrf(); ?>">',
+            '  <input type="hidden" name="action" value="save_project">',
+            '  <input type="hidden" name="project_id" value="proj_' + timestamp + '">',
+            '  <div class="project-card-header" onclick="toggleProjectAccordion(this)" style="display:flex; justify-content:space-between; align-items:center; padding: 12px 16px; background: rgba(255,255,255,0.03); cursor: pointer; user-select: none; border-bottom: 1px solid var(--border-color, rgba(255,255,255,0.08));">',
+            '    <div style="display: flex; align-items: center; gap: 12px; min-width: 0;">',
+            '      <span class="accordion-chevron" style="display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 50%; background: rgba(245,158,11,0.15); color: var(--accent-primary, #f5b800); font-size: 10px; font-weight: 900; transition: transform 0.25s ease;">▼</span>',
+            '      <div style="min-width: 0;">',
+            '        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">',
+            '          <span style="font-weight: 800; font-size: 13.5px; color: var(--accent-primary, #f5b800);">New Completed Work #' + projectCount + ':</span>',
+            '          <strong class="proj-title-preview" style="font-size: 13.5px; color: var(--text-primary);">(Unsaved New Project)</strong>',
+            '        </div>',
+            '        <div style="display: flex; align-items: center; gap: 6px; margin-top: 2px; font-size: 11px; color: var(--text-secondary);">',
+            '          <span class="proj-cat-preview">RESIDENTIAL</span>',
+            '          <span>•</span>',
+            '          <span>0 / 5 Photos</span>',
+            '        </div>',
             '      </div>',
-            '      <div style="display: flex; align-items: center; gap: 6px; margin-top: 2px; font-size: 11px; color: var(--text-secondary);">',
-            '        <span class="proj-cat-preview">RESIDENTIAL</span>',
-            '        <span>•</span>',
-            '        <span>0 / 5 Photos</span>',
+            '    </div>',
+            '    <div style="display: flex; align-items: center; gap: 8px;" onclick="event.stopPropagation()">',
+            '      <button type="button" onclick="removeUnsavedProjectCard(this)" class="btn btn-sm btn-secondary" style="color: #ef4444; border-color: rgba(239,68,68,0.3); font-size: 11px; padding: 4px 10px; display: inline-flex; align-items: center; gap: 4px; cursor: pointer;">',
+            '        <span>Discard</span>',
+            '      </button>',
+            '    </div>',
+            '  </div>',
+            '  <div class="project-card-body" style="padding: 18px; display: block;">',
+            '    <div class="grid-3" style="gap: 12px; margin-bottom: 12px;">',
+            '      <div class="field" style="margin-bottom:0;">',
+            '        <label style="font-size:12px;">Project Title / Name *</label>',
+            '        <input type="text" name="title" placeholder="e.g. Casa San Gregorio, DLSU-D Building" required oninput="updateProjTitlePreview(this)">',
+            '      </div>',
+            '      <div class="field" style="margin-bottom:0;">',
+            '        <label style="font-size:12px;">Project Category</label>',
+            '        <input type="text" name="category" placeholder="e.g. RESIDENTIAL, COMMERCIAL, INSTITUTIONAL" value="RESIDENTIAL" oninput="updateProjCatPreview(this)">',
+            '      </div>',
+            '      <div class="field" style="margin-bottom:0;">',
+            '        <label style="font-size:12px;">Location</label>',
+            '        <input type="text" name="location" placeholder="e.g. Makati, Manila">',
             '      </div>',
             '    </div>',
-            '  </div>',
-            '  <div style="display: flex; align-items: center; gap: 8px;" onclick="event.stopPropagation()">',
-            '    <button type="button" onclick="removeProjectCard(this)" class="btn btn-sm btn-secondary" style="color: #ef4444; border-color: rgba(239,68,68,0.3); font-size: 11px; padding: 4px 10px; display: inline-flex; align-items: center; gap: 4px; cursor: pointer;">',
-            '      <span>Delete Project</span>',
-            '    </button>',
-            '  </div>',
-            '</div>',
-            '<div class="project-card-body" style="padding: 18px; display: block;">',
-            '  <div class="grid-3" style="gap: 12px; margin-bottom: 12px;">',
-            '    <div class="field" style="margin-bottom:0;">',
-            '      <label style="font-size:12px;">Project Title / Name *</label>',
-            '      <input type="text" name="projects[' + pIdx + '][title]" placeholder="e.g. Casa San Gregorio, DLSU-D Building" required oninput="updateProjTitlePreview(this)">',
+            '    <div class="grid-2" style="gap: 16px; margin-bottom: 16px;">',
+            '      <div class="field" style="margin-bottom:0;">',
+            '        <label style="font-size:13px; font-weight:700; color:var(--text-primary);">Project Architectural Concept &amp; Narrative</label>',
+            '        <textarea name="description" rows="7" placeholder="Describe the design philosophy, space planning, materials, volumetric form, and concept..." style="font-size:13.5px; line-height:1.65; min-height:160px; width:100%; box-sizing:border-box; resize:vertical;"></textarea>',
+            '      </div>',
+            '      <div class="field" style="margin-bottom:0;">',
+            '        <label style="font-size:13px; font-weight:700; color:var(--text-primary);">Project Team / Collaborators</label>',
+            '        <textarea name="project_team" rows="7" placeholder="e.g. Ar. Anthony Nazareno&#10;Ar. Vladimir Banks&#10;IDr. Marielle Saguibo&#10;Engr. Juan Dela Cruz" style="font-size:13.5px; line-height:1.6; min-height:160px; width:100%; box-sizing:border-box; resize:vertical;"></textarea>',
+            '      </div>',
             '    </div>',
-            '    <div class="field" style="margin-bottom:0;">',
-            '      <label style="font-size:12px;">Project Category</label>',
-            '      <input type="text" name="projects[' + pIdx + '][category]" placeholder="e.g. RESIDENTIAL, COMMERCIAL, INSTITUTIONAL" value="RESIDENTIAL" oninput="updateProjCatPreview(this)">',
+            '    <div style="background: rgba(0,0,0,0.2); border-radius: 10px; padding: 14px; border: 1px solid var(--border-color, rgba(255,255,255,0.06));">',
+            '      <div style="margin-bottom: 12px; padding: 10px; background: rgba(245,158,11,0.05); border: 1px solid rgba(245,158,11,0.25); border-radius: 8px;">',
+            '        <span style="font-size: 12px; font-weight: 700; color: var(--accent-primary, #f5b800); display: block; margin-bottom: 6px;">★ Cover Photo (Front Thumbnail on Directory Grid) *</span>',
+            '        <input type="file" name="cover" accept=".jpg,.jpeg,.png,.webp" required style="font-size: 12px;">',
+            '      </div>',
+            '      <div class="field" style="margin-bottom:0;">',
+            '        <label style="font-size: 12px;">Upload Additional Photos (Up to 4 more files, max 5 total photos):</label>',
+            '        <input type="file" name="photos[]" accept=".jpg,.jpeg,.png,.webp" multiple style="font-size: 12px;">',
+            '      </div>',
             '    </div>',
-            '    <div class="field" style="margin-bottom:0;">',
-            '      <label style="font-size:12px;">Location</label>',
-            '      <input type="text" name="projects[' + pIdx + '][location]" placeholder="e.g. Makati, Manila">',
-            '    </div>',
-            '  </div>',
-            '  <div class="grid-2" style="gap: 16px; margin-bottom: 16px;">',
-            '    <div class="field" style="margin-bottom:0;">',
-            '      <label style="font-size:13px; font-weight:700; color:var(--text-primary);">Project Architectural Concept &amp; Narrative</label>',
-            '      <textarea name="projects[' + pIdx + '][description]" rows="7" placeholder="Describe the design philosophy, space planning, materials, volumetric form, and concept..." style="font-size:13.5px; line-height:1.65; min-height:160px; width:100%; box-sizing:border-box; resize:vertical;"></textarea>',
-            '    </div>',
-            '    <div class="field" style="margin-bottom:0;">',
-            '      <label style="font-size:13px; font-weight:700; color:var(--text-primary);">Project Team / Collaborators</label>',
-            '      <textarea name="projects[' + pIdx + '][project_team]" rows="7" placeholder="e.g. Ar. Anthony Nazareno&#10;Ar. Vladimir Banks&#10;IDr. Marielle Saguibo&#10;Engr. Juan Dela Cruz" style="font-size:13.5px; line-height:1.6; min-height:160px; width:100%; box-sizing:border-box; resize:vertical;"></textarea>',
+            '    <div style="margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--border-color, rgba(255,255,255,0.08)); display: flex; justify-content: flex-end; gap: 10px;">',
+            '      <button type="submit" class="btn btn-primary btn-sm" style="padding: 9px 22px; font-weight: 700; font-size: 13px; display: inline-flex; align-items: center; gap: 6px; cursor: pointer;">',
+            '        <span>Save This Project</span>',
+            '      </button>',
             '    </div>',
             '  </div>',
-            '  <div style="background: rgba(0,0,0,0.2); border-radius: 10px; padding: 14px; border: 1px solid var(--border-color, rgba(255,255,255,0.06));">',
-            '    <div style="margin-bottom: 12px; padding: 10px; background: rgba(245,158,11,0.05); border: 1px solid rgba(245,158,11,0.25); border-radius: 8px;">',
-            '      <span style="font-size: 12px; font-weight: 700; color: var(--accent-primary, #f5b800); display: block; margin-bottom: 6px;">★ Cover Photo (Front Thumbnail on Directory Grid) *</span>',
-            '      <input type="file" name="projects[' + pIdx + '][cover]" accept=".jpg,.jpeg,.png,.webp" required style="font-size: 12px;">',
-            '    </div>',
-            '    <div class="field" style="margin-bottom:0;">',
-            '      <label style="font-size: 12px;">Upload Additional Photos (Up to 4 more files, max 5 total photos):</label>',
-            '      <input type="file" name="projects[' + pIdx + '][photos][]" accept=".jpg,.jpeg,.png,.webp" multiple style="font-size: 12px;">',
-            '    </div>',
-            '  </div>',
-            '</div>'
+            '</form>'
           ].join('');
 
           container.appendChild(div);
