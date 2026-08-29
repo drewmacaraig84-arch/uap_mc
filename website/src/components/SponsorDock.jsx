@@ -8,38 +8,6 @@ import './SponsorDock.css';
 const DURATION_PLATINUM = 180; // seconds total for a platinum sponsor
 const DURATION_REGULAR  = 30;  // seconds for a regular sponsor
 
-/* ── Thin Progress Ring (SVG) ── */
-function ProgressRing({ radius = 22, stroke = 2.5, progress = 1, gold = false }) {
-  const circ = 2 * Math.PI * radius;
-  return (
-    <svg
-      width={radius * 2 + stroke * 2}
-      height={radius * 2 + stroke * 2}
-      style={{ position: 'absolute', top: 0, left: 0, pointerEvents: 'none' }}
-    >
-      <circle
-        cx={radius + stroke}
-        cy={radius + stroke}
-        r={radius}
-        fill="none"
-        stroke="rgba(255,255,255,0.08)"
-        strokeWidth={stroke}
-      />
-      <circle
-        cx={radius + stroke}
-        cy={radius + stroke}
-        r={radius}
-        fill="none"
-        stroke={gold ? '#f5b800' : 'rgba(255,255,255,0.45)'}
-        strokeWidth={stroke}
-        strokeDasharray={circ}
-        strokeDashoffset={circ * (1 - progress)}
-        strokeLinecap="round"
-        style={{ transform: 'rotate(-90deg)', transformOrigin: '50% 50%', transition: 'stroke-dashoffset 1s linear' }}
-      />
-    </svg>
-  );
-}
 
 export default function SponsorDock() {
   const { data: sponsors } = useApi('/api/sponsors.php');
@@ -245,14 +213,11 @@ export default function SponsorDock() {
 
               {/* Logo Spotlight */}
               <Link to={`/partners/${activeSponsor.id}`} className="spotlight-logo-wrap" title={`Visit ${activeSponsor.name}`}>
-                <div className="spotlight-logo-ring" style={{ position: 'relative' }}>
-                  <ProgressRing radius={52} stroke={3} progress={sponsorProgress} gold={isPlat} />
-                  <div className="spotlight-logo-inner">
-                    {activeSponsor.logo_url
-                      ? <img src={activeSponsor.logo_url} alt={activeSponsor.name} className="spotlight-logo-img" />
-                      : <span className="spotlight-logo-fallback">{activeSponsor.name.slice(0, 2).toUpperCase()}</span>
-                    }
-                  </div>
+                <div className="spotlight-logo-inner">
+                  {activeSponsor.logo_url
+                    ? <img src={activeSponsor.logo_url} alt={activeSponsor.name} className="spotlight-logo-img" />
+                    : <span className="spotlight-logo-fallback">{activeSponsor.name.slice(0, 2).toUpperCase()}</span>
+                  }
                 </div>
               </Link>
 
@@ -272,27 +237,14 @@ export default function SponsorDock() {
                 )}
               </div>
 
-              {/* Sponsor Duration Indicator */}
-              <div className="spotlight-timer-row">
-                <span className="spotlight-timer-label">
-                  {isPlat ? '3 min spotlight' : '30 sec spotlight'}
-                </span>
-                <div className="spotlight-timer-bar-wrap">
-                  <div
-                    className={`spotlight-timer-bar ${isPlat ? 'plat' : ''}`}
-                    style={{ transform: `scaleX(${sponsorProgress})` }}
-                  />
-                </div>
-              </div>
 
-              {/* ── PRODUCT CAROUSEL (Platinum) ── */}
+
+              {/* ── PRODUCT CAROUSEL ── */}
               {productCount > 0 && (
                 <div className="spotlight-products-section">
                   <div className="spotlight-products-header">
-                    <span className="spotlight-products-label">
-                      {isPlat ? 'Products' : 'Product Showcase'}
-                    </span>
-                    {isPlat && productCount > 1 && (
+                    <span className="spotlight-products-label">Products</span>
+                    {productCount > 1 && (
                       <span className="spotlight-products-count">{activeProductIdx + 1} / {productCount}</span>
                     )}
                   </div>
@@ -302,15 +254,6 @@ export default function SponsorDock() {
                       {activeProduct.image_url && (
                         <div className="spotlight-product-img-wrap">
                           <img src={activeProduct.image_url} alt={activeProduct.name} className="spotlight-product-img" />
-                          {/* Per-product progress bar for platinum */}
-                          {isPlat && productCount > 1 && (
-                            <div className="spotlight-product-progress-wrap">
-                              <div
-                                className="spotlight-product-progress-bar"
-                                style={{ transform: `scaleX(${productProgress})` }}
-                              />
-                            </div>
-                          )}
                         </div>
                       )}
                       <div className="spotlight-product-body">
@@ -333,28 +276,36 @@ export default function SponsorDock() {
                     </div>
                   )}
 
-                  {/* Product nav controls */}
-                  {productCount > 1 && (
-                    <div className="spotlight-product-nav">
-                      <button type="button" className="spotlight-product-nav-btn" onClick={prevProduct} title="Previous product">
-                        ‹
-                      </button>
-                      <div className="spotlight-product-dots">
-                        {products.map((_, i) => (
-                          <button
-                            key={i}
-                            type="button"
-                            className={`spotlight-product-dot${i === activeProductIdx ? ' active' : ''}`}
-                            onClick={() => { setActiveProductIdx(i); setProductProgress(1); }}
-                            title={products[i].name}
-                          />
-                        ))}
-                      </div>
-                      <button type="button" className="spotlight-product-nav-btn" onClick={nextProduct} title="Next product">
-                        ›
-                      </button>
+                  {/* Nav: always show prev/next + dots when >1 product */}
+                  <div className="spotlight-product-nav">
+                    <button
+                      type="button"
+                      className="spotlight-product-nav-btn"
+                      onClick={prevProduct}
+                      disabled={productCount <= 1}
+                      title="Previous product"
+                    >‹</button>
+
+                    <div className="spotlight-product-dots">
+                      {products.map((_, i) => (
+                        <button
+                          key={i}
+                          type="button"
+                          className={`spotlight-product-dot${i === activeProductIdx ? ' active' : ''}`}
+                          onClick={() => { setActiveProductIdx(i); setProductProgress(1); }}
+                          title={products[i].name}
+                        />
+                      ))}
                     </div>
-                  )}
+
+                    <button
+                      type="button"
+                      className="spotlight-product-nav-btn"
+                      onClick={nextProduct}
+                      disabled={productCount <= 1}
+                      title="Next product"
+                    >›</button>
+                  </div>
                 </div>
               )}
             </>

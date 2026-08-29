@@ -1,8 +1,8 @@
 /* ============================================================
    SPONSORS & PARTNERS DOCK
    Desktop (> 900px): Permanent Non-Collapsible Right Rail
-     — Single-Sponsor Spotlight with rotation timer
-     — Product Carousel for Platinum (sub-timer per product)
+     — Single-Sponsor Spotlight (no ring, no timer label)
+     — Compact info + enlarged product carousel
    Mobile (<= 900px): Auto-Sliding Marquee Ticker + Collapse
    ============================================================ */
 
@@ -133,8 +133,8 @@
   align-items: center;
   overflow-y: auto;
   overflow-x: hidden;
-  padding: 14px 14px 16px;
-  gap: 12px;
+  padding: 10px 12px 12px;
+  gap: 8px;
 }
 
 .sponsor-spotlight::-webkit-scrollbar { width: 3px; }
@@ -199,7 +199,7 @@
   background: var(--c-gold);
 }
 
-/* Logo ring + image */
+/* Logo — plain square, no ring */
 .spotlight-logo-wrap {
   display: flex;
   align-items: center;
@@ -211,24 +211,16 @@
 
 .spotlight-logo-wrap:hover { transform: scale(1.04); }
 
-.spotlight-logo-ring {
-  width: 112px;
-  height: 112px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
 .spotlight-logo-inner {
-  width: 96px;
-  height: 96px;
-  border-radius: 8px;
+  width: 80px;
+  height: 80px;
+  border-radius: 6px;
   background: #ffffff;
-  padding: 5px;
+  padding: 4px;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 3px 14px rgba(0, 0, 0, 0.45);
   overflow: hidden;
 }
 
@@ -239,40 +231,40 @@
 }
 
 .spotlight-logo-fallback {
-  font-size: 1.4rem;
+  font-size: 1.2rem;
   font-weight: 900;
   color: var(--c-gold);
   text-transform: uppercase;
 }
 
-/* Sponsor info */
+/* Sponsor info — compact */
 .spotlight-info {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
+  gap: 3px;
   width: 100%;
   text-align: center;
 }
 
 .spotlight-name {
-  font-size: 1rem;
+  font-size: 0.88rem;
   font-weight: 800;
   color: var(--c-white, #fff);
   text-decoration: none;
-  line-height: 1.25;
+  line-height: 1.2;
   transition: color var(--t-fast);
 }
 
 .spotlight-name:hover { color: var(--c-gold); }
 
 .spotlight-desc {
-  font-size: 0.72rem;
+  font-size: 0.67rem;
   color: var(--c-text-2);
-  line-height: 1.4;
+  line-height: 1.35;
   margin: 0;
   display: -webkit-box;
-  -webkit-line-clamp: 2;
+  -webkit-line-clamp: 1;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
@@ -280,12 +272,12 @@
 .spotlight-ext-link {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  font-size: 0.68rem;
+  gap: 3px;
+  font-size: 0.64rem;
   font-weight: 700;
   color: var(--c-gold);
   text-decoration: none;
-  padding: 2px 8px;
+  padding: 2px 7px;
   border-radius: 4px;
   border: 1px solid rgba(245, 158, 11, 0.3);
   background: rgba(245, 158, 11, 0.07);
@@ -293,42 +285,6 @@
 }
 
 .spotlight-ext-link:hover { background: rgba(245, 158, 11, 0.18); color: #fff; }
-
-/* Sponsor duration timer bar */
-.spotlight-timer-row {
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.spotlight-timer-label {
-  font-size: 0.62rem;
-  font-weight: 600;
-  color: var(--c-text-3);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  text-align: center;
-}
-
-.spotlight-timer-bar-wrap {
-  width: 100%;
-  height: 2px;
-  background: rgba(255, 255, 255, 0.08);
-  border-radius: 1px;
-  overflow: hidden;
-}
-
-.spotlight-timer-bar {
-  height: 100%;
-  width: 100%;
-  background: rgba(255, 255, 255, 0.4);
-  border-radius: 1px;
-  transform-origin: left center;
-  transition: transform 1s linear;
-}
-
-.spotlight-timer-bar.plat { background: var(--c-gold); }
 
 /* ── PRODUCT CAROUSEL ── */
 .spotlight-products-section {
@@ -338,6 +294,7 @@
   gap: 8px;
   border-top: 1px solid rgba(255, 255, 255, 0.07);
   padding-top: 10px;
+  flex: 1;
 }
 
 .spotlight-products-header {
@@ -364,7 +321,7 @@
   border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-/* Individual product card */
+/* Individual product card — enlarged */
 .spotlight-product-card {
   display: flex;
   flex-direction: column;
@@ -383,7 +340,7 @@
 
 .spotlight-product-img-wrap {
   width: 100%;
-  height: 110px;
+  height: 150px;
   background: #000;
   overflow: hidden;
   position: relative;
@@ -398,22 +355,6 @@
 
 .spotlight-product-card:hover .spotlight-product-img { transform: scale(1.04); }
 
-/* Per-product countdown bar (inside image) */
-.spotlight-product-progress-wrap {
-  position: absolute;
-  bottom: 0; left: 0; right: 0;
-  height: 3px;
-  background: rgba(0, 0, 0, 0.4);
-}
-
-.spotlight-product-progress-bar {
-  height: 100%;
-  width: 100%;
-  background: var(--c-gold);
-  transform-origin: left center;
-  transition: transform 1s linear;
-}
-
 .spotlight-product-body {
   display: flex;
   flex-direction: column;
@@ -422,14 +363,14 @@
 }
 
 .spotlight-product-name {
-  font-size: 0.78rem;
+  font-size: 0.8rem;
   font-weight: 700;
   color: var(--c-white, #fff);
-  line-height: 1.25;
+  line-height: 1.2;
 }
 
 .spotlight-product-desc {
-  font-size: 0.67rem;
+  font-size: 0.68rem;
   color: var(--c-text-2);
   line-height: 1.35;
   display: -webkit-box;
@@ -452,22 +393,23 @@
 
 .spotlight-product-link:hover { color: #fff; }
 
-/* Product carousel navigation */
+/* Product nav — always visible, below card */
 .spotlight-product-nav {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
+  padding: 4px 0 2px;
 }
 
 .spotlight-product-nav-btn {
-  width: 24px;
-  height: 24px;
+  width: 28px;
+  height: 28px;
   border-radius: 6px;
   background: rgba(255, 255, 255, 0.06);
   border: 1px solid rgba(255, 255, 255, 0.12);
   color: var(--c-text-2);
-  font-size: 1.1rem;
+  font-size: 1.2rem;
   line-height: 1;
   cursor: pointer;
   display: flex;
@@ -475,36 +417,43 @@
   justify-content: center;
   transition: all var(--t-fast);
   padding: 0;
+  flex-shrink: 0;
 }
 
-.spotlight-product-nav-btn:hover {
-  background: rgba(245, 158, 11, 0.18);
+.spotlight-product-nav-btn:not(:disabled):hover {
+  background: rgba(245, 158, 11, 0.2);
   border-color: var(--c-gold);
   color: var(--c-gold);
 }
 
+.spotlight-product-nav-btn:disabled {
+  opacity: 0.25;
+  cursor: default;
+}
+
+/* Dots */
 .spotlight-product-dots {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 5px;
   flex: 1;
   justify-content: center;
 }
 
 .spotlight-product-dot {
-  width: 5px;
-  height: 5px;
+  width: 6px;
+  height: 6px;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.18);
   border: none;
   padding: 0;
   cursor: pointer;
-  transition: background var(--t-fast), transform var(--t-fast), width var(--t-fast);
+  transition: background var(--t-fast), width var(--t-fast), border-radius var(--t-fast);
 }
 
 .spotlight-product-dot.active {
-  width: 14px;
-  border-radius: 2px;
+  width: 18px;
+  border-radius: 3px;
   background: var(--c-gold);
 }
 
