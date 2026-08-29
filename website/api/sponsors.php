@@ -29,6 +29,7 @@ try {
                 }
             }
         }
+        $s['duration_seconds'] = ($s['is_platinum'] === 1 ? 180 : 30);
         $s['products'] = $products;
         return $s;
     };

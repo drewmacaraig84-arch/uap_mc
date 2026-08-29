@@ -1,42 +1,165 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { useApi } from '../hooks/useApi';
-import { IconStar, IconSparkles, IconHandshake, IconChevronDown, IconChevronUp, IconGrid, IconExternalLink } from './Icons';
+import { IconStar, IconSparkles, IconHandshake, IconChevronDown, IconChevronUp, IconExternalLink } from './Icons';
 import './SponsorDock.css';
+
+/* ── Timing constants ── */
+const DURATION_PLATINUM = 180; // seconds total for a platinum sponsor
+const DURATION_REGULAR  = 30;  // seconds for a regular sponsor
+
+/* ── Thin Progress Ring (SVG) ── */
+function ProgressRing({ radius = 22, stroke = 2.5, progress = 1, gold = false }) {
+  const circ = 2 * Math.PI * radius;
+  return (
+    <svg
+      width={radius * 2 + stroke * 2}
+      height={radius * 2 + stroke * 2}
+      style={{ position: 'absolute', top: 0, left: 0, pointerEvents: 'none' }}
+    >
+      <circle
+        cx={radius + stroke}
+        cy={radius + stroke}
+        r={radius}
+        fill="none"
+        stroke="rgba(255,255,255,0.08)"
+        strokeWidth={stroke}
+      />
+      <circle
+        cx={radius + stroke}
+        cy={radius + stroke}
+        r={radius}
+        fill="none"
+        stroke={gold ? '#f5b800' : 'rgba(255,255,255,0.45)'}
+        strokeWidth={stroke}
+        strokeDasharray={circ}
+        strokeDashoffset={circ * (1 - progress)}
+        strokeLinecap="round"
+        style={{ transform: 'rotate(-90deg)', transformOrigin: '50% 50%', transition: 'stroke-dashoffset 1s linear' }}
+      />
+    </svg>
+  );
+}
 
 export default function SponsorDock() {
   const { data: sponsors } = useApi('/api/sponsors.php');
-  const [isCollapsed, setIsCollapsed] = useState(false);
-  const [isPaused, setIsPaused] = useState(false);
-  const [openDropdowns, setOpenDropdowns] = useState({});
-  const marqueeRef = useRef(null);
+  const [isCollapsed, setIsCollapsed]         = useState(false);
+  const [isPaused, setIsPaused]               = useState(false);
 
+  /* ── Spotlight State ── */
+  const [activeSponsorIdx, setActiveSponsorIdx] = useState(0);
+  const [activeProductIdx, setActiveProductIdx] = useState(0);
+  const [sponsorProgress, setSponsorProgress]   = useState(1);   // 1→0
+  const [productProgress, setProductProgress]   = useState(1);
+
+  const sponsorTimerRef = useRef(null);
+  const productTimerRef = useRef(null);
+  const marqueeRef      = useRef(null);
+
+  /* ── Sorted sponsor list ── */
   const rawItems = sponsors && Array.isArray(sponsors) ? sponsors : [];
-
-  // Sort: Platinum partners ALWAYS on top, followed by display_order
   const sortedItems = [...rawItems].sort((a, b) => {
-    const aPlat = a.is_platinum === 1 ? 1 : 0;
-    const bPlat = b.is_platinum === 1 ? 1 : 0;
-    if (bPlat !== aPlat) return bPlat - aPlat;
+    const aP = a.is_platinum === 1 ? 1 : 0;
+    const bP = b.is_platinum === 1 ? 1 : 0;
+    if (bP !== aP) return bP - aP;
     return (a.display_order || 0) - (b.display_order || 0);
   });
 
-  const toggleDropdown = (id, e) => {
-    if (e) {
-      e.preventDefault();
-      e.stopPropagation();
-    }
-    setOpenDropdowns((prev) => ({
-      ...prev,
-      [id]: !prev[id],
-    }));
-  };
+  const totalSponsors = sortedItems.length;
 
-  // Duplicate for seamless infinite auto-slide marquee when items exist
-  const marqueeItems = sortedItems.length > 0 
-    ? (sortedItems.length < 5 ? [...sortedItems, ...sortedItems, ...sortedItems, ...sortedItems] : [...sortedItems, ...sortedItems]) 
+  /* ── Active sponsor object ── */
+  const activeSponsor = totalSponsors > 0 ? sortedItems[activeSponsorIdx % totalSponsors] : null;
+  const isPlat        = activeSponsor?.is_platinum === 1;
+  const products      = activeSponsor?.products && Array.isArray(activeSponsor.products) ? activeSponsor.products : [];
+  const productCount  = products.length;
+
+  /* Per-product duration for platinum */
+  const productDuration = isPlat && productCount > 0
+    ? Math.floor(DURATION_PLATINUM / productCount)
+    : DURATION_PLATINUM;
+
+  const sponsorDuration = isPlat ? DURATION_PLATINUM : DURATION_REGULAR;
+
+  /* ── Advance to next sponsor ── */
+  const nextSponsor = useCallback(() => {
+    setActiveSponsorIdx(prev => (prev + 1) % Math.max(totalSponsors, 1));
+    setActiveProductIdx(0);
+    setSponsorProgress(1);
+    setProductProgress(1);
+  }, [totalSponsors]);
+
+  /* ── Advance to next product (wraps within sponsor) ── */
+  const nextProduct = useCallback(() => {
+    setActiveProductIdx(prev => {
+      const next = (prev + 1) % Math.max(productCount, 1);
+      return next;
+    });
+    setProductProgress(1);
+  }, [productCount]);
+
+  const prevProduct = useCallback(() => {
+    setActiveProductIdx(prev => {
+      const next = (prev - 1 + Math.max(productCount, 1)) % Math.max(productCount, 1);
+      return next;
+    });
+    setProductProgress(1);
+  }, [productCount]);
+
+  /* ── Sponsor rotation timer ── */
+  useEffect(() => {
+    if (totalSponsors === 0 || isPaused) return;
+
+    clearInterval(sponsorTimerRef.current);
+    let elapsed = 0;
+    setSponsorProgress(1);
+
+    sponsorTimerRef.current = setInterval(() => {
+      elapsed += 1;
+      setSponsorProgress(1 - elapsed / sponsorDuration);
+      if (elapsed >= sponsorDuration) {
+        nextSponsor();
+      }
+    }, 1000);
+
+    return () => clearInterval(sponsorTimerRef.current);
+  }, [activeSponsorIdx, totalSponsors, sponsorDuration, isPaused, nextSponsor]);
+
+  /* ── Product sub-rotation timer (Platinum only, more than 1 product) ── */
+  useEffect(() => {
+    clearInterval(productTimerRef.current);
+    if (!isPlat || productCount <= 1 || isPaused) return;
+
+    let elapsed = 0;
+    setProductProgress(1);
+
+    productTimerRef.current = setInterval(() => {
+      elapsed += 1;
+      setProductProgress(1 - elapsed / productDuration);
+      if (elapsed >= productDuration) {
+        nextProduct();
+        elapsed = 0;
+      }
+    }, 1000);
+
+    return () => clearInterval(productTimerRef.current);
+  }, [activeSponsorIdx, activeProductIdx, isPlat, productCount, productDuration, isPaused, nextProduct]);
+
+  /* ── Reset product index on sponsor change ── */
+  useEffect(() => {
+    setActiveProductIdx(0);
+  }, [activeSponsorIdx]);
+
+  /* ── Marquee duplicate items for mobile ── */
+  const marqueeItems = sortedItems.length > 0
+    ? (sortedItems.length < 5
+        ? [...sortedItems, ...sortedItems, ...sortedItems, ...sortedItems]
+        : [...sortedItems, ...sortedItems])
     : [];
 
+  /* ── Active product ── */
+  const activeProduct = products[activeProductIdx] || null;
+
+  /* ── Render ── */
   return (
     <>
       {/* COLLAPSED FLOATING TRIGGER PILL (Mobile Only) */}
@@ -53,12 +176,8 @@ export default function SponsorDock() {
               <IconStar size={13} className="sponsor-pill-star" />
             </span>
             <span className="sponsor-pill-text">Featured Partners</span>
-            {sortedItems.length > 0 && (
-              <span className="sponsor-pill-badge">{sortedItems.length}</span>
-            )}
-            <span className="sponsor-pill-arrow">
-              <IconChevronUp size={14} />
-            </span>
+            {totalSponsors > 0 && <span className="sponsor-pill-badge">{totalSponsors}</span>}
+            <span className="sponsor-pill-arrow"><IconChevronUp size={14} /></span>
           </div>
         </button>
       )}
@@ -67,15 +186,15 @@ export default function SponsorDock() {
       <aside
         className={`sponsor-rail${isCollapsed ? ' mobile-collapsed' : ''}`}
         aria-label="Featured Partners"
+        onMouseEnter={() => setIsPaused(true)}
+        onMouseLeave={() => setIsPaused(false)}
       >
         {/* Dock Header */}
         <div className="sponsor-rail-header">
           <Link to="/partners" className="sponsor-rail-title-wrap" title="View all Featured Partners">
             <IconStar size={14} className="sponsor-rail-star" />
             <span className="sponsor-rail-title">Featured Partners</span>
-            {sortedItems.length > 0 && (
-              <span className="sponsor-count-tag">{sortedItems.length}</span>
-            )}
+            {totalSponsors > 0 && <span className="sponsor-count-tag">{totalSponsors}</span>}
           </Link>
 
           <div className="sponsor-rail-actions">
@@ -83,7 +202,6 @@ export default function SponsorDock() {
               <span>View All</span>
               <span style={{ fontSize: '10px' }}>&rarr;</span>
             </Link>
-            {/* Collapse toggle button strictly for mobile view */}
             <button
               type="button"
               className="sponsor-toggle-btn mobile-only"
@@ -96,125 +214,162 @@ export default function SponsorDock() {
           </div>
         </div>
 
-        {/* Desktop Vertical List (1/4 screen enlarged rail) */}
-        <div className="sponsor-rail-list desktop-only">
-          {sortedItems.length > 0 ? (
-            sortedItems.map((sponsor) => {
-              const isPlat = sponsor.is_platinum === 1;
-              const products = sponsor.products && Array.isArray(sponsor.products) ? sponsor.products : [];
-              const hasProducts = products.length > 0;
-              const isExpanded = !!openDropdowns[sponsor.id];
+        {/* ── DESKTOP: SINGLE-SPONSOR SPOTLIGHT ── */}
+        <div className="sponsor-spotlight desktop-only">
+          {activeSponsor ? (
+            <>
+              {/* Tier tag + sponsor nav */}
+              <div className="spotlight-tier-row">
+                <span className={`spotlight-tier-badge ${isPlat ? 'plat' : 'reg'}`}>
+                  {isPlat ? <><IconSparkles size={10} />&nbsp;PLATINUM</> : 'FEATURED'}
+                </span>
+                {totalSponsors > 1 && (
+                  <div className="spotlight-nav-dots">
+                    {sortedItems.map((_, i) => (
+                      <button
+                        key={i}
+                        type="button"
+                        className={`spotlight-dot${i === activeSponsorIdx ? ' active' : ''}`}
+                        onClick={() => {
+                          setActiveSponsorIdx(i);
+                          setActiveProductIdx(0);
+                          setSponsorProgress(1);
+                          setProductProgress(1);
+                        }}
+                        title={sortedItems[i].name}
+                      />
+                    ))}
+                  </div>
+                )}
+              </div>
 
-              return (
-                <div
-                  key={`desk-${sponsor.id}`}
-                  className={`sponsor-rail-card-box ${isPlat ? 'is-platinum' : ''}`}
-                >
-                  <Link
-                    to={`/partners/${sponsor.id}`}
-                    className="sponsor-rail-card-main"
-                    title={`View ${sponsor.name} details & showcase`}
-                  >
-                    <div className="sponsor-rail-img-wrap">
-                      {sponsor.logo_url ? (
-                        <img src={sponsor.logo_url} alt={sponsor.name} className="sponsor-rail-img" />
-                      ) : (
-                        <div className="sponsor-rail-placeholder">
-                          {sponsor.name.slice(0, 2).toUpperCase()}
+              {/* Logo Spotlight */}
+              <Link to={`/partners/${activeSponsor.id}`} className="spotlight-logo-wrap" title={`Visit ${activeSponsor.name}`}>
+                <div className="spotlight-logo-ring" style={{ position: 'relative' }}>
+                  <ProgressRing radius={52} stroke={3} progress={sponsorProgress} gold={isPlat} />
+                  <div className="spotlight-logo-inner">
+                    {activeSponsor.logo_url
+                      ? <img src={activeSponsor.logo_url} alt={activeSponsor.name} className="spotlight-logo-img" />
+                      : <span className="spotlight-logo-fallback">{activeSponsor.name.slice(0, 2).toUpperCase()}</span>
+                    }
+                  </div>
+                </div>
+              </Link>
+
+              {/* Sponsor Name & Description */}
+              <div className="spotlight-info">
+                <Link to={`/partners/${activeSponsor.id}`} className="spotlight-name" title={activeSponsor.name}>
+                  {activeSponsor.name}
+                </Link>
+                {activeSponsor.description && (
+                  <p className="spotlight-desc">{activeSponsor.description}</p>
+                )}
+                {activeSponsor.url && (
+                  <a href={activeSponsor.url} target="_blank" rel="noopener noreferrer" className="spotlight-ext-link">
+                    <IconExternalLink size={12} />
+                    <span>Visit Website</span>
+                  </a>
+                )}
+              </div>
+
+              {/* Sponsor Duration Indicator */}
+              <div className="spotlight-timer-row">
+                <span className="spotlight-timer-label">
+                  {isPlat ? '3 min spotlight' : '30 sec spotlight'}
+                </span>
+                <div className="spotlight-timer-bar-wrap">
+                  <div
+                    className={`spotlight-timer-bar ${isPlat ? 'plat' : ''}`}
+                    style={{ transform: `scaleX(${sponsorProgress})` }}
+                  />
+                </div>
+              </div>
+
+              {/* ── PRODUCT CAROUSEL (Platinum) ── */}
+              {productCount > 0 && (
+                <div className="spotlight-products-section">
+                  <div className="spotlight-products-header">
+                    <span className="spotlight-products-label">
+                      {isPlat ? 'Products' : 'Product Showcase'}
+                    </span>
+                    {isPlat && productCount > 1 && (
+                      <span className="spotlight-products-count">{activeProductIdx + 1} / {productCount}</span>
+                    )}
+                  </div>
+
+                  {activeProduct && (
+                    <div className="spotlight-product-card reveal-pop" key={`${activeSponsorIdx}-${activeProductIdx}`}>
+                      {activeProduct.image_url && (
+                        <div className="spotlight-product-img-wrap">
+                          <img src={activeProduct.image_url} alt={activeProduct.name} className="spotlight-product-img" />
+                          {/* Per-product progress bar for platinum */}
+                          {isPlat && productCount > 1 && (
+                            <div className="spotlight-product-progress-wrap">
+                              <div
+                                className="spotlight-product-progress-bar"
+                                style={{ transform: `scaleX(${productProgress})` }}
+                              />
+                            </div>
+                          )}
                         </div>
                       )}
-                    </div>
-
-                    <div className="sponsor-rail-info">
-                      <div className="sponsor-rail-name-row">
-                        <span className="sponsor-rail-name">{sponsor.name}</span>
-                        {isPlat && (
-                          <span className="sponsor-rail-plat-badge" title="Official Platinum Partner">
-                            <IconSparkles size={10} />
-                            <span>PLATINUM</span>
-                          </span>
+                      <div className="spotlight-product-body">
+                        <span className="spotlight-product-name">{activeProduct.name}</span>
+                        {activeProduct.description && (
+                          <span className="spotlight-product-desc">{activeProduct.description}</span>
+                        )}
+                        {activeProduct.link_url && (
+                          <a
+                            href={activeProduct.link_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="spotlight-product-link"
+                          >
+                            <IconExternalLink size={10} />
+                            <span>Learn More</span>
+                          </a>
                         )}
                       </div>
-
-                      <span className={`sponsor-rail-tag ${isPlat ? 'plat-tag' : ''}`}>
-                        {isPlat ? 'PLATINUM PARTNER' : 'FEATURED PARTNER'}
-                      </span>
-
-                      {/* Products Badge & Dropdown Trigger Button */}
-                      {isPlat && hasProducts && (
-                        <div className="sponsor-rail-product-trigger-row">
-                          <button
-                            type="button"
-                            className={`sponsor-rail-dropdown-btn ${isExpanded ? 'active' : ''}`}
-                            onClick={(e) => toggleDropdown(sponsor.id, e)}
-                            title="Toggle promotional products list"
-                          >
-                            <IconGrid size={11} />
-                            <span>{products.length} Product{products.length > 1 ? 's' : ''}</span>
-                            <IconChevronDown
-                              size={12}
-                              className={`dropdown-arrow-icon ${isExpanded ? 'rotated' : ''}`}
-                            />
-                          </button>
-                        </div>
-                      )}
                     </div>
-                  </Link>
+                  )}
 
-                  {/* Expandable Products Dropdown inside the dock card */}
-                  {isPlat && hasProducts && isExpanded && (
-                    <div className="sponsor-rail-products-dropdown reveal-pop">
-                      <div className="sponsor-rail-dropdown-header">
-                        <span>Promotional Products ({products.length}):</span>
-                      </div>
-                      <div className="sponsor-rail-dropdown-list">
-                        {products.map((prod, pIdx) => (
-                          <Link
-                            key={prod.id || pIdx}
-                            to={`/partners/${sponsor.id}`}
-                            className="sponsor-rail-dropdown-item"
-                          >
-                            <div className="sponsor-dropdown-item-img-wrap">
-                              {prod.image_url ? (
-                                <img src={prod.image_url} alt={prod.name} className="sponsor-dropdown-item-img" />
-                              ) : (
-                                <IconGrid size={14} className="muted" />
-                              )}
-                            </div>
-                            <div className="sponsor-dropdown-item-text">
-                              <span className="sponsor-dropdown-item-name">{prod.name}</span>
-                              {prod.description && (
-                                <span className="sponsor-dropdown-item-desc">{prod.description}</span>
-                              )}
-                            </div>
-                          </Link>
+                  {/* Product nav controls */}
+                  {productCount > 1 && (
+                    <div className="spotlight-product-nav">
+                      <button type="button" className="spotlight-product-nav-btn" onClick={prevProduct} title="Previous product">
+                        ‹
+                      </button>
+                      <div className="spotlight-product-dots">
+                        {products.map((_, i) => (
+                          <button
+                            key={i}
+                            type="button"
+                            className={`spotlight-product-dot${i === activeProductIdx ? ' active' : ''}`}
+                            onClick={() => { setActiveProductIdx(i); setProductProgress(1); }}
+                            title={products[i].name}
+                          />
                         ))}
                       </div>
-                      <Link
-                        to={`/partners/${sponsor.id}`}
-                        className="sponsor-rail-dropdown-footer-link"
-                      >
-                        <span>View Full Product Showcase</span>
-                        <span style={{ fontSize: '11px' }}>&rarr;</span>
-                      </Link>
+                      <button type="button" className="spotlight-product-nav-btn" onClick={nextProduct} title="Next product">
+                        ›
+                      </button>
                     </div>
                   )}
                 </div>
-              );
-            })
+              )}
+            </>
           ) : (
+            /* Empty state */
             <Link to="/partners" className="sponsor-rail-empty-link" title="Partner with UAP Mindoro Chapter">
-              <div className="sponsor-rail-empty-icon">
-                <IconHandshake size={24} />
-              </div>
+              <div className="sponsor-rail-empty-icon"><IconHandshake size={28} /></div>
               <span className="sponsor-rail-empty-text">Partner with Us</span>
               <span className="sponsor-rail-empty-sub">Showcase your brand on our official chapter portal</span>
             </Link>
           )}
         </div>
 
-        {/* Mobile Auto-Slide Marquee Ticker */}
-        <div 
+        {/* ── MOBILE: AUTO-SLIDE MARQUEE TICKER ── */}
+        <div
           className="sponsor-mobile-ticker-wrap mobile-only"
           onMouseEnter={() => setIsPaused(true)}
           onMouseLeave={() => setIsPaused(false)}
@@ -222,33 +377,28 @@ export default function SponsorDock() {
           onTouchEnd={() => setIsPaused(false)}
         >
           {marqueeItems.length > 0 ? (
-            <div 
+            <div
               ref={marqueeRef}
               className={`sponsor-mobile-marquee-track${isPaused ? ' paused' : ''}`}
             >
               {marqueeItems.map((sponsor, idx) => {
-                const isPlat = sponsor.is_platinum === 1;
+                const sp = sponsor.is_platinum === 1;
                 return (
                   <Link
                     key={`mob-${sponsor.id}-${idx}`}
                     to={`/partners/${sponsor.id}`}
-                    className={`sponsor-ticker-card ${isPlat ? 'is-platinum-ticker' : ''}`}
+                    className={`sponsor-ticker-card ${sp ? 'is-platinum-ticker' : ''}`}
                     title={`View ${sponsor.name}`}
                   >
                     <div className="sponsor-ticker-img-wrap">
-                      {sponsor.logo_url ? (
-                        <img src={sponsor.logo_url} alt={sponsor.name} className="sponsor-ticker-img" />
-                      ) : (
-                        <div className="sponsor-ticker-placeholder">
-                          {sponsor.name.slice(0, 2).toUpperCase()}
-                        </div>
-                      )}
+                      {sponsor.logo_url
+                        ? <img src={sponsor.logo_url} alt={sponsor.name} className="sponsor-ticker-img" />
+                        : <div className="sponsor-ticker-placeholder">{sponsor.name.slice(0, 2).toUpperCase()}</div>
+                      }
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
                       <span className="sponsor-ticker-name">{sponsor.name}</span>
-                      {isPlat && (
-                        <span style={{ fontSize: '8.5px', color: '#f5b800', fontWeight: 800 }}>★ PLATINUM</span>
-                      )}
+                      {sp && <span style={{ fontSize: '8.5px', color: '#f5b800', fontWeight: 800 }}>★ PLATINUM</span>}
                     </div>
                   </Link>
                 );

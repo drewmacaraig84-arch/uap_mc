@@ -109,50 +109,51 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
                 }
             }
 
-            // Process Promotional Products (for Platinum partners)
+            // Process Promotional Products (Up to 10 for Platinum, 1 for Regular)
+            $maxProducts = $is_platinum ? 10 : 1;
             $products = [];
-            if ($is_platinum) {
-                $uploadDir = __DIR__ . '/../uploads/sponsors/';
-                if (!is_dir($uploadDir)) {
-                    @mkdir($uploadDir, 0775, true);
-                }
-                $allowedExts = ['jpg', 'jpeg', 'png', 'webp'];
-                $rawProducts = $_POST['products'] ?? [];
-                if (is_array($rawProducts)) {
-                    foreach ($rawProducts as $k => $p) {
-                        if (!empty($p['delete'])) continue;
-                        $pName = trim($p['name'] ?? '');
-                        $pDesc = trim($p['description'] ?? '');
-                        $pLink = trim($p['link_url'] ?? '');
-                        $pId = !empty($p['id']) ? trim($p['id']) : ('prod_' . time() . '_' . bin2hex(random_bytes(3)));
-                        $imgPath = '';
+            $uploadDir = __DIR__ . '/../uploads/sponsors/';
+            if (!is_dir($uploadDir)) {
+                @mkdir($uploadDir, 0775, true);
+            }
+            $allowedExts = ['jpg', 'jpeg', 'png', 'webp'];
+            $rawProducts = $_POST['products'] ?? [];
+            if (is_array($rawProducts)) {
+                foreach ($rawProducts as $k => $p) {
+                    if (!empty($p['delete'])) continue;
+                    if (count($products) >= $maxProducts) break;
+                    $pName = trim($p['name'] ?? '');
+                    $pDesc = trim($p['description'] ?? '');
+                    $pLink = trim($p['link_url'] ?? '');
+                    $pId = !empty($p['id']) ? trim($p['id']) : ('prod_' . time() . '_' . bin2hex(random_bytes(3)));
+                    $imgPath = '';
 
-                        if (isset($_FILES['products']['name'][$k]['image']) && $_FILES['products']['error'][$k]['image'] === UPLOAD_ERR_OK) {
-                            $fName = $_FILES['products']['name'][$k]['image'];
-                            $fExt = strtolower(pathinfo($fName, PATHINFO_EXTENSION));
-                            if (in_array($fExt, $allowedExts) && $_FILES['products']['size'][$k]['image'] <= 12 * 1024 * 1024) {
-                                $pFileName = 'prod_' . time() . '_' . $k . '_' . bin2hex(random_bytes(3)) . '.' . $fExt;
-                                $pDest = $uploadDir . $pFileName;
-                                if (move_uploaded_file($_FILES['products']['tmp_name'][$k]['image'], $pDest)) {
-                                    $imgPath = 'uploads/sponsors/' . $pFileName;
-                                }
+                    if (isset($_FILES['products']['name'][$k]['image']) && $_FILES['products']['error'][$k]['image'] === UPLOAD_ERR_OK) {
+                        $fName = $_FILES['products']['name'][$k]['image'];
+                        $fExt = strtolower(pathinfo($fName, PATHINFO_EXTENSION));
+                        if (in_array($fExt, $allowedExts) && $_FILES['products']['size'][$k]['image'] <= 12 * 1024 * 1024) {
+                            $pFileName = 'prod_' . time() . '_' . $k . '_' . bin2hex(random_bytes(3)) . '.' . $fExt;
+                            $pDest = $uploadDir . $pFileName;
+                            if (move_uploaded_file($_FILES['products']['tmp_name'][$k]['image'], $pDest)) {
+                                $imgPath = 'uploads/sponsors/' . $pFileName;
                             }
-                        } elseif (!empty($p['image_url'])) {
-                            $imgPath = trim($p['image_url']);
                         }
+                    } elseif (!empty($p['image_url'])) {
+                        $imgPath = trim($p['image_url']);
+                    }
 
-                        if (!empty($pName) || !empty($imgPath) || !empty($pDesc)) {
-                            $products[] = [
-                                'id' => $pId,
-                                'name' => $pName !== '' ? $pName : 'Featured Promotional Product',
-                                'description' => $pDesc,
-                                'link_url' => $pLink,
-                                'image_path' => $imgPath
-                            ];
-                        }
+                    if (!empty($pName) || !empty($imgPath) || !empty($pDesc)) {
+                        $products[] = [
+                            'id' => $pId,
+                            'name' => $pName !== '' ? $pName : 'Featured Promotional Product',
+                            'description' => $pDesc,
+                            'link_url' => $pLink,
+                            'image_path' => $imgPath
+                        ];
                     }
                 }
             }
+            $products = array_slice($products, 0, $maxProducts);
             $products_json = !empty($products) ? json_encode($products) : null;
 
             if (empty($error)) {
@@ -189,51 +190,52 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
             }
         }
 
-        // Process Promotional Products
+        // Process Promotional Products (Up to 10 for Platinum, 1 for Regular)
+        $maxProducts = $is_platinum ? 10 : 1;
         $products = [];
-        if ($is_platinum) {
-            $uploadDir = __DIR__ . '/../uploads/sponsors/';
-            if (!is_dir($uploadDir)) {
-                @mkdir($uploadDir, 0775, true);
-            }
-            $allowedExts = ['jpg', 'jpeg', 'png', 'webp'];
-            $rawProducts = $_POST['products'] ?? [];
-            if (is_array($rawProducts)) {
-                foreach ($rawProducts as $k => $p) {
-                    if (!empty($p['delete'])) continue;
-                    $pName = trim($p['name'] ?? '');
-                    $pDesc = trim($p['description'] ?? '');
-                    $pLink = trim($p['link_url'] ?? '');
-                    $pId = !empty($p['id']) ? trim($p['id']) : ('prod_' . time() . '_' . bin2hex(random_bytes(3)));
-                    $existingImg = trim($p['existing_image'] ?? '');
-                    $imgPath = $existingImg;
+        $uploadDir = __DIR__ . '/../uploads/sponsors/';
+        if (!is_dir($uploadDir)) {
+            @mkdir($uploadDir, 0775, true);
+        }
+        $allowedExts = ['jpg', 'jpeg', 'png', 'webp'];
+        $rawProducts = $_POST['products'] ?? [];
+        if (is_array($rawProducts)) {
+            foreach ($rawProducts as $k => $p) {
+                if (!empty($p['delete'])) continue;
+                if (count($products) >= $maxProducts) break;
+                $pName = trim($p['name'] ?? '');
+                $pDesc = trim($p['description'] ?? '');
+                $pLink = trim($p['link_url'] ?? '');
+                $pId = !empty($p['id']) ? trim($p['id']) : ('prod_' . time() . '_' . bin2hex(random_bytes(3)));
+                $existingImg = trim($p['existing_image'] ?? '');
+                $imgPath = $existingImg;
 
-                    if (isset($_FILES['products']['name'][$k]['image']) && $_FILES['products']['error'][$k]['image'] === UPLOAD_ERR_OK) {
-                        $fName = $_FILES['products']['name'][$k]['image'];
-                        $fExt = strtolower(pathinfo($fName, PATHINFO_EXTENSION));
-                        if (in_array($fExt, $allowedExts) && $_FILES['products']['size'][$k]['image'] <= 12 * 1024 * 1024) {
-                            $pFileName = 'prod_' . time() . '_' . $k . '_' . bin2hex(random_bytes(3)) . '.' . $fExt;
-                            $pDest = $uploadDir . $pFileName;
-                            if (move_uploaded_file($_FILES['products']['tmp_name'][$k]['image'], $pDest)) {
-                                $imgPath = 'uploads/sponsors/' . $pFileName;
-                            }
+                if (isset($_FILES['products']['name'][$k]['image']) && $_FILES['products']['error'][$k]['image'] === UPLOAD_ERR_OK) {
+                    $fName = $_FILES['products']['name'][$k]['image'];
+                    $fExt = strtolower(pathinfo($fName, PATHINFO_EXTENSION));
+                    if (in_array($fExt, $allowedExts) && $_FILES['products']['size'][$k]['image'] <= 12 * 1024 * 1024) {
+                        $pFileName = 'prod_' . time() . '_' . $k . '_' . bin2hex(random_bytes(3)) . '.' . $fExt;
+                        $pDest = $uploadDir . $pFileName;
+                        if (move_uploaded_file($_FILES['products']['tmp_name'][$k]['image'], $pDest)) {
+                            $imgPath = 'uploads/sponsors/' . $pFileName;
                         }
-                    } elseif (!empty($p['image_url'])) {
-                        $imgPath = trim($p['image_url']);
                     }
+                } elseif (!empty($p['image_url'])) {
+                    $imgPath = trim($p['image_url']);
+                }
 
-                    if (!empty($pName) || !empty($imgPath) || !empty($pDesc)) {
-                        $products[] = [
-                            'id' => $pId,
-                            'name' => $pName !== '' ? $pName : 'Featured Promotional Product',
-                            'description' => $pDesc,
-                            'link_url' => $pLink,
-                            'image_path' => $imgPath
-                        ];
-                    }
+                if (!empty($pName) || !empty($imgPath) || !empty($pDesc)) {
+                    $products[] = [
+                        'id' => $pId,
+                        'name' => $pName !== '' ? $pName : 'Featured Promotional Product',
+                        'description' => $pDesc,
+                        'link_url' => $pLink,
+                        'image_path' => $imgPath
+                    ];
                 }
             }
         }
+        $products = array_slice($products, 0, $maxProducts);
         $products_json = !empty($products) ? json_encode($products) : null;
 
         if ($logo_path) {
@@ -581,24 +583,36 @@ function switchSettingsTab(tabId, btn) {
         </div>
       </div>
 
-      <!-- PLATINUM TIER TOGGLE -->
-      <div style="background: rgba(245,158,11,0.06); border: 1px solid rgba(245,158,11,0.25); border-radius: 10px; padding: 14px; margin-bottom: 16px;">
-        <label style="display: flex; align-items: center; gap: 10px; font-weight: 700; color: var(--text-primary); cursor: pointer; margin-bottom: 0;">
-          <input type="checkbox" name="is_platinum" id="add_is_platinum" value="1" onchange="toggleAddPlatinumProducts(this.checked)" style="width: 18px; height: 18px; accent-color: var(--accent-primary, #f5b800);">
-          <span style="display: inline-flex; align-items: center; gap: 6px;">
-            <span style="color: var(--accent-primary, #f5b800); font-size: 15px;">★</span>
-            <span>Designate as <strong>Platinum Sponsor / Partner</strong> (Unlocks Promotional Products Showcase &amp; Platinum Badge)</span>
-          </span>
-        </label>
-        
+      <!-- SPONSOR TIER & PRODUCTS -->
+      <div style="background: rgba(0,0,0,0.25); border: 1px solid var(--border-color, rgba(255,255,255,0.12)); border-radius: 10px; padding: 14px; margin-bottom: 16px;">
+        <label style="font-weight: 700; font-size: 13px; display: block; margin-bottom: 8px; color: var(--text-primary);">Select Partnership Tier &amp; Showcase Level</label>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+          <label id="add_tier_plat_label" style="display: flex; align-items: flex-start; gap: 10px; padding: 10px 12px; border-radius: 8px; border: 1px solid rgba(245,158,11,0.5); background: rgba(245,158,11,0.09); cursor: pointer;">
+            <input type="radio" name="is_platinum" value="1" id="add_tier_platinum" onchange="setSponsorTier('add', true)" checked style="margin-top: 3px; accent-color: var(--accent-primary, #f5b800);">
+            <div>
+              <strong style="color: var(--accent-primary, #f5b800); font-size: 13px; display: block;">★ Platinum Partner</strong>
+              <span class="muted" style="font-size: 11.5px; display: block; line-height: 1.35; margin-top: 2px;">3-Minute Website Spotlight • Up to <strong>10 Promotional Products</strong> in Carousel</span>
+            </div>
+          </label>
+
+          <label id="add_tier_reg_label" style="display: flex; align-items: flex-start; gap: 10px; padding: 10px 12px; border-radius: 8px; border: 1px solid var(--border-color, rgba(255,255,255,0.1)); background: rgba(255,255,255,0.02); cursor: pointer;">
+            <input type="radio" name="is_platinum" value="0" id="add_tier_regular" onchange="setSponsorTier('add', false)" style="margin-top: 3px; accent-color: var(--accent-primary, #f5b800);">
+            <div>
+              <strong style="color: var(--text-primary); font-size: 13px; display: block;">Featured / Regular Partner</strong>
+              <span class="muted" style="font-size: 11.5px; display: block; line-height: 1.35; margin-top: 2px;">30-Second Website Spotlight • <strong>1 Promotional Product</strong> Showcase</span>
+            </div>
+          </label>
+        </div>
+
         <!-- PROMOTIONAL PRODUCTS SLOTS -->
-        <div id="addSponsorProductsSection" style="display: none; margin-top: 14px; padding-top: 14px; border-top: 1px dashed rgba(245,158,11,0.2);">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+        <div id="addSponsorProductsSection" style="margin-top: 14px; padding-top: 14px; border-top: 1px dashed rgba(245,158,11,0.2);">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 8px;">
             <div>
               <strong style="font-size: 13px; color: var(--accent-primary, #f5b800);">Promotional Products &amp; Material Catalogs</strong>
-              <p class="muted" style="font-size: 11.5px; margin: 2px 0 0;">Add featured products with images, specifications, and links for this Platinum sponsor.</p>
+              <span id="addProductsCountBadge" style="font-size: 11px; margin-left: 6px; padding: 2px 7px; border-radius: 999px; background: rgba(245,158,11,0.15); color: var(--accent-primary, #f5b800); font-weight: 700;">(0/10 Products)</span>
+              <p class="muted" style="font-size: 11.5px; margin: 2px 0 0;" id="addProductsHelpText">Platinum partners can showcase up to 10 promotional products in the website carousel.</p>
             </div>
-            <button type="button" onclick="addProductSlot('addSponsorProductsList')" class="btn btn-sm" style="background: rgba(245,158,11,0.15); color: var(--accent-primary, #f5b800); border: 1px solid rgba(245,158,11,0.3); font-size: 11px; padding: 4px 10px;">
+            <button type="button" id="btnAddProductSlot" onclick="addProductSlot('addSponsorProductsList', null, 'add')" class="btn btn-sm" style="background: rgba(245,158,11,0.15); color: var(--accent-primary, #f5b800); border: 1px solid rgba(245,158,11,0.3); font-size: 11px; padding: 4px 10px;">
               + Add Product
             </button>
           </div>
@@ -633,7 +647,7 @@ function switchSettingsTab(tabId, btn) {
           ★ Platinum (<?php echo $platinumCount; ?>)
         </button>
         <button type="button" class="sponsor-filter-btn" onclick="filterSponsors('standard', this)" style="background: transparent; color: var(--text-secondary); font-weight: 600; border: none; padding: 4px 12px; border-radius: 6px; font-size: 11.5px; cursor: pointer;">
-          Standard (<?php echo $standardCount; ?>)
+          Regular (<?php echo $standardCount; ?>)
         </button>
       </div>
     </div>
@@ -654,13 +668,19 @@ function switchSettingsTab(tabId, btn) {
             <?php if ($isPlat): ?>
               <div style="position: absolute; top: 10px; right: 10px;">
                 <span style="background: linear-gradient(135deg, rgba(245,158,11,0.2), rgba(217,119,6,0.3)); border: 1px solid rgba(245,158,11,0.6); color: #f5b800; font-size: 10px; font-weight: 800; padding: 2px 8px; border-radius: 999px; display: inline-flex; align-items: center; gap: 3px; letter-spacing: 0.5px;">
-                  ★ PLATINUM
+                  ★ PLATINUM (3 MIN)
+                </span>
+              </div>
+            <?php else: ?>
+              <div style="position: absolute; top: 10px; right: 10px;">
+                <span style="background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.15); color: var(--text-secondary); font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 999px; display: inline-flex; align-items: center; gap: 3px;">
+                  REGULAR (30s)
                 </span>
               </div>
             <?php endif; ?>
 
-            <div style="height: 90px; display: flex; align-items: center; justify-content: center; background: #fff; border-radius: 8px; padding: 8px; margin-bottom: 12px; border: 1px solid rgba(0,0,0,0.06);">
-              <img src="<?php echo BASE_URL; ?>/<?php echo htmlspecialchars($sponsor['logo_path']); ?>" alt="<?php echo htmlspecialchars($sponsor['name']); ?>" style="max-width: 100%; max-height: 100%; object-fit: contain;">
+            <div style="height: 90px; display: flex; align-items: center; justify-content: center; background: #fff; border-radius: 4px; padding: 4px; margin-bottom: 12px; border: 1px solid rgba(255,255,255,0.15);">
+              <img src="<?php echo BASE_URL; ?>/<?php echo htmlspecialchars($sponsor['logo_path']); ?>" alt="<?php echo htmlspecialchars($sponsor['name']); ?>" style="max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 3px;">
             </div>
             <strong style="font-size: 14px; margin-bottom: 4px; display: block; color: var(--text-primary);"><?php echo htmlspecialchars($sponsor['name']); ?></strong>
             
@@ -668,11 +688,9 @@ function switchSettingsTab(tabId, btn) {
               <span class="muted" style="font-size: 12px; margin-bottom: 8px; display: block;"><?php echo htmlspecialchars($sponsor['description']); ?></span>
             <?php endif; ?>
 
-            <?php if ($isPlat && count($sponsorProducts) > 0): ?>
-              <span style="font-size: 11px; color: var(--accent-primary, #f5b800); font-weight: 700; margin-bottom: 8px; display: block;">
-                <?php echo count($sponsorProducts); ?> Promotional Product<?php echo count($sponsorProducts) > 1 ? 's' : ''; ?>
-              </span>
-            <?php endif; ?>
+            <span style="font-size: 11px; color: <?php echo $isPlat ? 'var(--accent-primary, #f5b800)' : 'var(--text-secondary)'; ?>; font-weight: 700; margin-bottom: 8px; display: block;">
+              <?php echo count($sponsorProducts); ?>/<?php echo $isPlat ? '10' : '1'; ?> Product<?php echo count($sponsorProducts) === 1 ? '' : 's'; ?> Added
+            </span>
 
             <?php if (!empty($sponsor['url'])): ?>
               <a href="<?php echo htmlspecialchars($sponsor['url']); ?>" target="_blank" style="font-size: 12px; margin-bottom: 12px; display: inline-flex; align-items: center; justify-content: center; gap: 4px;">
@@ -895,23 +913,36 @@ function switchSettingsTab(tabId, btn) {
           <input type="file" name="sponsor_logo" accept="image/png, image/jpeg, image/webp" style="padding:6px; width:100%;">
         </div>
 
-        <!-- PLATINUM TIER TOGGLE -->
-        <div style="background: rgba(245,158,11,0.06); border: 1px solid rgba(245,158,11,0.25); border-radius: 10px; padding: 14px; margin-bottom: 16px;">
-          <label style="display: flex; align-items: center; gap: 10px; font-weight: 700; color: var(--text-primary); cursor: pointer; margin-bottom: 0;">
-            <input type="checkbox" name="is_platinum" id="edit_is_platinum" value="1" onchange="toggleEditPlatinumProducts(this.checked)" style="width: 18px; height: 18px; accent-color: var(--accent-primary, #f5b800);">
-            <span style="display: inline-flex; align-items: center; gap: 6px;">
-              <span style="color: var(--accent-primary, #f5b800); font-size: 15px;">★</span>
-              <span>Designate as <strong>Platinum Sponsor / Partner</strong></span>
-            </span>
-          </label>
-          
-          <div id="editSponsorProductsSection" style="display: none; margin-top: 14px; padding-top: 14px; border-top: 1px dashed rgba(245,158,11,0.2);">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+        <!-- SPONSOR TIER & PRODUCTS -->
+        <div style="background: rgba(0,0,0,0.25); border: 1px solid var(--border-color, rgba(255,255,255,0.12)); border-radius: 10px; padding: 14px; margin-bottom: 16px;">
+          <label style="font-weight: 700; font-size: 13px; display: block; margin-bottom: 8px; color: var(--text-primary);">Partnership Tier &amp; Showcase Level</label>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+            <label id="edit_tier_plat_label" style="display: flex; align-items: flex-start; gap: 10px; padding: 10px 12px; border-radius: 8px; border: 1px solid rgba(245,158,11,0.5); background: rgba(245,158,11,0.09); cursor: pointer;">
+              <input type="radio" name="is_platinum" value="1" id="edit_tier_platinum" onchange="setSponsorTier('edit', true)" style="margin-top: 3px; accent-color: var(--accent-primary, #f5b800);">
+              <div>
+                <strong style="color: var(--accent-primary, #f5b800); font-size: 13px; display: block;">★ Platinum Partner</strong>
+                <span class="muted" style="font-size: 11.5px; display: block; line-height: 1.35; margin-top: 2px;">3-Minute Website Spotlight • Up to <strong>10 Promotional Products</strong></span>
+              </div>
+            </label>
+
+            <label id="edit_tier_reg_label" style="display: flex; align-items: flex-start; gap: 10px; padding: 10px 12px; border-radius: 8px; border: 1px solid var(--border-color, rgba(255,255,255,0.1)); background: rgba(255,255,255,0.02); cursor: pointer;">
+              <input type="radio" name="is_platinum" value="0" id="edit_tier_regular" onchange="setSponsorTier('edit', false)" style="margin-top: 3px; accent-color: var(--accent-primary, #f5b800);">
+              <div>
+                <strong style="color: var(--text-primary); font-size: 13px; display: block;">Featured / Regular Partner</strong>
+                <span class="muted" style="font-size: 11.5px; display: block; line-height: 1.35; margin-top: 2px;">30-Second Website Spotlight • <strong>1 Promotional Product</strong> Showcase</span>
+              </div>
+            </label>
+          </div>
+
+          <!-- PROMOTIONAL PRODUCTS SLOTS -->
+          <div id="editSponsorProductsSection" style="margin-top: 14px; padding-top: 14px; border-top: 1px dashed rgba(245,158,11,0.2);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 8px;">
               <div>
                 <strong style="font-size: 13px; color: var(--accent-primary, #f5b800);">Promotional Products &amp; Material Catalogs</strong>
-                <p class="muted" style="font-size: 11.5px; margin: 2px 0 0;">Manage promotional product showcases for this Platinum partner.</p>
+                <span id="editProductsCountBadge" style="font-size: 11px; margin-left: 6px; padding: 2px 7px; border-radius: 999px; background: rgba(245,158,11,0.15); color: var(--accent-primary, #f5b800); font-weight: 700;">(0/10 Products)</span>
+                <p class="muted" style="font-size: 11.5px; margin: 2px 0 0;" id="editProductsHelpText">Manage promotional product showcases for this partner.</p>
               </div>
-              <button type="button" onclick="addProductSlot('editSponsorProductsList')" class="btn btn-sm" style="background: rgba(245,158,11,0.15); color: var(--accent-primary, #f5b800); border: 1px solid rgba(245,158,11,0.3); font-size: 11px; padding: 4px 10px;">
+              <button type="button" id="btnEditAddProductSlot" onclick="addProductSlot('editSponsorProductsList', null, 'edit')" class="btn btn-sm" style="background: rgba(245,158,11,0.15); color: var(--accent-primary, #f5b800); border: 1px solid rgba(245,158,11,0.3); font-size: 11px; padding: 4px 10px;">
                 + Add Product
               </button>
             </div>
@@ -954,36 +985,99 @@ function switchSettingsTab(tabId, btn) {
     });
   }
 
-  function toggleAddPlatinumProducts(checked) {
-    var sec = document.getElementById('addSponsorProductsSection');
-    if (sec) {
-      sec.style.display = checked ? 'block' : 'none';
-      if (checked) {
-        var list = document.getElementById('addSponsorProductsList');
-        if (list && list.children.length === 0) {
-          addProductSlot('addSponsorProductsList');
+  function setSponsorTier(prefix, isPlatinum) {
+    var platLabel = document.getElementById(prefix + '_tier_plat_label');
+    var regLabel = document.getElementById(prefix + '_tier_reg_label');
+    var helpText = document.getElementById(prefix + 'ProductsHelpText');
+    var containerId = prefix === 'add' ? 'addSponsorProductsList' : 'editSponsorProductsList';
+    var container = document.getElementById(containerId);
+
+    if (isPlatinum) {
+      if (platLabel) {
+        platLabel.style.border = '1px solid rgba(245,158,11,0.5)';
+        platLabel.style.background = 'rgba(245,158,11,0.09)';
+      }
+      if (regLabel) {
+        regLabel.style.border = '1px solid var(--border-color, rgba(255,255,255,0.1))';
+        regLabel.style.background = 'rgba(255,255,255,0.02)';
+      }
+      if (helpText) {
+        helpText.textContent = 'Platinum partners can showcase up to 10 promotional products in the website carousel.';
+      }
+    } else {
+      if (regLabel) {
+        regLabel.style.border = '1px solid rgba(245,158,11,0.5)';
+        regLabel.style.background = 'rgba(245,158,11,0.09)';
+      }
+      if (platLabel) {
+        platLabel.style.border = '1px solid var(--border-color, rgba(255,255,255,0.1))';
+        platLabel.style.background = 'rgba(255,255,255,0.02)';
+      }
+      if (helpText) {
+        helpText.textContent = 'Regular partners are limited to 1 promotional product showcase on the website.';
+      }
+      // If switching to Regular and more than 1 product exists, trim to 1
+      if (container && container.children.length > 1) {
+        while (container.children.length > 1) {
+          container.lastElementChild.remove();
         }
       }
     }
+
+    updateProductCounter(containerId, isPlatinum);
   }
 
-  function toggleEditPlatinumProducts(checked) {
-    var sec = document.getElementById('editSponsorProductsSection');
-    if (sec) {
-      sec.style.display = checked ? 'block' : 'none';
-      if (checked) {
-        var list = document.getElementById('editSponsorProductsList');
-        if (list && list.children.length === 0) {
-          addProductSlot('editSponsorProductsList');
-        }
+  function updateProductCounter(containerId, isPlatinum) {
+    var container = document.getElementById(containerId);
+    var prefix = containerId === 'addSponsorProductsList' ? 'add' : 'edit';
+    var badge = document.getElementById(prefix + 'ProductsCountBadge');
+    var btn = prefix === 'add' ? document.getElementById('btnAddProductSlot') : document.getElementById('btnEditAddProductSlot');
+    
+    var maxLimit = isPlatinum ? 10 : 1;
+    var count = container ? container.querySelectorAll('.sponsor-product-slot').length : 0;
+
+    if (badge) {
+      badge.textContent = '(' + count + '/' + maxLimit + ' Product' + (maxLimit > 1 ? 's' : '') + ')';
+      if (count >= maxLimit) {
+        badge.style.background = 'rgba(239,68,68,0.15)';
+        badge.style.color = '#ef4444';
+      } else {
+        badge.style.background = 'rgba(245,158,11,0.15)';
+        badge.style.color = 'var(--accent-primary, #f5b800)';
+      }
+    }
+
+    if (btn) {
+      if (count >= maxLimit) {
+        btn.disabled = true;
+        btn.style.opacity = '0.4';
+        btn.style.cursor = 'not-allowed';
+        btn.title = 'Maximum product limit reached (' + maxLimit + ')';
+      } else {
+        btn.disabled = false;
+        btn.style.opacity = '1';
+        btn.style.cursor = 'pointer';
+        btn.title = 'Add product';
       }
     }
   }
 
   var productSlotCount = 100;
-  function addProductSlot(containerId, prodData) {
+  function addProductSlot(containerId, prodData, prefixParam) {
     var container = document.getElementById(containerId);
     if (!container) return;
+
+    var prefix = prefixParam || (containerId === 'addSponsorProductsList' ? 'add' : 'edit');
+    var isPlatRadio = document.getElementById(prefix + '_tier_platinum');
+    var isPlatinum = isPlatRadio ? isPlatRadio.checked : true;
+    var maxLimit = isPlatinum ? 10 : 1;
+    var currentCount = container.querySelectorAll('.sponsor-product-slot').length;
+
+    if (currentCount >= maxLimit) {
+      alert('Maximum product limit of ' + maxLimit + ' reached for ' + (isPlatinum ? 'Platinum' : 'Regular') + ' partners.');
+      return;
+    }
+
     productSlotCount++;
     var idx = 'slot_' + Date.now() + '_' + productSlotCount;
     var data = prodData || { id: 'prod_' + Date.now(), name: '', description: '', link_url: '', image_path: '' };
@@ -1002,18 +1096,27 @@ function switchSettingsTab(tabId, btn) {
       '<input type="hidden" name="products[' + idx + '][id]" value="' + (data.id || '') + '">',
       '<input type="hidden" name="products[' + idx + '][existing_image]" value="' + (data.image_path || '') + '">',
       '<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">',
-      '  <span style="font-size:12px; font-weight:700; color:var(--accent-primary, #f5b800);">Promotional Product</span>',
-      '  <button type="button" onclick="this.closest(\'.sponsor-product-slot\').remove()" style="background:transparent; border:none; color:#ef4444; font-size:11px; cursor:pointer; padding:2px 6px;">&times; Remove</button>',
+      '  <span style="font-size:12px; font-weight:700; color:var(--accent-primary, #f5b800);">Promotional Product #' + (currentCount + 1) + '</span>',
+      '  <button type="button" onclick="removeProductSlot(this, \'' + containerId + '\', \'' + prefix + '\')" style="background:transparent; border:none; color:#ef4444; font-size:11px; cursor:pointer; padding:2px 6px;">&times; Remove</button>',
       '</div>',
       '<div class="grid-2" style="gap:8px; margin-bottom:8px;">',
-      '  <div class="field" style="margin:0;"><label style="font-size:11.5px;">Product Name *</label><input type="text" name="products[' + idx + '][name]" value="' + (data.name ? data.name.replace(/"/g, '&quot;') : '') + '" placeholder="e.g. Davies Sun & Rain, Megacryl" required style="font-size:12px; padding:6px 10px;"></div>',
+      '  <div class="field" style="margin:0;"><label style="font-size:11.5px;">Product Name *</label><input type="text" name="products[' + idx + '][name]" value="' + (data.name ? data.name.replace(/"/g, '&quot;') : '') + '" placeholder="e.g. Megacryl Latex Paint, Cool Roof Membrane" required style="font-size:12px; padding:6px 10px;"></div>',
       '  <div class="field" style="margin:0;"><label style="font-size:11.5px;">Product Link URL (Optional)</label><input type="url" name="products[' + idx + '][link_url]" value="' + (data.link_url ? data.link_url.replace(/"/g, '&quot;') : '') + '" placeholder="https://..." style="font-size:12px; padding:6px 10px;"></div>',
       '</div>',
-      '<div class="field" style="margin-bottom:8px;"><label style="font-size:11.5px;">Product Description & Specs</label><textarea name="products[' + idx + '][description]" rows="2" placeholder="Product features, architectural application, color palette..." style="font-size:12px; padding:6px 10px;">' + (data.description || '') + '</textarea></div>',
+      '<div class="field" style="margin-bottom:8px;"><label style="font-size:11.5px;">Product Description & Specs</label><textarea name="products[' + idx + '][description]" rows="2" placeholder="Product features, architectural application, technical specifications..." style="font-size:12px; padding:6px 10px;">' + (data.description || '') + '</textarea></div>',
       '<div class="field" style="margin:0;"><label style="font-size:11.5px;">Product Image</label>' + imgPreview + '<input type="file" name="products[' + idx + '][image]" accept=".jpg,.jpeg,.png,.webp" style="font-size:11px; padding:4px;"></div>'
     ].join('');
 
     container.appendChild(div);
+    updateProductCounter(containerId, isPlatinum);
+  }
+
+  function removeProductSlot(btn, containerId, prefix) {
+    var slot = btn.closest('.sponsor-product-slot');
+    if (slot) slot.remove();
+    var isPlatRadio = document.getElementById(prefix + '_tier_platinum');
+    var isPlatinum = isPlatRadio ? isPlatRadio.checked : true;
+    updateProductCounter(containerId, isPlatinum);
   }
 
   function openEditNewsModal(data) {
@@ -1034,24 +1137,25 @@ function switchSettingsTab(tabId, btn) {
     document.getElementById('edit_sponsor_url').value = data.url || '';
     document.getElementById('edit_sponsor_desc').value = data.description || '';
     
-    var isPlat = !!data.is_platinum;
-    var platCheckbox = document.getElementById('edit_is_platinum');
-    if (platCheckbox) {
-      platCheckbox.checked = isPlat;
-      toggleEditPlatinumProducts(isPlat);
-    }
+    var isPlat = parseInt(data.is_platinum) === 1;
+    var platRadio = document.getElementById('edit_tier_platinum');
+    var regRadio = document.getElementById('edit_tier_regular');
+    if (isPlat && platRadio) platRadio.checked = true;
+    else if (regRadio) regRadio.checked = true;
+
+    setSponsorTier('edit', isPlat);
 
     var list = document.getElementById('editSponsorProductsList');
     if (list) {
       list.innerHTML = '';
       if (data.products && Array.isArray(data.products) && data.products.length > 0) {
-        data.products.forEach(function(p) {
-          addProductSlot('editSponsorProductsList', p);
+        var maxCount = isPlat ? 10 : 1;
+        data.products.slice(0, maxCount).forEach(function(p) {
+          addProductSlot('editSponsorProductsList', p, 'edit');
         });
-      } else if (isPlat) {
-        addProductSlot('editSponsorProductsList');
       }
     }
+    updateProductCounter('editSponsorProductsList', isPlat);
 
     document.getElementById('editSponsorModal').style.display = 'flex';
   }
