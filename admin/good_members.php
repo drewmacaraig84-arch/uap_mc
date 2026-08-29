@@ -83,7 +83,7 @@ $certifiedMembers = [];
 $revokedMembers = [];
 $pendingSettlementMembers = [];
 
-foreach ($allMembers as $m) {
+foreach ($allMembers as &$m) {
     $standing = get_member_standing_details($pdo, $m['id']);
     $m['standing_details'] = $standing;
 
@@ -95,6 +95,7 @@ foreach ($allMembers as $m) {
         $pendingSettlementMembers[] = $m;
     }
 }
+unset($m);
 
 $activeTab = $_GET['tab'] ?? 'certified';
 if (!in_array($activeTab, ['certified', 'revoked', 'all'], true)) {
@@ -199,8 +200,8 @@ include __DIR__ . '/../includes/header.php';
           <tbody>
             <?php foreach ($certifiedMembers as $member): ?>
               <?php
-                $avatar = $member['profile_photo'] ? (str_starts_with($member['profile_photo'], 'http') ? $member['profile_photo'] : BASE_URL . '/' . ltrim($member['profile_photo'], '/')) : null;
-                $initials = strtoupper(substr($member['name'], 0, 1) . substr(strrchr($member['name'], ' ') ?: $member['name'], 1, 1));
+                $avatar = !empty($member['profile_photo']) ? (str_starts_with($member['profile_photo'], 'http') ? $member['profile_photo'] : BASE_URL . '/' . ltrim($member['profile_photo'], '/')) : null;
+                $initials = strtoupper(substr($member['name'] ?? 'M', 0, 1) . substr(strrchr($member['name'] ?? '', ' ') ?: ($member['name'] ?? 'M'), 1, 1));
               ?>
               <tr>
                 <td>
@@ -266,8 +267,8 @@ include __DIR__ . '/../includes/header.php';
           <tbody>
             <?php foreach ($revokedMembers as $member): ?>
               <?php
-                $avatar = $member['profile_photo'] ? (str_starts_with($member['profile_photo'], 'http') ? $member['profile_photo'] : BASE_URL . '/' . ltrim($member['profile_photo'], '/')) : null;
-                $initials = strtoupper(substr($member['name'], 0, 1) . substr(strrchr($member['name'], ' ') ?: $member['name'], 1, 1));
+                $avatar = !empty($member['profile_photo']) ? (str_starts_with($member['profile_photo'], 'http') ? $member['profile_photo'] : BASE_URL . '/' . ltrim($member['profile_photo'], '/')) : null;
+                $initials = strtoupper(substr($member['name'] ?? 'M', 0, 1) . substr(strrchr($member['name'] ?? '', ' ') ?: ($member['name'] ?? 'M'), 1, 1));
               ?>
               <tr>
                 <td>
@@ -334,9 +335,9 @@ include __DIR__ . '/../includes/header.php';
         <tbody>
           <?php foreach ($allMembers as $member): ?>
             <?php
-              $standing = $member['standing_details'];
-              $avatar = $member['profile_photo'] ? (str_starts_with($member['profile_photo'], 'http') ? $member['profile_photo'] : BASE_URL . '/' . ltrim($member['profile_photo'], '/')) : null;
-              $initials = strtoupper(substr($member['name'], 0, 1) . substr(strrchr($member['name'], ' ') ?: $member['name'], 1, 1));
+              $standing = $member['standing_details'] ?? get_member_standing_details($pdo, $member['id']);
+              $avatar = !empty($member['profile_photo']) ? (str_starts_with($member['profile_photo'], 'http') ? $member['profile_photo'] : BASE_URL . '/' . ltrim($member['profile_photo'], '/')) : null;
+              $initials = strtoupper(substr($member['name'] ?? 'M', 0, 1) . substr(strrchr($member['name'] ?? '', ' ') ?: ($member['name'] ?? 'M'), 1, 1));
             ?>
             <tr>
               <td>
