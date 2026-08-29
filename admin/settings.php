@@ -399,11 +399,11 @@ function switchSettingsTab(tabId, btn) {
       <p class="muted" style="margin-bottom: 16px; font-size: 13px;">Upload the official UAP Mindoro Chapter seal. Used on navigation headers, login portals, and receipts.</p>
       
       <div style="display: flex; align-items: center; gap: 18px; margin-bottom: 20px; padding: 14px; background: var(--bg-secondary); border-radius: 12px; border: 1px solid var(--border-color);">
-        <div style="width: 80px; height: 80px; border-radius: 12px; background: #fff; padding: 4px; border: 1px solid rgba(0,0,0,0.08); display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(0,0,0,0.06); flex-shrink: 0;">
+        <div style="width: 80px; height: 80px; border-radius: 4px; background: #fff; padding: 1px; border: 1px solid rgba(255,255,255,0.15); display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 6px rgba(0,0,0,0.1); flex-shrink: 0;">
           <?php
             $logo_src = $logo_val ? (BASE_URL . '/' . htmlspecialchars($logo_val)) : (BASE_URL . '/public/logo.jpg');
           ?>
-          <img src="<?php echo $logo_src; ?>" alt="Current Logo" onerror="if(this.src.indexOf('public/logo.jpg')===-1)this.src='<?php echo BASE_URL; ?>/public/logo.jpg';" style="max-width: 100%; max-height: 100%; object-fit: contain;">
+          <img src="<?php echo $logo_src; ?>" alt="Current Logo" onerror="if(this.src.indexOf('public/logo.jpg')===-1)this.src='<?php echo BASE_URL; ?>/public/logo.jpg';" style="max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 3px;">
         </div>
         <div>
           <strong style="display: block; font-size: 14px; margin-bottom: 4px;">Official Seal</strong>

@@ -209,13 +209,14 @@ nav::-webkit-scrollbar-thumb {
 .nav-brand-img-wrap {
   width: 38px;
   height: 38px;
-  border-radius: 10px;
+  border-radius: 4px;
   background: #ffffff;
-  padding: 3px;
+  padding: 1px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
   flex-shrink: 0;
 }
 
@@ -223,6 +224,7 @@ nav::-webkit-scrollbar-thumb {
   width: 100%;
   height: 100%;
   object-fit: contain;
+  border-radius: 3px;
 }
 
 .nav-brand-text {
@@ -978,14 +980,14 @@ tr:hover td {
 .auth-logo-badge {
   width: 80px;
   height: 80px;
-  border-radius: 18px;
+  border-radius: 6px;
   background: #ffffff;
-  padding: 4px;
+  padding: 1px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 8px 24px rgba(0,0,0,0.3);
-  border: 2px solid rgba(245, 158, 11, 0.35);
+  box-shadow: 0 4px 14px rgba(0,0,0,0.25);
+  border: 1px solid rgba(245, 158, 11, 0.35);
   margin-bottom: 24px;
 }
 
@@ -993,7 +995,7 @@ tr:hover td {
   width: 100%;
   height: 100%;
   object-fit: contain;
-  border-radius: 12px;
+  border-radius: 4px;
 }
 
 .auth-hero-title {
