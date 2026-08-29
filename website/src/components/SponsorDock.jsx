@@ -240,7 +240,7 @@ export default function SponsorDock() {
                 </div>
               </div>
 
-              {/* ── PRODUCT CAROUSEL ── */}
+              {/* ── PRODUCT CAROUSEL ── product card fills remaining height ── */}
               {productCount > 0 && (
                 <div className="spotlight-products-section">
                   <div className="spotlight-products-header">
@@ -276,37 +276,39 @@ export default function SponsorDock() {
                       </div>
                     </div>
                   )}
+                </div>
+              )}
 
-                  {/* Nav: dots + prev/next OUTSIDE card, at the bottom */}
-                  <div className="spotlight-product-nav">
-                    <button
-                      type="button"
-                      className="spotlight-product-nav-btn"
-                      onClick={prevProduct}
-                      disabled={productCount <= 1}
-                      title="Previous product"
-                    >‹</button>
+              {/* ── NAV: pinned at the very bottom of the panel ── */}
+              {productCount > 0 && (
+                <div className="spotlight-product-nav">
+                  <button
+                    type="button"
+                    className="spotlight-product-nav-btn"
+                    onClick={prevProduct}
+                    disabled={productCount <= 1}
+                    title="Previous product"
+                  >‹</button>
 
-                    <div className="spotlight-product-dots">
-                      {products.map((_, i) => (
-                        <button
-                          key={i}
-                          type="button"
-                          className={`spotlight-product-dot${i === activeProductIdx ? ' active' : ''}`}
-                          onClick={() => { setActiveProductIdx(i); setProductProgress(1); }}
-                          title={products[i].name}
-                        />
-                      ))}
-                    </div>
-
-                    <button
-                      type="button"
-                      className="spotlight-product-nav-btn"
-                      onClick={nextProduct}
-                      disabled={productCount <= 1}
-                      title="Next product"
-                    >›</button>
+                  <div className="spotlight-product-dots">
+                    {products.map((_, i) => (
+                      <button
+                        key={i}
+                        type="button"
+                        className={`spotlight-product-dot${i === activeProductIdx ? ' active' : ''}`}
+                        onClick={() => { setActiveProductIdx(i); setProductProgress(1); }}
+                        title={products[i].name}
+                      />
+                    ))}
                   </div>
+
+                  <button
+                    type="button"
+                    className="spotlight-product-nav-btn"
+                    onClick={nextProduct}
+                    disabled={productCount <= 1}
+                    title="Next product"
+                  >›</button>
                 </div>
               )}
             </>
