@@ -151,27 +151,27 @@
 }
 
 .spotlight-tier-badge {
-  font-size: 0.65rem;
+  font-size: 0.58rem;
   font-weight: 800;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  padding: 2px 9px;
+  padding: 2px 7px;
   border-radius: 999px;
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: 3px;
   flex-shrink: 0;
 }
 
 .spotlight-tier-badge.plat {
   background: linear-gradient(135deg, rgba(229, 231, 235, 0.22), rgba(156, 163, 175, 0.32));
-  border: 1px solid rgba(229, 231, 235, 0.55);
-  color: #e5e7eb;
+  border: 1px solid rgba(229, 231, 235, 0.45);
+  color: #c8cacc;
 }
 
 .spotlight-tier-badge.reg {
-  background: rgba(245, 158, 11, 0.14);
-  border: 1px solid rgba(245, 158, 11, 0.4);
+  background: rgba(245, 158, 11, 0.12);
+  border: 1px solid rgba(245, 158, 11, 0.35);
   color: #f5b800;
 }
 
@@ -199,28 +199,36 @@
   background: var(--c-gold);
 }
 
-/* Logo — plain square, no ring */
+/* ── PARTNER ROW: logo left + info right ── */
+.spotlight-partner-row {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* Logo — left, subtler shadow */
 .spotlight-logo-wrap {
   display: flex;
   align-items: center;
   justify-content: center;
   text-decoration: none;
   flex-shrink: 0;
-  transition: transform var(--t-fast);
+  transition: opacity var(--t-fast);
 }
 
-.spotlight-logo-wrap:hover { transform: scale(1.04); }
+.spotlight-logo-wrap:hover { opacity: 0.85; }
 
 .spotlight-logo-inner {
-  width: 80px;
-  height: 80px;
-  border-radius: 6px;
+  width: 68px;
+  height: 68px;
+  border-radius: 5px;
   background: #ffffff;
   padding: 4px;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 3px 14px rgba(0, 0, 0, 0.45);
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.25);
   overflow: hidden;
 }
 
@@ -231,37 +239,42 @@
 }
 
 .spotlight-logo-fallback {
-  font-size: 1.2rem;
+  font-size: 1.1rem;
   font-weight: 900;
   color: var(--c-gold);
   text-transform: uppercase;
 }
 
-/* Sponsor info — compact */
+/* Info — right of logo, left-aligned */
 .spotlight-info {
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: flex-start;
   gap: 3px;
-  width: 100%;
-  text-align: center;
+  min-width: 0;
+  flex: 1;
+  text-align: left;
 }
 
 .spotlight-name {
-  font-size: 0.88rem;
+  font-size: 0.82rem;
   font-weight: 800;
   color: var(--c-white, #fff);
   text-decoration: none;
   line-height: 1.2;
   transition: color var(--t-fast);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 .spotlight-name:hover { color: var(--c-gold); }
 
 .spotlight-desc {
-  font-size: 0.67rem;
+  font-size: 0.63rem;
   color: var(--c-text-2);
-  line-height: 1.35;
+  line-height: 1.3;
   margin: 0;
   display: -webkit-box;
   -webkit-line-clamp: 1;
@@ -273,15 +286,16 @@
   display: inline-flex;
   align-items: center;
   gap: 3px;
-  font-size: 0.64rem;
+  font-size: 0.62rem;
   font-weight: 700;
   color: var(--c-gold);
   text-decoration: none;
-  padding: 2px 7px;
+  padding: 2px 6px;
   border-radius: 4px;
-  border: 1px solid rgba(245, 158, 11, 0.3);
-  background: rgba(245, 158, 11, 0.07);
+  border: 1px solid rgba(245, 158, 11, 0.28);
+  background: rgba(245, 158, 11, 0.06);
   transition: all var(--t-fast);
+  margin-top: 2px;
 }
 
 .spotlight-ext-link:hover { background: rgba(245, 158, 11, 0.18); color: #fff; }
@@ -321,7 +335,7 @@
   border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-/* Individual product card — enlarged */
+/* Individual product card — enlarged, nav outside */
 .spotlight-product-card {
   display: flex;
   flex-direction: column;
@@ -340,7 +354,7 @@
 
 .spotlight-product-img-wrap {
   width: 100%;
-  height: 150px;
+  height: 190px;
   background: #000;
   overflow: hidden;
   position: relative;
@@ -393,23 +407,23 @@
 
 .spotlight-product-link:hover { color: #fff; }
 
-/* Product nav — always visible, below card */
+/* Product nav — always visible below card, bigger touch targets */
 .spotlight-product-nav {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  padding: 4px 0 2px;
+  gap: 10px;
+  padding: 6px 0 2px;
 }
 
 .spotlight-product-nav-btn {
-  width: 28px;
-  height: 28px;
-  border-radius: 6px;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.14);
   color: var(--c-text-2);
-  font-size: 1.2rem;
+  font-size: 1.35rem;
   line-height: 1;
   cursor: pointer;
   display: flex;
@@ -421,13 +435,13 @@
 }
 
 .spotlight-product-nav-btn:not(:disabled):hover {
-  background: rgba(245, 158, 11, 0.2);
+  background: rgba(245, 158, 11, 0.22);
   border-color: var(--c-gold);
   color: var(--c-gold);
 }
 
 .spotlight-product-nav-btn:disabled {
-  opacity: 0.25;
+  opacity: 0.2;
   cursor: default;
 }
 
@@ -435,14 +449,14 @@
 .spotlight-product-dots {
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: 6px;
   flex: 1;
   justify-content: center;
 }
 
 .spotlight-product-dot {
-  width: 6px;
-  height: 6px;
+  width: 7px;
+  height: 7px;
   border-radius: 50%;
   background: rgba(255, 255, 255, 0.18);
   border: none;
@@ -452,7 +466,7 @@
 }
 
 .spotlight-product-dot.active {
-  width: 18px;
+  width: 22px;
   border-radius: 3px;
   background: var(--c-gold);
 }

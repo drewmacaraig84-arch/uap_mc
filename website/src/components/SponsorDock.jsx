@@ -211,33 +211,34 @@ export default function SponsorDock() {
                 )}
               </div>
 
-              {/* Logo Spotlight */}
-              <Link to={`/partners/${activeSponsor.id}`} className="spotlight-logo-wrap" title={`Visit ${activeSponsor.name}`}>
-                <div className="spotlight-logo-inner">
-                  {activeSponsor.logo_url
-                    ? <img src={activeSponsor.logo_url} alt={activeSponsor.name} className="spotlight-logo-img" />
-                    : <span className="spotlight-logo-fallback">{activeSponsor.name.slice(0, 2).toUpperCase()}</span>
-                  }
-                </div>
-              </Link>
-
-              {/* Sponsor Name & Description */}
-              <div className="spotlight-info">
-                <Link to={`/partners/${activeSponsor.id}`} className="spotlight-name" title={activeSponsor.name}>
-                  {activeSponsor.name}
+              {/* ── SPONSOR CARD: logo left + info right ── */}
+              <div className="spotlight-partner-row">
+                {/* Logo — left side */}
+                <Link to={`/partners/${activeSponsor.id}`} className="spotlight-logo-wrap" title={`Visit ${activeSponsor.name}`}>
+                  <div className="spotlight-logo-inner">
+                    {activeSponsor.logo_url
+                      ? <img src={activeSponsor.logo_url} alt={activeSponsor.name} className="spotlight-logo-img" />
+                      : <span className="spotlight-logo-fallback">{activeSponsor.name.slice(0, 2).toUpperCase()}</span>
+                    }
+                  </div>
                 </Link>
-                {activeSponsor.description && (
-                  <p className="spotlight-desc">{activeSponsor.description}</p>
-                )}
-                {activeSponsor.url && (
-                  <a href={activeSponsor.url} target="_blank" rel="noopener noreferrer" className="spotlight-ext-link">
-                    <IconExternalLink size={12} />
-                    <span>Visit Website</span>
-                  </a>
-                )}
+
+                {/* Info — right side */}
+                <div className="spotlight-info">
+                  <Link to={`/partners/${activeSponsor.id}`} className="spotlight-name" title={activeSponsor.name}>
+                    {activeSponsor.name}
+                  </Link>
+                  {activeSponsor.description && (
+                    <p className="spotlight-desc">{activeSponsor.description}</p>
+                  )}
+                  {activeSponsor.url && (
+                    <a href={activeSponsor.url} target="_blank" rel="noopener noreferrer" className="spotlight-ext-link">
+                      <IconExternalLink size={10} />
+                      <span>Visit Website</span>
+                    </a>
+                  )}
+                </div>
               </div>
-
-
 
               {/* ── PRODUCT CAROUSEL ── */}
               {productCount > 0 && (
@@ -276,7 +277,7 @@ export default function SponsorDock() {
                     </div>
                   )}
 
-                  {/* Nav: always show prev/next + dots when >1 product */}
+                  {/* Nav: dots + prev/next OUTSIDE card, at the bottom */}
                   <div className="spotlight-product-nav">
                     <button
                       type="button"
