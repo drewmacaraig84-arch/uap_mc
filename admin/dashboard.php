@@ -13,7 +13,11 @@ $pendingDirectoryAppsCount = 0;
 try {
     $pendingDirectoryAppsCount = (int)$pdo->query("SELECT COUNT(*) FROM directory_applications WHERE status = 'pending_fee'")->fetchColumn();
 } catch (Throwable $e) {}
-$totalActionItems = $pendingPaymentsCount + $pendingMembersCount + $pendingDirectoryAppsCount;
+$pendingInquiriesCount = 0;
+try {
+    $pendingInquiriesCount = (int)$pdo->query("SELECT COUNT(*) FROM contact_inquiries WHERE status = 'unread'")->fetchColumn();
+} catch (Throwable $e) {}
+$totalActionItems = $pendingPaymentsCount + $pendingMembersCount + $pendingDirectoryAppsCount + $pendingInquiriesCount;
 
 // Members breakdown
 $totalMembers = (int)$pdo->query("SELECT COUNT(*) FROM users WHERE role = 'member' AND status = 'approved'")->fetchColumn();
@@ -176,6 +180,9 @@ include __DIR__ . '/../includes/header.php';
   </a>
   <a href="dues.php" class="btn btn-secondary" style="padding: 12px; font-size: 13px;">
     <?php echo icon('plus', '', 16); ?> <span>Add New Due</span>
+  </a>
+  <a href="inquiries.php" class="btn btn-secondary" style="padding: 12px; font-size: 13px; border-color: <?php echo $pendingInquiriesCount > 0 ? 'rgba(245,158,11,0.6)' : 'var(--border-color)'; ?>; <?php echo $pendingInquiriesCount > 0 ? 'background: rgba(245,158,11,0.06);' : ''; ?>">
+    <?php echo icon('mail', '', 16); ?> <span style="<?php echo $pendingInquiriesCount > 0 ? 'color: var(--accent-primary); font-weight: 700;' : ''; ?>">Inquiries (<?php echo $pendingInquiriesCount; ?>)</span>
   </a>
   <a href="good_members.php" class="btn btn-secondary" style="padding: 12px; font-size: 13px;">
     <?php echo icon('good_members', '', 16); ?> <span>Good Members</span>

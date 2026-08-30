@@ -6,7 +6,9 @@ import './Contact.css';
 export default function Contact() {
   const { data: settings } = useApi('/api/settings.php');
   const [form, setForm] = useState({ name: '', email: '', subject: '', message: '' });
+  const [submitting, setSubmitting] = useState(false);
   const [sent, setSent] = useState(false);
+  const [error, setError] = useState('');
 
   const contactEmail = settings?.contact_email || 'uapmindoro@gmail.com';
   const contactAddress = settings?.contact_address || 'Calapan City, Oriental Mindoro, Philippines 5200';
@@ -15,13 +17,35 @@ export default function Contact() {
   const hoursSaturday = settings?.office_hours_saturday || '9:00 AM – 12:00 PM';
   const hoursSunday = settings?.office_hours_sunday || 'Closed';
 
-  const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
+  const handleChange = (e) => {
+    setError('');
+    setForm({ ...form, [e.target.name]: e.target.value });
+  };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    const body = `Name: ${form.name}\nEmail: ${form.email}\n\n${form.message}`;
-    window.location.href = `mailto:${contactEmail}?subject=${encodeURIComponent(form.subject || 'Website Inquiry')}&body=${encodeURIComponent(body)}`;
-    setSent(true);
+    setSubmitting(true);
+    setError('');
+
+    try {
+      const res = await fetch('/api/contact.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(form)
+      });
+      const data = await res.json();
+
+      if (res.ok && data.success) {
+        setSent(true);
+        setForm({ name: '', email: '', subject: '', message: '' });
+      } else {
+        setError(data.error || 'Failed to submit inquiry. Please try again.');
+      }
+    } catch (err) {
+      setError('Unable to reach the server. Please check your connection and try again.');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -94,32 +118,37 @@ export default function Contact() {
                 <div className="contact-success-icon" style={{ color: 'var(--c-gold)' }}>
                   <IconMailSent size={48} />
                 </div>
-                <h3>Message Ready!</h3>
-                <p className="muted">Your default email client has been opened. Please send the email to complete your inquiry.</p>
-                <button className="btn btn-outline" onClick={() => setSent(false)}>Send Another</button>
+                <h3>Inquiry Received!</h3>
+                <p className="muted">Thank you for reaching out. Your message has been directly sent to the UAP Mindoro Chapter Secretariat. We will get in touch with you shortly.</p>
+                <button className="btn btn-outline" onClick={() => setSent(false)} style={{ marginTop: '16px' }}>Send Another Inquiry</button>
               </div>
             ) : (
               <form onSubmit={handleSubmit} className="contact-form">
+                {error && (
+                  <div style={{ padding: '12px 14px', borderRadius: '8px', background: 'rgba(239, 68, 68, 0.12)', border: '1px solid rgba(239, 68, 68, 0.3)', color: '#fca5a5', fontSize: '0.875rem', marginBottom: '16px' }}>
+                    {error}
+                  </div>
+                )}
                 <div className="form-row">
                   <div className="form-group">
                     <label htmlFor="name">Full Name</label>
-                    <input id="name" name="name" className="input" placeholder="Juan dela Cruz" required value={form.name} onChange={handleChange} />
+                    <input id="name" name="name" className="input" placeholder="Juan dela Cruz" required value={form.name} onChange={handleChange} disabled={submitting} />
                   </div>
                   <div className="form-group">
                     <label htmlFor="email">Email Address</label>
-                    <input id="email" name="email" type="email" className="input" placeholder="juan@email.com" required value={form.email} onChange={handleChange} />
+                    <input id="email" name="email" type="email" className="input" placeholder="juan@email.com" required value={form.email} onChange={handleChange} disabled={submitting} />
                   </div>
                 </div>
                 <div className="form-group">
                   <label htmlFor="subject">Subject</label>
-                  <input id="subject" name="subject" className="input" placeholder="Membership Inquiry / Project Consultation / etc." value={form.subject} onChange={handleChange} />
+                  <input id="subject" name="subject" className="input" placeholder="Membership Inquiry / Project Consultation / etc." value={form.subject} onChange={handleChange} disabled={submitting} />
                 </div>
                 <div className="form-group">
                   <label htmlFor="message">Message</label>
-                  <textarea id="message" name="message" className="input" rows="5" placeholder="How can the UAP Mindoro Chapter assist you?" required value={form.message} onChange={handleChange} />
+                  <textarea id="message" name="message" className="input" rows="5" placeholder="How can the UAP Mindoro Chapter assist you?" required value={form.message} onChange={handleChange} disabled={submitting} />
                 </div>
-                <button type="submit" className="btn btn-gold" style={{ alignSelf: 'flex-start' }}>
-                  Send Message
+                <button type="submit" className="btn btn-gold" style={{ alignSelf: 'flex-start' }} disabled={submitting}>
+                  {submitting ? 'Sending Message...' : 'Send Message'}
                 </button>
               </form>
             )}

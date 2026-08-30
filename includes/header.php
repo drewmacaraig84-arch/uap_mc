@@ -33,9 +33,11 @@ require_once __DIR__ . '/icons.php';
     $pending_approvals_count = 0;
     $pending_payments_count = 0;
     $pending_directory_count = 0;
+    $pending_inquiries_count = 0;
     $pending_approvals = [];
     $pending_payments = [];
     $pending_directory_apps = [];
+    $pending_inquiries = [];
 
     if ($_SESSION['role'] === 'admin') {
         try {
@@ -47,9 +49,12 @@ require_once __DIR__ . '/icons.php';
 
             $pending_directory_apps = $pdo->query("SELECT da.id, u.name, u.id_number, da.created_at FROM directory_applications da JOIN users u ON da.user_id = u.id WHERE da.status = 'pending_fee' ORDER BY da.created_at DESC LIMIT 5")->fetchAll();
             $pending_directory_count = (int)$pdo->query("SELECT COUNT(*) FROM directory_applications WHERE status = 'pending_fee'")->fetchColumn();
+
+            $pending_inquiries = $pdo->query("SELECT id, name, email, subject, created_at FROM contact_inquiries WHERE status = 'unread' ORDER BY created_at DESC LIMIT 5")->fetchAll();
+            $pending_inquiries_count = (int)$pdo->query("SELECT COUNT(*) FROM contact_inquiries WHERE status = 'unread'")->fetchColumn();
         } catch (Throwable $e) {}
     }
-    $total_notifications = $pending_approvals_count + $pending_payments_count + $pending_directory_count;
+    $total_notifications = $pending_approvals_count + $pending_payments_count + $pending_directory_count + $pending_inquiries_count;
 
     $logo_path = function_exists('get_site_logo') ? get_site_logo($pdo) : 'public/logo.jpg';
     $logo_src = BASE_URL . '/' . htmlspecialchars(ltrim($logo_path ?: 'public/logo.jpg', '/'));
@@ -147,8 +152,15 @@ require_once __DIR__ . '/icons.php';
           </a>
         </div>
 
-        <div class="nav-category">System &amp; Settings</div>
+        <div class="nav-category">Communications &amp; Settings</div>
         <div class="nav-section">
+          <a class="nav-item<?php echo $nav_active('inquiries.php'); ?>" href="<?php echo BASE_URL; ?>/admin/inquiries.php">
+            <span class="nav-icon"><?php echo icon('mail'); ?></span>
+            <span>Contact Inquiries</span>
+            <?php if ($pending_inquiries_count > 0): ?>
+              <span class="nav-badge" style="background: var(--accent-primary, #f59e0b); color: #111827; font-weight: 700;"><?php echo $pending_inquiries_count; ?></span>
+            <?php endif; ?>
+          </a>
           <a class="nav-item<?php echo $nav_active('reports.php'); ?>" href="<?php echo BASE_URL; ?>/admin/reports.php">
             <span class="nav-icon"><?php echo icon('reports'); ?></span>
             <span>Financial Reports</span>
@@ -216,6 +228,13 @@ require_once __DIR__ . '/icons.php';
                   <p style="margin: 6px 0 0 0;">All caught up! No pending approvals, payments, or applications.</p>
                 </div>
               <?php else: ?>
+                <?php foreach ($pending_inquiries as $inquiry): ?>
+                  <div class="notification-item" onclick="window.location.href='<?php echo BASE_URL; ?>/admin/inquiries.php'">
+                    <span class="notification-type" style="background: rgba(245,158,11,0.15); color: #f59e0b; border: 1px solid rgba(245,158,11,0.3);">Website Inquiry</span>
+                    <div class="notification-member"><?php echo htmlspecialchars($inquiry['name']); ?></div>
+                    <div class="notification-meta"><?php echo htmlspecialchars($inquiry['subject'] ?: 'Website Message'); ?> &bull; <?php echo date('M d, h:i A', strtotime($inquiry['created_at'])); ?></div>
+                  </div>
+                <?php endforeach; ?>
                 <?php foreach ($pending_approvals as $approval): ?>
                   <div class="notification-item" onclick="window.location.href='<?php echo BASE_URL; ?>/admin/approvals.php'">
                     <span class="notification-type approval">Member Sign-Up</span>
