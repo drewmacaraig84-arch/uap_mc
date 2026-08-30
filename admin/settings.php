@@ -336,6 +336,14 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
     if ($action === 'delete_news' && !empty($_POST['news_id'] ?? '')) {
         $stmt = $pdo->prepare("DELETE FROM news_announcements WHERE id = ?");
         $stmt->execute([$_POST['news_id']]);
+
+        // Re-compact display_order to 1, 2, 3...
+        $remainingNews = $pdo->query("SELECT id FROM news_announcements WHERE is_active = 1 ORDER BY display_order ASC, id DESC")->fetchAll(PDO::FETCH_COLUMN);
+        $recompactStmt = $pdo->prepare("UPDATE news_announcements SET display_order = ? WHERE id = ?");
+        foreach ($remainingNews as $idx => $rId) {
+            $recompactStmt->execute([$idx + 1, $rId]);
+        }
+
         $success = 'News announcement deleted successfully.';
     }
 
@@ -1165,7 +1173,7 @@ function switchSettingsTab(tabId, btn) {
 
     <?php if (count($news) > 0): ?>
       <div id="newsSortable" style="display: flex; flex-direction: column; gap: 10px;">
-        <?php foreach ($news as $item): ?>
+        <?php $newsPos = 0; foreach ($news as $item): $newsPos++; ?>
           <div class="news-sortable-item" data-id="<?php echo $item['id']; ?>"
                style="background: var(--bg-secondary); padding: 14px 16px; border-radius: 12px; border: 1px solid var(--border-color); display: flex; align-items: flex-start; gap: 12px; cursor: grab; transition: box-shadow 0.2s, border-color 0.2s;">
 
@@ -1181,7 +1189,7 @@ function switchSettingsTab(tabId, btn) {
 
             <!-- Order Badge -->
             <div class="news-order-badge" style="flex-shrink: 0; width: 26px; height: 26px; border-radius: 6px; background: rgba(245,158,11,0.12); color: var(--accent-primary, #f59e0b); font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center; margin-top: 1px;">
-              <?php echo $item['display_order'] > 0 ? $item['display_order'] : '?'; ?>
+              <?php echo $newsPos; ?>
             </div>
 
             <!-- Content -->

@@ -217,8 +217,17 @@ try {
         ");
         echo "Seeded default chapter milestones.\n";
     }
+// Normalize news display_order to sequential 1, 2, 3... starting at 1
+try {
+    $allNews = $pdo->query("SELECT id FROM news_announcements WHERE is_active = 1 ORDER BY display_order ASC, ABS(DATEDIFF(date_posted, CURDATE())) ASC, id DESC")->fetchAll(PDO::FETCH_COLUMN);
+    if (!empty($allNews)) {
+        $updNews = $pdo->prepare("UPDATE news_announcements SET display_order = ? WHERE id = ?");
+        foreach ($allNews as $rank => $nId) {
+            $updNews->execute([$rank + 1, $nId]);
+        }
+    }
 } catch (Throwable $e) {
-    echo "Milestones setup notice: " . $e->getMessage() . "\n";
+    echo "News display order setup notice: " . $e->getMessage() . "\n";
 }
 
 run_sql_files($pdo, __DIR__ . '/seeds', 'seed');
