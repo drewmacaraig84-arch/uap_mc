@@ -73,15 +73,6 @@
 }
 .footer-link:hover { color: var(--c-gold); }
 
-.footer-uap-badge {
-  margin-top: var(--space-5);
-  padding: 8px 14px;
-  border: 1px solid var(--c-border-gold);
-  border-radius: var(--r-md);
-  background: var(--c-gold-dim);
-  display: inline-block;
-}
-
 .footer-bottom {
   border-top: 1px solid var(--c-border);
   padding: var(--space-4) var(--space-5);

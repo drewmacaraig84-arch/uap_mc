@@ -48,9 +48,6 @@ export default function Footer() {
             <li><a href={PORTAL_URL} className="footer-link">Portal Login</a></li>
             <li><a href={REGISTER_URL} className="footer-link">Register</a></li>
           </ul>
-          <div className="footer-uap-badge">
-            <span className="eyebrow">IAPOA Chapter</span>
-          </div>
         </div>
       </div>
 
