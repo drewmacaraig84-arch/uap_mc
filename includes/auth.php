@@ -22,6 +22,10 @@ function ensure_user_profile_photo_column($pdo) {
             if (!$colCompany) {
                 $pdo->exec("ALTER TABLE website_members ADD COLUMN company_name VARCHAR(255) NULL AFTER location");
             }
+            $colLogo = $pdo->query("SHOW COLUMNS FROM website_members LIKE 'company_logo_path'")->fetch();
+            if (!$colLogo) {
+                $pdo->exec("ALTER TABLE website_members ADD COLUMN company_logo_path VARCHAR(255) NULL AFTER company_name");
+            }
             $colLink = $pdo->query("SHOW COLUMNS FROM website_members LIKE 'link_url'")->fetch();
             if (!$colLink) {
                 $pdo->exec("ALTER TABLE website_members ADD COLUMN link_url VARCHAR(500) NULL AFTER company_name");
