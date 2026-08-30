@@ -13,7 +13,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
     // Default active tab based on action if not explicitly sent
     if (in_array($action, ['upload_logo', 'upload_header_badges', 'update_info'])) {
         $active_tab = 'brandingTab';
-    } elseif (in_array($action, ['update_about'])) {
+    } elseif (in_array($action, ['update_about', 'add_milestone', 'edit_milestone', 'delete_milestone'])) {
         $active_tab = 'websiteTab';
     } elseif (in_array($action, ['add_sponsor', 'edit_sponsor', 'delete_sponsor', 'reorder_sponsors'])) {
         $active_tab = 'sponsorsTab';
@@ -338,6 +338,34 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
         $stmt->execute([$_POST['news_id']]);
         $success = 'News announcement deleted successfully.';
     }
+
+    // ============ CHAPTER MILESTONES MANAGEMENT ============
+    if ($action === 'add_milestone' && !empty($_POST['milestone_year'] ?? '') && !empty($_POST['milestone_title'] ?? '')) {
+        $stmt = $pdo->prepare("INSERT INTO chapter_milestones (year, title, content, sort_order) VALUES (?, ?, ?, (SELECT COALESCE(MAX(sort_order), 0) + 1 FROM chapter_milestones cm2))");
+        $stmt->execute([
+            trim($_POST['milestone_year']),
+            trim($_POST['milestone_title']),
+            trim($_POST['milestone_content'] ?? ''),
+        ]);
+        $success = 'Chapter milestone added successfully.';
+    }
+
+    if ($action === 'edit_milestone' && !empty($_POST['milestone_id'] ?? '') && !empty($_POST['milestone_title'] ?? '')) {
+        $stmt = $pdo->prepare("UPDATE chapter_milestones SET year = ?, title = ?, content = ? WHERE id = ?");
+        $stmt->execute([
+            trim($_POST['milestone_year']),
+            trim($_POST['milestone_title']),
+            trim($_POST['milestone_content'] ?? ''),
+            (int)$_POST['milestone_id'],
+        ]);
+        $success = 'Chapter milestone updated successfully.';
+    }
+
+    if ($action === 'delete_milestone' && !empty($_POST['milestone_id'] ?? '')) {
+        $stmt = $pdo->prepare("DELETE FROM chapter_milestones WHERE id = ?");
+        $stmt->execute([(int)$_POST['milestone_id']]);
+        $success = 'Chapter milestone deleted successfully.';
+    }
 }
 
 // Fetch current data
@@ -354,6 +382,10 @@ $office_hours_sunday_val = $settings_rows['office_hours_sunday'] ?? 'Closed';
 
 $sponsors = $pdo->query("SELECT * FROM sponsors WHERE is_active = 1 ORDER BY display_order ASC")->fetchAll();
 $news = $pdo->query("SELECT * FROM news_announcements WHERE is_active = 1 ORDER BY display_order ASC")->fetchAll();
+$milestones = [];
+try {
+    $milestones = $pdo->query("SELECT * FROM chapter_milestones ORDER BY sort_order ASC, year ASC")->fetchAll();
+} catch (Throwable $e) {}
 
 $page_title = 'System & Website Settings';
 include __DIR__ . '/../includes/header.php';
@@ -700,6 +732,113 @@ function switchSettingsTab(tabId, btn) {
         <?php echo icon('check', '', 14); ?> <span>Save About Us &amp; Contact Settings</span>
       </button>
     </form>
+
+    <!-- SECTION 4: CHAPTER MILESTONES -->
+    <div style="margin-top: 28px; padding-top: 22px; border-top: 1px solid var(--border-color);">
+      <h3 style="font-size: 14px; margin: 0 0 4px; display: flex; align-items: center; gap: 8px; color: var(--accent-primary);">
+        <?php echo icon('calendar', '', 16); ?> <span>Chapter Milestones (Timeline)</span>
+      </h3>
+      <p class="muted" style="font-size: 12px; margin: 0 0 16px;">These appear on the public About page as the Chapter History timeline. Add, edit, or remove milestones here.</p>
+
+      <!-- ADD NEW MILESTONE -->
+      <form method="post" style="background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 10px; padding: 14px; margin-bottom: 18px;">
+        <?php echo csrf_field(); ?>
+        <input type="hidden" name="action" value="add_milestone">
+        <input type="hidden" name="current_tab" value="websiteTab">
+        <strong style="display: block; font-size: 13px; margin-bottom: 12px;">+ Add New Milestone</strong>
+        <div class="grid-2" style="gap: 12px; margin-bottom: 12px;">
+          <div class="field" style="margin: 0;">
+            <label style="font-size: 12px;">Year <span style="color:var(--c-gold)">*</span></label>
+            <input type="text" name="milestone_year" placeholder="e.g. 2016" maxlength="10" required>
+          </div>
+          <div class="field" style="margin: 0;">
+            <label style="font-size: 12px;">Title <span style="color:var(--c-gold)">*</span></label>
+            <input type="text" name="milestone_title" placeholder="e.g. Chapter Founded" required>
+          </div>
+        </div>
+        <div class="field" style="margin-bottom: 12px;">
+          <label style="font-size: 12px;">Content / Description</label>
+          <textarea name="milestone_content" rows="3" placeholder="Brief description of this milestone..." style="width: 100%; font-family: inherit; font-size: 13px;"></textarea>
+        </div>
+        <button class="btn btn-sm" type="submit" style="display: inline-flex; align-items: center; gap: 6px;">
+          <?php echo icon('plus', '', 14); ?> <span>Add Milestone</span>
+        </button>
+      </form>
+
+      <!-- EXISTING MILESTONES LIST -->
+      <?php if (empty($milestones)): ?>
+        <p class="muted" style="font-size: 13px; text-align: center; padding: 20px 0;">No milestones yet. Add one above.</p>
+      <?php else: ?>
+        <div style="display: flex; flex-direction: column; gap: 12px;">
+          <?php foreach ($milestones as $ms): ?>
+            <div style="background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 10px; padding: 14px;" id="ms-view-<?php echo $ms['id']; ?>">
+              <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 10px;">
+                <div style="flex: 1;">
+                  <span style="display: inline-block; font-size: 11px; font-weight: 700; color: var(--accent-primary); background: rgba(245,158,11,0.1); padding: 2px 8px; border-radius: 20px; margin-bottom: 4px;"><?php echo htmlspecialchars($ms['year']); ?></span>
+                  <strong style="display: block; font-size: 14px; margin-bottom: 4px;"><?php echo htmlspecialchars($ms['title']); ?></strong>
+                  <p class="muted" style="font-size: 13px; margin: 0; line-height: 1.5;"><?php echo htmlspecialchars($ms['content']); ?></p>
+                </div>
+                <div style="display: flex; gap: 6px; flex-shrink: 0;">
+                  <button type="button" class="btn btn-sm" onclick="editMilestone(<?php echo $ms['id']; ?>)" style="padding: 4px 10px; font-size: 12px;">
+                    <?php echo icon('edit', '', 13); ?>
+                  </button>
+                  <form method="post" style="margin:0;" onsubmit="return confirm('Delete this milestone?');">
+                    <?php echo csrf_field(); ?>
+                    <input type="hidden" name="action" value="delete_milestone">
+                    <input type="hidden" name="current_tab" value="websiteTab">
+                    <input type="hidden" name="milestone_id" value="<?php echo $ms['id']; ?>">
+                    <button type="submit" class="btn btn-sm" style="padding: 4px 10px; font-size: 12px; background: rgba(239,68,68,0.1); border-color: rgba(239,68,68,0.3); color: #ef4444;">
+                      <?php echo icon('trash', '', 13); ?>
+                    </button>
+                  </form>
+                </div>
+              </div>
+
+              <!-- INLINE EDIT FORM (hidden by default) -->
+              <form method="post" id="ms-form-<?php echo $ms['id']; ?>" style="display: none; margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--border-color);">
+                <?php echo csrf_field(); ?>
+                <input type="hidden" name="action" value="edit_milestone">
+                <input type="hidden" name="current_tab" value="websiteTab">
+                <input type="hidden" name="milestone_id" value="<?php echo $ms['id']; ?>">
+                <div class="grid-2" style="gap: 10px; margin-bottom: 10px;">
+                  <div class="field" style="margin: 0;">
+                    <label style="font-size: 11px;">Year</label>
+                    <input type="text" name="milestone_year" value="<?php echo htmlspecialchars($ms['year']); ?>" maxlength="10" required>
+                  </div>
+                  <div class="field" style="margin: 0;">
+                    <label style="font-size: 11px;">Title</label>
+                    <input type="text" name="milestone_title" value="<?php echo htmlspecialchars($ms['title']); ?>" required>
+                  </div>
+                </div>
+                <div class="field" style="margin-bottom: 10px;">
+                  <label style="font-size: 11px;">Content</label>
+                  <textarea name="milestone_content" rows="3" style="width: 100%; font-family: inherit; font-size: 13px;"><?php echo htmlspecialchars($ms['content']); ?></textarea>
+                </div>
+                <div style="display: flex; gap: 8px;">
+                  <button type="submit" class="btn btn-sm" style="display: inline-flex; align-items: center; gap: 6px;">
+                    <?php echo icon('check', '', 13); ?> <span>Save Changes</span>
+                  </button>
+                  <button type="button" class="btn btn-sm" onclick="cancelEditMilestone(<?php echo $ms['id']; ?>)" style="background: var(--bg-tertiary); border-color: var(--border-color); color: var(--text-secondary);">
+                    Cancel
+                  </button>
+                </div>
+              </form>
+            </div>
+          <?php endforeach; ?>
+        </div>
+      <?php endif; ?>
+    </div>
+
+    <script>
+    function editMilestone(id) {
+      document.getElementById('ms-view-' + id).querySelector('.btn').style.display = 'none';
+      document.getElementById('ms-form-' + id).style.display = 'block';
+    }
+    function cancelEditMilestone(id) {
+      document.getElementById('ms-view-' + id).querySelector('.btn').style.display = '';
+      document.getElementById('ms-form-' + id).style.display = 'none';
+    }
+    </script>
   </div>
 </div>
 

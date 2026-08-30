@@ -2,12 +2,12 @@ import { useApi } from '../hooks/useApi';
 import { IconBuilding, IconLeaf, IconDraftingCompass, IconHandshake } from '../components/Icons';
 import './About.css';
 
-const TIMELINE = [
-  { year: '2016', title: 'Chapter Founded', desc: 'UAP Mindoro Chapter established as IAPOA Chapter 121, bringing together registered architects across the Mindoro provinces.' },
-  { year: '2018', title: 'Growing Membership', desc: 'Membership expanded significantly with architects from Calapan City, Puerto Galera, and Occidental Mindoro joining the chapter.' },
-  { year: '2020', title: 'Digital Transformation', desc: 'Adopted digital systems for member management, dues processing, and chapter communications.' },
-  { year: '2023', title: 'New Leadership', desc: 'A new Board of Directors was elected, bringing fresh perspectives and initiatives for chapter growth.' },
-  { year: '2024', title: 'Online Architect Directory', desc: 'Launched the public Architect Directory to connect clients with verified UAP Mindoro architects.' },
+const DEFAULT_MILESTONES = [
+  { year: '2016', title: 'Chapter Founded', content: 'UAP Mindoro Chapter established as IAPOA Chapter 121, bringing together registered architects across the Mindoro provinces.' },
+  { year: '2018', title: 'Growing Membership', content: 'Membership expanded significantly with architects from Calapan City, Puerto Galera, and Occidental Mindoro joining the chapter.' },
+  { year: '2020', title: 'Digital Transformation', content: 'Adopted digital systems for member management, dues processing, and chapter communications.' },
+  { year: '2023', title: 'New Leadership', content: 'A new Board of Directors was elected, bringing fresh perspectives and initiatives for chapter growth.' },
+  { year: '2024', title: 'Online Architect Directory', content: 'Launched the public Architect Directory to connect clients with verified UAP Mindoro architects.' },
 ];
 
 const MISSION = [
@@ -35,7 +35,9 @@ const MISSION = [
 
 export default function About() {
   const { data: settings } = useApi('/api/settings.php');
+  const { data: milestonesData } = useApi('/api/milestones.php');
   const aboutText = settings?.about_us || 'The United Architects of the Philippines — Mindoro Chapter (IAPOA Chapter 121) is the official professional organization of licensed architects serving Oriental and Occidental Mindoro.';
+  const timeline = (milestonesData && milestonesData.length > 0) ? milestonesData : DEFAULT_MILESTONES;
 
   return (
     <main className="page-container">
@@ -81,13 +83,13 @@ export default function About() {
           </div>
 
           <div className="timeline">
-            {TIMELINE.map((item, i) => (
-              <div key={i} className={`timeline-item${i % 2 === 0 ? ' left reveal-left' : ' right reveal-right'}`}>
+            {timeline.map((item, i) => (
+              <div key={item.id ?? i} className={`timeline-item${i % 2 === 0 ? ' left reveal-left' : ' right reveal-right'}`}>
                 <div className="timeline-dot" />
                 <div className="timeline-content card">
                   <span className="timeline-year eyebrow">{item.year}</span>
                   <h3 className="timeline-title">{item.title}</h3>
-                  <p className="muted">{item.desc}</p>
+                  <p className="muted">{item.content ?? item.desc}</p>
                 </div>
               </div>
             ))}
