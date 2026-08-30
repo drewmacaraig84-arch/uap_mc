@@ -8,6 +8,8 @@ uploads/*
 !uploads/*/.gitkeep
 !uploads/davies.png
 !uploads/qr_*
+!uploads/home_images
+!uploads/home_images/*
 !public/logo.jpg
 receipts/*
 !receipts/.gitkeep
