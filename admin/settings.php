@@ -44,6 +44,51 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
         }
     }
 
+    // ============ HEADER BADGES / LOGOS UPLOAD ============
+    if ($action === 'upload_header_badge') {
+        $badge_num = (int)($_POST['badge_num'] ?? 0);
+        if ($badge_num >= 1 && $badge_num <= 3) {
+            $key = 'header_badge_' . $badge_num;
+            if (!empty($_POST['remove_badge'])) {
+                $stmt = $pdo->prepare("DELETE FROM site_settings WHERE setting_key = ?");
+                $stmt->execute([$key]);
+                if (function_exists('cache_delete')) {
+                    cache_delete('site_setting:' . $key);
+                }
+                $success = "Header image #{$badge_num} removed successfully.";
+            } elseif (isset($_FILES['badge_file']) && $_FILES['badge_file']['error'] === UPLOAD_ERR_OK) {
+                $ext = strtolower(pathinfo($_FILES['badge_file']['name'], PATHINFO_EXTENSION));
+                $allowedExtensions = ['jpg', 'jpeg', 'png', 'webp', 'svg'];
+
+                $finfo = finfo_open(FILEINFO_MIME_TYPE);
+                $mime = finfo_file($finfo, $_FILES['badge_file']['tmp_name']);
+                finfo_close($finfo);
+
+                $allowedMimes = ['image/jpeg', 'image/png', 'image/webp', 'image/svg+xml'];
+
+                if (!in_array($ext, $allowedExtensions)) {
+                    $error = "Only JPG, PNG, WebP, or SVG images are allowed.";
+                } else {
+                    $filename = 'header_badge_' . $badge_num . '_' . time() . '_' . bin2hex(random_bytes(3)) . '.' . $ext;
+                    $dest = __DIR__ . '/../uploads/' . $filename;
+                    if (move_uploaded_file($_FILES['badge_file']['tmp_name'], $dest)) {
+                        $path = 'uploads/' . $filename;
+                        $stmt = $pdo->prepare("INSERT INTO site_settings (setting_key, setting_value) VALUES (?, ?) ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)");
+                        $stmt->execute([$key, $path]);
+                        if (function_exists('cache_delete')) {
+                            cache_delete('site_setting:' . $key);
+                        }
+                        $success = "Header image #{$badge_num} updated successfully.";
+                    } else {
+                        $error = "Failed to upload header image #{$badge_num}.";
+                    }
+                }
+            } else {
+                $error = "Please select an image file to upload for badge #{$badge_num}.";
+            }
+        }
+    }
+
     // ============ CHAPTER INFO UPDATE ============
     if ($action === 'update_info') {
         $org_name = trim($_POST['org_name'] ?? '');
@@ -463,6 +508,72 @@ function switchSettingsTab(tabId, btn) {
           </a>
         </div>
       </div>
+    </div>
+  </div>
+
+  <!-- HEADER BADGES SECTION (3 IMAGES) -->
+  <div class="card" style="margin-top: 24px;">
+    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px;">
+      <div style="width: 36px; height: 36px; border-radius: 8px; background: rgba(245,158,11,0.12); color: var(--accent-primary); display: flex; align-items: center; justify-content: center;">
+        <?php echo icon('image', '', 18); ?>
+      </div>
+      <div>
+        <h2 style="font-size: 16px; margin: 0;">Header Navigation Badges &amp; Logos (3 Images)</h2>
+        <p class="muted" style="margin: 2px 0 0; font-size: 13px;">Upload up to 3 affiliate logos or badges to display in the website navigation header next to the Chapter logo.</p>
+      </div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 20px; margin-top: 16px;">
+      <?php for ($slot = 1; $slot <= 3; $slot++): 
+        $badge_key = 'header_badge_' . $slot;
+        $badge_val = $settings_rows[$badge_key] ?? null;
+      ?>
+        <div style="padding: 16px; background: var(--bg-secondary); border-radius: 12px; border: 1px solid var(--border-color); display: flex; flex-direction: column; gap: 12px;">
+          <div style="display: flex; align-items: center; justify-content: space-between;">
+            <strong style="font-size: 13px; color: var(--text-primary);">Header Slot #<?php echo $slot; ?></strong>
+            <?php if ($badge_val): ?>
+              <span class="badge-pill" style="background: rgba(16,185,129,0.15); color: #10b981; font-size: 11px; padding: 2px 8px;">Active</span>
+            <?php else: ?>
+              <span class="badge-pill" style="background: rgba(156,163,175,0.15); color: #9ca3af; font-size: 11px; padding: 2px 8px;">Empty</span>
+            <?php endif; ?>
+          </div>
+
+          <div style="display: flex; align-items: center; gap: 14px;">
+            <div style="width: 50px; height: 50px; border-radius: 6px; background: #fff; padding: 2px; border: 1px solid rgba(245,158,11,0.3); display: flex; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: 0 2px 6px rgba(0,0,0,0.15); overflow: hidden;">
+              <?php if ($badge_val): ?>
+                <img src="<?php echo BASE_URL . '/' . htmlspecialchars($badge_val); ?>" alt="Header Slot #<?php echo $slot; ?>" style="max-width: 100%; max-height: 100%; object-fit: contain;">
+              <?php else: ?>
+                <span style="color: #9ca3af; font-size: 18px; font-weight: bold;">+</span>
+              <?php endif; ?>
+            </div>
+            <div style="font-size: 12px;" class="muted">
+              <span>Matches chapter logo size in header. PNG, WebP, SVG, JPG.</span>
+            </div>
+          </div>
+
+          <form method="post" enctype="multipart/form-data" style="margin-top: auto; display: flex; flex-direction: column; gap: 8px;">
+            <?php echo csrf_field(); ?>
+            <input type="hidden" name="action" value="upload_header_badge">
+            <input type="hidden" name="badge_num" value="<?php echo $slot; ?>">
+            <input type="file" name="badge_file" accept=".jpg,.jpeg,.png,.webp,.svg" required style="font-size: 12px; width: 100%;">
+            <button class="btn btn-sm" type="submit" style="width: 100%; display: inline-flex; align-items: center; justify-content: center; gap: 6px; font-size: 12px;">
+              <?php echo icon('upload', '', 12); ?> <span><?php echo $badge_val ? 'Replace Image' : 'Upload Image'; ?></span>
+            </button>
+          </form>
+
+          <?php if ($badge_val): ?>
+            <form method="post" onsubmit="return confirm('Remove Header Image #<?php echo $slot; ?>?');" style="margin-top: -4px;">
+              <?php echo csrf_field(); ?>
+              <input type="hidden" name="action" value="upload_header_badge">
+              <input type="hidden" name="badge_num" value="<?php echo $slot; ?>">
+              <input type="hidden" name="remove_badge" value="1">
+              <button type="submit" class="btn btn-sm" style="width: 100%; background: transparent; border: 1px solid var(--border-color); color: #ef4444; font-size: 12px; display: inline-flex; align-items: center; justify-content: center; gap: 6px;">
+                <?php echo icon('trash', '', 12); ?> <span>Remove</span>
+              </button>
+            </form>
+          <?php endif; ?>
+        </div>
+      <?php endfor; ?>
     </div>
   </div>
 </div>

@@ -102,7 +102,7 @@
   background: var(--c-bg-2);
   border-top: 1px solid var(--c-border);
   border-bottom: 1px solid var(--c-border);
-  padding: var(--space-6) 0;
+  padding: 16px 0;
   overflow: hidden;
 }
 
@@ -118,7 +118,7 @@
 
 .home-showcase-track {
   display: flex;
-  gap: 20px;
+  gap: 14px;
   width: max-content;
   animation: showcase-scroll 45s linear infinite;
   will-change: transform;
@@ -130,20 +130,20 @@
 
 .home-showcase-card {
   flex-shrink: 0;
-  width: 240px;
-  height: 240px;
+  width: 120px;
+  height: 120px;
   aspect-ratio: 1 / 1;
-  border-radius: var(--r-lg, 12px);
+  border-radius: var(--r-md, 8px);
   overflow: hidden;
   border: 1px solid var(--c-border-gold);
   background: #080c18;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
   transition: transform 0.3s var(--ease), border-color 0.3s var(--ease), box-shadow 0.3s var(--ease);
 }
 
 .home-showcase-card:hover {
-  transform: translateY(-4px) scale(1.02);
-  box-shadow: 0 8px 30px rgba(245, 158, 11, 0.25);
+  transform: translateY(-3px) scale(1.03);
+  box-shadow: 0 6px 24px rgba(245, 158, 11, 0.25);
 }
 
 .home-showcase-card img {
@@ -321,11 +321,11 @@
   }
   .about-logo-wrap { width: 160px; height: 160px; }
   .about-accent-ring { width: 200px; height: 200px; }
-  .home-showcase-card { width: 180px; height: 180px; }
+  .home-showcase-card { width: 95px; height: 95px; }
 }
 
 @media (max-width: 480px) {
-  .home-showcase-card { width: 140px; height: 140px; }
+  .home-showcase-card { width: 80px; height: 80px; }
   .hero-actions {
     flex-direction: column;
     width: 100%;
