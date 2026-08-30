@@ -11,8 +11,6 @@ const HeroCanvas = lazy(() => import('../components/HeroCanvas'));
 
 const STATS = [
   { value: '2016', label: 'Chapter Founded' },
-  { value: '121', label: 'IAPOA Chapter' },
-  { value: '50+', label: 'Active Architects' },
   { value: 'UAP', label: 'National Organization' },
 ];
 
@@ -35,7 +33,7 @@ export default function Home() {
         <div className="container-wide hero-container">
           <div className="hero-content">
             <p className="eyebrow hero-eyebrow animate-fade-in-up">
-              United Architects of the Philippines — Mindoro Chapter 121
+              United Architects of the Philippines — Mindoro Chapter
             </p>
             <h1 className="display-1 hero-title animate-fade-in-up">
               Building the Future<br />

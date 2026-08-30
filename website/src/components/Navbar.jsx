@@ -47,7 +47,7 @@ export default function Navbar() {
           />
           <div className="navbar-brand-text">
             <span className="navbar-brand-title">{orgName.split(' ').slice(0, 2).join(' ')}</span>
-            <span className="navbar-brand-sub">Chapter 121</span>
+            <span className="navbar-brand-sub">Chapter</span>
           </div>
         </Link>
 

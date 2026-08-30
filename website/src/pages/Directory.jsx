@@ -34,7 +34,7 @@ export default function Directory() {
       {/* Page Hero */}
       <div className="dir-hero">
         <div className="container reveal-pop">
-          <p className="eyebrow">Chapter 121 • Mindoro</p>
+          <p className="eyebrow">Mindoro Chapter</p>
           <h1 className="display-2">Architect <span className="text-gold">Directory</span></h1>
           <p className="body-lg muted" style={{ marginTop: 12, maxWidth: 520 }}>
             Verified, licensed architects of the UAP Mindoro Chapter in good standing.

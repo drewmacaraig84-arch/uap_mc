@@ -15,7 +15,7 @@ export default function Footer() {
             <img src="/public/logo.jpg" alt="UAP Mindoro" />
           </div>
           <p className="footer-brand-name">United Architects<br/>of the Philippines</p>
-          <p className="footer-brand-sub">Mindoro Chapter 121</p>
+          <p className="footer-brand-sub">Mindoro Chapter</p>
           <p className="footer-desc">
             Promoting architectural excellence, professional integrity, and sustainable development across Oriental and Occidental Mindoro since 2016.
           </p>
@@ -46,7 +46,7 @@ export default function Footer() {
             <li><a href={REGISTER_URL} className="footer-link">Register</a></li>
           </ul>
           <div className="footer-uap-badge">
-            <span className="eyebrow">IAPOA Chapter 121</span>
+            <span className="eyebrow">IAPOA Chapter</span>
           </div>
         </div>
       </div>
