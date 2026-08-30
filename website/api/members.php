@@ -9,11 +9,21 @@ try {
         return '/' . ltrim($path, '/');
     };
 
-    $rows = $pdo->query("SELECT wm.id, wm.name, wm.id_number, wm.role_title, wm.specialty, wm.location, wm.company_name, wm.company_logo_path, wm.link_url, wm.link_type, wm.links_json, wm.achievements, wm.awards, wm.user_id, COALESCE(NULLIF(u.profile_photo, ''), NULLIF(wm.photo_path, '')) as photo_path 
+    // Try with company_logo_path; fall back if column doesn't exist yet (e.g. pre-migration)
+    try {
+        $rows = $pdo->query("SELECT wm.id, wm.name, wm.id_number, wm.role_title, wm.specialty, wm.location, wm.company_name, wm.company_logo_path, wm.link_url, wm.link_type, wm.links_json, wm.achievements, wm.awards, wm.user_id, COALESCE(NULLIF(u.profile_photo, ''), NULLIF(wm.photo_path, '')) as photo_path 
                            FROM website_members wm 
                            LEFT JOIN users u ON wm.user_id = u.id 
                            WHERE wm.is_published = 1 
                            ORDER BY wm.name ASC")->fetchAll();
+    } catch (Throwable $qe) {
+        // Column may not exist yet — fall back without it
+        $rows = $pdo->query("SELECT wm.id, wm.name, wm.id_number, wm.role_title, wm.specialty, wm.location, wm.company_name, NULL as company_logo_path, wm.link_url, wm.link_type, wm.links_json, wm.achievements, wm.awards, wm.user_id, COALESCE(NULLIF(u.profile_photo, ''), NULLIF(wm.photo_path, '')) as photo_path 
+                           FROM website_members wm 
+                           LEFT JOIN users u ON wm.user_id = u.id 
+                           WHERE wm.is_published = 1 
+                           ORDER BY wm.name ASC")->fetchAll();
+    }
     
     $members = [];
     foreach ($rows as $m) {
