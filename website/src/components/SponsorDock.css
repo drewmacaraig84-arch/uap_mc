@@ -225,8 +225,6 @@
   width: 64px;
   height: 64px;
   border-radius: 5px;
-  background: #ffffff;
-  padding: 4px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -614,12 +612,9 @@
     width: 28px;
     height: 28px;
     border-radius: 50%;
-    background: #ffffff;
-    padding: 2px;
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
     overflow: hidden;
     flex-shrink: 0;
   }

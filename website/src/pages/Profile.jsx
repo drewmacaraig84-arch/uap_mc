@@ -70,91 +70,96 @@ export default function Profile() {
             </div>
 
             <h1 className="profile-name display-2">{m.name}</h1>
-            {m.company_name ? (
-              <p className="profile-company-highlight">{m.company_name}</p>
-            ) : (
-              <p className="profile-company-highlight">{m.role_title || 'Licensed Architect'}</p>
-            )}
 
-            <div className="profile-meta">
-              {m.company_name && m.role_title && (
-                <span className="profile-meta-item">
-                  <IconBriefcase size={15} style={{ color: 'var(--c-gold)' }} />
-                  <span>{m.role_title}</span>
-                </span>
-              )}
-              {m.location && (
-                <span className="profile-meta-item">
-                  <IconMapPin size={15} />
-                  <span>{m.location}</span>
-                </span>
-              )}
-            </div>
+            <div className="profile-company-row">
+              <div className="profile-company-text-side">
+                {m.company_name ? (
+                  <p className="profile-company-highlight">{m.company_name}</p>
+                ) : (
+                  <p className="profile-company-highlight">{m.role_title || 'Licensed Architect'}</p>
+                )}
 
-            {/* Multiple Social Links */}
-            {(() => {
-              const socialLinksList = (m.links && m.links.length > 0)
-                ? m.links.map(l => getSocialLinkInfo(l.url, l.type)).filter(Boolean)
-                : (socialInfo ? [socialInfo] : []);
-
-              if (socialLinksList.length === 0) return null;
-
-              return (
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 12 }}>
-                  {socialLinksList.map((s, idx) => (
-                    <a
-                      key={idx}
-                      href={s.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className={`btn btn-sm arch-social-${s.type}`}
-                      style={{
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: 6,
-                        padding: '6px 14px',
-                        borderRadius: 8,
-                        fontSize: '0.85rem',
-                        fontWeight: 600,
-                        textDecoration: 'none'
-                      }}
-                    >
-                      <s.Icon size={14} />
-                      <span>Visit {s.label} &rarr;</span>
-                    </a>
-                  ))}
+                <div className="profile-meta">
+                  {m.company_name && m.role_title && (
+                    <span className="profile-meta-item">
+                      <IconBriefcase size={15} style={{ color: 'var(--c-gold)' }} />
+                      <span>{m.role_title}</span>
+                    </span>
+                  )}
+                  {m.location && (
+                    <span className="profile-meta-item">
+                      <IconMapPin size={15} />
+                      <span>{m.location}</span>
+                    </span>
+                  )}
                 </div>
-              );
-            })()}
-          </div>
 
-          {/* Company Logo — right column */}
-          <div className="profile-company-logo-wrap">
-            {m.company_logo_url ? (
-              <img
-                src={m.company_logo_url}
-                alt={m.company_name || 'Company Logo'}
-                className="profile-company-logo-img"
-                onError={(e) => {
-                  e.currentTarget.style.display = 'none';
-                  const ph = e.currentTarget.parentElement?.querySelector('.profile-company-logo-placeholder');
-                  if (ph) ph.style.display = 'flex';
-                }}
-              />
-            ) : null}
-            <div
-              className="profile-company-logo-placeholder"
-              style={{ display: m.company_logo_url ? 'none' : 'flex' }}
-            >
-              <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--c-gold)', opacity: 0.35 }}>
-                <rect x="3" y="3" width="18" height="18" rx="2"/>
-                <path d="M3 9h18M9 21V9"/>
-              </svg>
-              {m.company_name && (
-                <span className="profile-company-logo-initials">
-                  {m.company_name.split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase()}
-                </span>
-              )}
+                {/* Multiple Social Links */}
+                {(() => {
+                  const socialLinksList = (m.links && m.links.length > 0)
+                    ? m.links.map(l => getSocialLinkInfo(l.url, l.type)).filter(Boolean)
+                    : (socialInfo ? [socialInfo] : []);
+
+                  if (socialLinksList.length === 0) return null;
+
+                  return (
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 12 }}>
+                      {socialLinksList.map((s, idx) => (
+                        <a
+                          key={idx}
+                          href={s.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className={`btn btn-sm arch-social-${s.type}`}
+                          style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: 6,
+                            padding: '6px 14px',
+                            borderRadius: 8,
+                            fontSize: '0.85rem',
+                            fontWeight: 600,
+                            textDecoration: 'none'
+                          }}
+                        >
+                          <s.Icon size={14} />
+                          <span>Visit {s.label} &rarr;</span>
+                        </a>
+                      ))}
+                    </div>
+                  );
+                })()}
+              </div>
+
+              {/* Company Logo — positioned in lower-right of hero exactly as drawn */}
+              <div className="profile-company-logo-wrap">
+                {m.company_logo_url ? (
+                  <img
+                    src={m.company_logo_url}
+                    alt={m.company_name || 'Company Logo'}
+                    className="profile-company-logo-img"
+                    onError={(e) => {
+                      e.currentTarget.style.display = 'none';
+                      const ph = e.currentTarget.parentElement?.querySelector('.profile-company-logo-placeholder');
+                      if (ph) ph.style.display = 'flex';
+                    }}
+                  />
+                ) : null}
+                <div
+                  className="profile-company-logo-placeholder"
+                  style={{ display: m.company_logo_url ? 'none' : 'flex' }}
+                >
+                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--c-gold)', opacity: 0.35 }}>
+                    <rect x="3" y="3" width="18" height="18" rx="2"/>
+                    <path d="M3 9h18M9 21V9"/>
+                  </svg>
+                  {m.company_name && (
+                    <span className="profile-company-logo-initials">
+                      {m.company_name.split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase()}
+                    </span>
+                  )}
+                </div>
+              </div>
             </div>
           </div>
         </div>

@@ -72,9 +72,7 @@
 .sponsor-detail-logo-wrap {
   width: 100%;
   height: 180px;
-  background: #ffffff;
   border-radius: var(--r-lg);
-  padding: 16px;
   display: flex;
   align-items: center;
   justify-content: center;

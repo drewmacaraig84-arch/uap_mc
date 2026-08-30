@@ -15,8 +15,7 @@
   width: 56px;
   height: 56px;
   border-radius: 4px;
-  background: #fff;
-  padding: 1px;
+  overflow: hidden;
   margin-bottom: var(--space-3);
 }
 
