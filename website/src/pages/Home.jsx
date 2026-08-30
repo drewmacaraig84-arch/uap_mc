@@ -18,6 +18,7 @@ export default function Home() {
   const { data: settings } = useApi('/api/settings.php');
   const { data: members, loading: mLoad } = useApi('/api/members.php');
   const { data: news, loading: nLoad } = useApi('/api/news.php');
+  const { data: homeImages } = useApi('/api/home_images.php');
 
   const featured = members || [];
   const latestNews = news || [];
@@ -78,18 +79,28 @@ export default function Home() {
       <section className="section about-section">
         <div className="container about-grid">
           <div className="about-visual reveal-left">
-            <div className="about-logo-wrap">
-              <img 
-                src={settings?.logo || '/logo.jpg'} 
-                alt={settings?.org_name || 'UAP Mindoro Chapter'} 
-                onError={(e) => {
-                  if (!e.currentTarget.src.endsWith('/logo.jpg')) {
-                    e.currentTarget.src = '/logo.jpg';
-                  }
-                }}
-              />
+            <div className="about-img-strip-wrap">
+              {homeImages && homeImages.length > 0 ? (
+                <div className="about-img-strip">
+                  {/* Duplicate for seamless loop */}
+                  {[...homeImages, ...homeImages].map((src, i) => (
+                    <img key={i} src={src} alt={`UAP Mindoro ${i + 1}`} className="about-strip-img" />
+                  ))}
+                </div>
+              ) : (
+                <div className="about-logo-wrap">
+                  <img
+                    src={settings?.logo || '/logo.jpg'}
+                    alt={settings?.org_name || 'UAP Mindoro Chapter'}
+                    onError={(e) => {
+                      if (!e.currentTarget.src.endsWith('/logo.jpg')) {
+                        e.currentTarget.src = '/logo.jpg';
+                      }
+                    }}
+                  />
+                </div>
+              )}
             </div>
-            <div className="about-accent-ring" />
           </div>
           <div className="about-content reveal-right">
             <p className="eyebrow">Our Mission</p>

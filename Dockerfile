@@ -58,7 +58,7 @@ RUN if [ ! -f /var/www/html/includes/config.php ] && [ -f /var/www/html/includes
     fi \
     && sed -i -e 's/\r$//' /var/www/html/docker-entrypoint.sh \
     && chmod 755 /var/www/html/docker-entrypoint.sh \
-    && mkdir -p /var/www/html/uploads/qr_codes /var/www/html/uploads/avatars /var/www/html/uploads/members /var/www/html/uploads/sponsors /var/www/html/uploads/proofs /var/www/html/uploads/receipts /var/www/html/receipts /var/www/html/public /var/www/html/seed_assets \
+    && mkdir -p /var/www/html/uploads/qr_codes /var/www/html/uploads/avatars /var/www/html/uploads/members /var/www/html/uploads/sponsors /var/www/html/uploads/proofs /var/www/html/uploads/receipts /var/www/html/uploads/home_images /var/www/html/receipts /var/www/html/public /var/www/html/seed_assets \
     && if [ -d /var/www/html/uploads ]; then cp -r /var/www/html/uploads /var/www/html/seed_assets/ 2>/dev/null || true; fi \
     && if [ -d /var/www/html/public ]; then cp -r /var/www/html/public /var/www/html/seed_assets/ 2>/dev/null || true; fi \
     && chown -R www-data:www-data /var/www/html/uploads /var/www/html/receipts /var/www/html/seed_assets /var/www/html/public

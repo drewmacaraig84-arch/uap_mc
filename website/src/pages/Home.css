@@ -183,6 +183,43 @@
 
 .about-content { display: flex; flex-direction: column; gap: var(--space-4); }
 
+/* ========== ABOUT IMAGE STRIP ========== */
+.about-img-strip-wrap {
+  width: 100%;
+  height: 480px;
+  border-radius: var(--r-xl, 16px);
+  overflow: hidden;
+  border: 1px solid var(--c-border-gold);
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.5);
+  position: relative;
+}
+
+.about-img-strip {
+  display: flex;
+  flex-direction: column;
+  animation: strip-scroll 40s linear infinite;
+  will-change: transform;
+}
+
+.about-img-strip:hover {
+  animation-play-state: paused;
+}
+
+.about-strip-img {
+  width: 100%;
+  height: 260px;
+  object-fit: cover;
+  display: block;
+  flex-shrink: 0;
+}
+
+@keyframes strip-scroll {
+  0%   { transform: translateY(0); }
+  100% { transform: translateY(-50%); }
+}
+
+
+
 .about-features {
   display: flex;
   flex-direction: column;
