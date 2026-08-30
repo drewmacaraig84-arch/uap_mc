@@ -7,7 +7,7 @@ import './SponsorDock.css';
 /* ── Timing constants ── */
 const DURATION_PLATINUM = 180; // seconds total for a platinum sponsor
 const DURATION_REGULAR  = 30;  // seconds for a regular sponsor
-
+const DURATION_PRODUCT  = 5;   // seconds per product slide before repeating
 
 export default function SponsorDock() {
   const { data: sponsors } = useApi('/api/sponsors.php');
@@ -40,11 +40,6 @@ export default function SponsorDock() {
   const isPlat        = activeSponsor?.is_platinum === 1;
   const products      = activeSponsor?.products && Array.isArray(activeSponsor.products) ? activeSponsor.products : [];
   const productCount  = products.length;
-
-  /* Per-product duration for platinum */
-  const productDuration = isPlat && productCount > 0
-    ? Math.floor(DURATION_PLATINUM / productCount)
-    : DURATION_PLATINUM;
 
   const sponsorDuration = isPlat ? DURATION_PLATINUM : DURATION_REGULAR;
 
@@ -92,25 +87,25 @@ export default function SponsorDock() {
     return () => clearInterval(sponsorTimerRef.current);
   }, [activeSponsorIdx, totalSponsors, sponsorDuration, isPaused, nextSponsor]);
 
-  /* ── Product sub-rotation timer (Platinum only, more than 1 product) ── */
+  /* ── Product sub-rotation timer (repeats every DURATION_PRODUCT seconds) ── */
   useEffect(() => {
     clearInterval(productTimerRef.current);
-    if (!isPlat || productCount <= 1 || isPaused) return;
+    if (productCount <= 1 || isPaused) return;
 
     let elapsed = 0;
     setProductProgress(1);
 
     productTimerRef.current = setInterval(() => {
       elapsed += 1;
-      setProductProgress(1 - elapsed / productDuration);
-      if (elapsed >= productDuration) {
+      setProductProgress(1 - elapsed / DURATION_PRODUCT);
+      if (elapsed >= DURATION_PRODUCT) {
         nextProduct();
         elapsed = 0;
       }
     }, 1000);
 
     return () => clearInterval(productTimerRef.current);
-  }, [activeSponsorIdx, activeProductIdx, isPlat, productCount, productDuration, isPaused, nextProduct]);
+  }, [activeSponsorIdx, activeProductIdx, productCount, isPaused, nextProduct]);
 
   /* ── Reset product index on sponsor change ── */
   useEffect(() => {
