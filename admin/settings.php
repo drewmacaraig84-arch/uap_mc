@@ -17,7 +17,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
         $active_tab = 'websiteTab';
     } elseif (in_array($action, ['add_sponsor', 'edit_sponsor', 'delete_sponsor', 'reorder_sponsors'])) {
         $active_tab = 'sponsorsTab';
-    } elseif (in_array($action, ['add_news', 'edit_news', 'delete_news'])) {
+    } elseif (in_array($action, ['add_news', 'edit_news', 'delete_news', 'reorder_news'])) {
         $active_tab = 'newsTab';
     }
 
@@ -339,6 +339,23 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
         $success = 'News announcement deleted successfully.';
     }
 
+    // Drag-and-drop reorder: receives JSON array of IDs in new order
+    if ($action === 'reorder_news' && !empty($_POST['order'] ?? '')) {
+        $ids = json_decode($_POST['order'], true);
+        if (is_array($ids)) {
+            $stmt = $pdo->prepare("UPDATE news_announcements SET display_order = ? WHERE id = ?");
+            foreach ($ids as $pos => $id) {
+                $stmt->execute([$pos + 1, (int)$id]);
+            }
+        }
+        if (!empty($_SERVER['HTTP_X_REQUESTED_WITH'])) {
+            header('Content-Type: application/json');
+            echo json_encode(['ok' => true]);
+            exit;
+        }
+        $success = 'News order updated.';
+    }
+
     // ============ CHAPTER MILESTONES MANAGEMENT ============
     if ($action === 'add_milestone' && !empty($_POST['milestone_year'] ?? '') && !empty($_POST['milestone_title'] ?? '')) {
         $stmt = $pdo->prepare("INSERT INTO chapter_milestones (year, title, content, sort_order) VALUES (?, ?, ?, (SELECT COALESCE(MAX(sort_order), 0) + 1 FROM chapter_milestones cm2))");
@@ -381,7 +398,7 @@ $office_hours_saturday_val = $settings_rows['office_hours_saturday'] ?? '9:00 AM
 $office_hours_sunday_val = $settings_rows['office_hours_sunday'] ?? 'Closed';
 
 $sponsors = $pdo->query("SELECT * FROM sponsors WHERE is_active = 1 ORDER BY display_order ASC")->fetchAll();
-$news = $pdo->query("SELECT * FROM news_announcements WHERE is_active = 1 ORDER BY id DESC")->fetchAll();
+$news = $pdo->query("SELECT * FROM news_announcements WHERE is_active = 1 ORDER BY display_order ASC, id DESC")->fetchAll();
 $milestones = [];
 try {
     $milestones = $pdo->query("SELECT * FROM chapter_milestones ORDER BY sort_order ASC, year ASC")->fetchAll();
@@ -1133,27 +1150,61 @@ function switchSettingsTab(tabId, btn) {
   </div>
 
   <div class="card">
-    <h3 style="font-size: 15px; margin: 0 0 16px 0;">Published News &amp; Announcements (<?php echo count($news); ?>)</h3>
+    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; flex-wrap: wrap; gap: 10px;">
+      <h3 style="font-size: 15px; margin: 0;">Published News &amp; Announcements (<?php echo count($news); ?>)</h3>
+      <?php if (count($news) > 1): ?>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span id="newsSortHint" style="font-size: 11.5px; color: var(--text-secondary); display: flex; align-items: center; gap: 5px;">
+            <?php echo icon('move', '', 13); ?>
+            Drag rows to reorder &mdash; order reflects on the website
+          </span>
+          <span id="newsSortSaved" style="font-size: 11.5px; color: #22c55e; display: none;">&#10003; Saved</span>
+        </div>
+      <?php endif; ?>
+    </div>
+
     <?php if (count($news) > 0): ?>
-      <div style="display: flex; flex-direction: column; gap: 12px;">
+      <div id="newsSortable" style="display: flex; flex-direction: column; gap: 10px;">
         <?php foreach ($news as $item): ?>
-          <div style="background: var(--bg-secondary); padding: 16px; border-radius: 12px; border: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap;">
-            <div style="flex: 1; min-width: 250px;">
-              <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
-                <strong style="font-size: 15px; color: var(--text-primary);"><?php echo htmlspecialchars($item['title']); ?></strong>
-                <span class="badge" style="font-size: 11px;"><?php echo date('M d, Y', strtotime($item['date_posted'])); ?></span>
-              </div>
-              <p class="muted" style="margin: 0; font-size: 13px; line-height: 1.5;"><?php echo htmlspecialchars($item['summary']); ?></p>
+          <div class="news-sortable-item" data-id="<?php echo $item['id']; ?>"
+               style="background: var(--bg-secondary); padding: 14px 16px; border-radius: 12px; border: 1px solid var(--border-color); display: flex; align-items: flex-start; gap: 12px; cursor: grab; transition: box-shadow 0.2s, border-color 0.2s;">
+
+            <!-- Drag Handle -->
+            <div class="drag-handle" title="Drag to reorder"
+                 style="flex-shrink: 0; margin-top: 2px; color: var(--text-secondary); opacity: 0.5; cursor: grab; padding: 2px 0;">
+              <svg width="14" height="20" viewBox="0 0 14 20" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="4" cy="4" r="2"/><circle cx="10" cy="4" r="2"/>
+                <circle cx="4" cy="10" r="2"/><circle cx="10" cy="10" r="2"/>
+                <circle cx="4" cy="16" r="2"/><circle cx="10" cy="16" r="2"/>
+              </svg>
             </div>
-            <div style="display: flex; gap: 8px; align-items: center;">
-              <button type="button" class="btn btn-sm btn-secondary" 
+
+            <!-- Order Badge -->
+            <div class="news-order-badge" style="flex-shrink: 0; width: 26px; height: 26px; border-radius: 6px; background: rgba(245,158,11,0.12); color: var(--accent-primary, #f59e0b); font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center; margin-top: 1px;">
+              <?php echo $item['display_order'] > 0 ? $item['display_order'] : '?'; ?>
+            </div>
+
+            <!-- Content -->
+            <div style="flex: 1; min-width: 0;">
+              <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px; flex-wrap: wrap;">
+                <strong style="font-size: 14.5px; color: var(--text-primary);"><?php echo htmlspecialchars($item['title']); ?></strong>
+                <span class="badge" style="font-size: 11px; flex-shrink: 0;"><?php echo date('M d, Y', strtotime($item['date_posted'])); ?></span>
+              </div>
+              <p class="muted" style="margin: 0; font-size: 12.5px; line-height: 1.5; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 500px;">
+                <?php echo htmlspecialchars($item['summary']); ?>
+              </p>
+            </div>
+
+            <!-- Action Buttons -->
+            <div style="display: flex; gap: 7px; align-items: center; flex-shrink: 0;">
+              <button type="button" class="btn btn-sm btn-secondary"
                       onclick="openEditNewsModal(<?php echo htmlspecialchars(json_encode([
                         'id' => $item['id'],
                         'title' => $item['title'],
                         'summary' => $item['summary'],
                         'date_posted' => $item['date_posted']
                       ]), ENT_QUOTES, 'UTF-8'); ?>)"
-                      style="font-size: 12px; padding: 6px 12px; display: inline-flex; align-items: center; gap: 4px;">
+                      style="font-size: 12px; padding: 5px 10px; display: inline-flex; align-items: center; gap: 4px;">
                 <?php echo icon('edit', '', 12); ?> <span>Edit</span>
               </button>
               <form method="post" style="margin: 0;"
@@ -1165,7 +1216,7 @@ function switchSettingsTab(tabId, btn) {
                 <?php echo csrf_field(); ?>
                 <input type="hidden" name="action" value="delete_news">
                 <input type="hidden" name="news_id" value="<?php echo $item['id']; ?>">
-                <button type="submit" class="btn btn-sm btn-danger" style="font-size: 12px; padding: 6px 12px; display: inline-flex; align-items: center; gap: 4px;">
+                <button type="submit" class="btn btn-sm btn-danger" style="font-size: 12px; padding: 5px 10px; display: inline-flex; align-items: center; gap: 4px;">
                   <?php echo icon('trash', '', 12); ?> <span>Delete</span>
                 </button>
               </form>
@@ -1532,5 +1583,94 @@ function switchSettingsTab(tabId, btn) {
     }
   });
 </script>
+
+<!-- SortableJS for drag-and-drop news reordering -->
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
+<script>
+(function() {
+  var list = document.getElementById('newsSortable');
+  if (!list) return;
+
+  // Hover / active styles via JS to avoid extra CSS file
+  list.addEventListener('mouseover', function(e) {
+    var item = e.target.closest('.news-sortable-item');
+    if (item) {
+      item.style.borderColor = 'rgba(245,158,11,0.5)';
+      item.style.boxShadow = '0 4px 16px rgba(0,0,0,0.25)';
+      item.querySelector('.drag-handle').style.opacity = '1';
+    }
+  });
+  list.addEventListener('mouseout', function(e) {
+    var item = e.target.closest('.news-sortable-item');
+    if (item && !item.classList.contains('sortable-drag')) {
+      item.style.borderColor = '';
+      item.style.boxShadow = '';
+      item.querySelector('.drag-handle').style.opacity = '0.5';
+    }
+  });
+
+  Sortable.create(list, {
+    handle: '.news-sortable-item',   // whole row is draggable
+    animation: 180,
+    ghostClass: 'news-drag-ghost',
+    chosenClass: 'news-drag-chosen',
+    dragClass: 'news-dragging',
+    onEnd: function() {
+      // Collect new order
+      var items = list.querySelectorAll('.news-sortable-item');
+      var ids = [];
+      items.forEach(function(el, i) {
+        ids.push(el.dataset.id);
+        // Update the visible badge number
+        var badge = el.querySelector('.news-order-badge');
+        if (badge) badge.textContent = i + 1;
+      });
+
+      // AJAX POST
+      var csrf = '<?php echo csrf_token(); ?>';
+      var form = new FormData();
+      form.append('csrf_token', csrf);
+      form.append('action', 'reorder_news');
+      form.append('order', JSON.stringify(ids));
+
+      fetch('settings.php', {
+        method: 'POST',
+        headers: { 'X-Requested-With': 'XMLHttpRequest' },
+        body: form
+      }).then(function(r) { return r.json(); }).then(function(data) {
+        if (data.ok) {
+          var saved = document.getElementById('newsSortSaved');
+          var hint  = document.getElementById('newsSortHint');
+          if (saved) {
+            saved.style.display = 'inline';
+            if (hint) hint.style.display = 'none';
+            setTimeout(function() {
+              saved.style.display = 'none';
+              if (hint) hint.style.display = 'flex';
+            }, 2500);
+          }
+        }
+      }).catch(function(){});
+    }
+  });
+
+  // Drag state visual
+  list.addEventListener('mousedown', function(e) {
+    var item = e.target.closest('.news-sortable-item');
+    if (item) item.style.cursor = 'grabbing';
+  });
+  document.addEventListener('mouseup', function() {
+    list.querySelectorAll('.news-sortable-item').forEach(function(el) {
+      el.style.cursor = 'grab';
+    });
+  });
+})();
+</script>
+
+<style>
+.news-drag-ghost  { opacity: 0.4; background: rgba(245,158,11,0.08) !important; border: 1.5px dashed rgba(245,158,11,0.6) !important; }
+.news-drag-chosen { box-shadow: 0 8px 30px rgba(0,0,0,0.4) !important; border-color: rgba(245,158,11,0.6) !important; }
+.news-dragging    { opacity: 0.95; }
+</style>
 
 <?php include __DIR__ . '/../includes/footer.php'; ?>
