@@ -314,11 +314,15 @@ include __DIR__ . '/../includes/header.php';
                     <strong style="font-size: 13.5px; color: var(--text-primary); display: block;">
                       <?php echo htmlspecialchars($inq['name']); ?>
                     </strong>
-                    <a href="mailto:<?php echo htmlspecialchars($inq['email']); ?>" class="muted" style="font-size: 12px; color: var(--text-secondary); text-decoration: none;">
-                      <?php echo htmlspecialchars($inq['email']); ?>
-                    </a>
+                    <?php if (!empty($inq['email'])): ?>
+                      <a href="mailto:<?php echo htmlspecialchars($inq['email']); ?>" class="muted" style="font-size: 12px; color: var(--text-secondary); text-decoration: none; display: block;">
+                        <?php echo htmlspecialchars($inq['email']); ?>
+                      </a>
+                    <?php endif; ?>
                     <?php if (!empty($inq['phone'])): ?>
-                      <span class="muted" style="font-size: 11.5px; display: block;"><?php echo htmlspecialchars($inq['phone']); ?></span>
+                      <a href="tel:<?php echo htmlspecialchars($inq['phone']); ?>" class="muted" style="font-size: 11.5px; color: var(--accent-primary, #f59e0b); text-decoration: none; display: block;">
+                        <?php echo htmlspecialchars($inq['phone']); ?>
+                      </a>
                     <?php endif; ?>
                   </div>
                 </div>
@@ -360,12 +364,21 @@ include __DIR__ . '/../includes/header.php';
                   <?php echo icon('document', '', 12); ?> <span>View</span>
                 </button>
 
-                <a href="mailto:<?php echo htmlspecialchars($inq['email']); ?>?subject=<?php echo urlencode('Re: ' . ($inq['subject'] ?: 'UAP Mindoro Chapter Inquiry')); ?>"
-                   class="btn btn-sm btn-outline"
-                   title="Direct Email Reply"
-                   style="padding: 4px 8px; font-size: 12px; display: inline-flex; align-items: center; gap: 4px; margin-right: 4px;">
-                  <?php echo icon('mail', '', 12); ?> <span>Reply</span>
-                </a>
+                <?php if (!empty($inq['email'])): ?>
+                  <a href="mailto:<?php echo htmlspecialchars($inq['email']); ?>?subject=<?php echo urlencode('Re: ' . ($inq['subject'] ?: 'UAP Mindoro Chapter Inquiry')); ?>"
+                     class="btn btn-sm btn-outline"
+                     title="Direct Email Reply"
+                     style="padding: 4px 8px; font-size: 12px; display: inline-flex; align-items: center; gap: 4px; margin-right: 4px;">
+                    <?php echo icon('mail', '', 12); ?> <span>Reply</span>
+                  </a>
+                <?php elseif (!empty($inq['phone'])): ?>
+                  <a href="tel:<?php echo htmlspecialchars($inq['phone']); ?>"
+                     class="btn btn-sm btn-outline"
+                     title="Direct Phone Call"
+                     style="padding: 4px 8px; font-size: 12px; display: inline-flex; align-items: center; gap: 4px; margin-right: 4px;">
+                    <?php echo icon('phone', '', 12); ?> <span>Call</span>
+                  </a>
+                <?php endif; ?>
 
                 <form method="post" class="inline" style="display:inline-block;"
                       data-confirm="Delete inquiry from <?php echo htmlspecialchars($inq['name']); ?>?"
@@ -465,8 +478,8 @@ include __DIR__ . '/../includes/header.php';
 <script>
 function openInquiryModal(inq) {
   document.getElementById('modalSenderName').textContent = inq.name;
-  document.getElementById('modalMeta').textContent = inq.email + ' • ' + inq.created_at;
-  document.getElementById('modalEmail').textContent = inq.email;
+  document.getElementById('modalMeta').textContent = (inq.email || inq.phone || 'No direct contact') + ' • ' + inq.created_at;
+  document.getElementById('modalEmail').textContent = inq.email || 'Not Provided';
   document.getElementById('modalPhone').textContent = inq.phone || 'Not Provided';
   document.getElementById('modalSubject').textContent = inq.subject || 'Website Inquiry';
   document.getElementById('modalMessage').textContent = inq.message;
@@ -475,9 +488,20 @@ function openInquiryModal(inq) {
   document.getElementById('modalStatusInquiryId').value = inq.id;
   document.getElementById('modalStatusSelect').value = inq.status;
 
-  const mailtoSubject = encodeURIComponent('Re: ' + (inq.subject || 'UAP Mindoro Chapter Inquiry'));
-  const mailtoBody = encodeURIComponent('\n\n--- Original Inquiry ---\nFrom: ' + inq.name + '\nDate: ' + inq.created_at + '\n\n' + inq.message);
-  document.getElementById('modalMailtoBtn').href = 'mailto:' + inq.email + '?subject=' + mailtoSubject + '&body=' + mailtoBody;
+  const mailBtn = document.getElementById('modalMailtoBtn');
+  if (inq.email) {
+    const mailtoSubject = encodeURIComponent('Re: ' + (inq.subject || 'UAP Mindoro Chapter Inquiry'));
+    const mailtoBody = encodeURIComponent('\n\n--- Original Inquiry ---\nFrom: ' + inq.name + '\nDate: ' + inq.created_at + '\n\n' + inq.message);
+    mailBtn.href = 'mailto:' + inq.email + '?subject=' + mailtoSubject + '&body=' + mailtoBody;
+    mailBtn.style.display = 'inline-flex';
+    mailBtn.innerHTML = '<?php echo icon("mail", "", 14); ?> <span>Send Email Reply</span>';
+  } else if (inq.phone) {
+    mailBtn.href = 'tel:' + inq.phone;
+    mailBtn.style.display = 'inline-flex';
+    mailBtn.innerHTML = '<?php echo icon("phone", "", 14); ?> <span>Call ' + inq.phone + '</span>';
+  } else {
+    mailBtn.style.display = 'none';
+  }
 
   const modal = document.getElementById('inquiryModal');
   modal.style.display = 'flex';

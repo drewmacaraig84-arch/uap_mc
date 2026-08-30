@@ -5,7 +5,7 @@ import './Contact.css';
 
 export default function Contact() {
   const { data: settings } = useApi('/api/settings.php');
-  const [form, setForm] = useState({ name: '', email: '', subject: '', message: '' });
+  const [form, setForm] = useState({ name: '', email: '', phone: '', subject: '', message: '' });
   const [submitting, setSubmitting] = useState(false);
   const [sent, setSent] = useState(false);
   const [error, setError] = useState('');
@@ -24,8 +24,29 @@ export default function Contact() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setSubmitting(true);
     setError('');
+
+    if (!form.name.trim()) {
+      setError('Please provide your full name.');
+      return;
+    }
+
+    if (!form.email.trim() && !form.phone.trim()) {
+      setError('Please provide at least one contact method (Email address or Mobile/Contact number).');
+      return;
+    }
+
+    if (form.email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) {
+      setError('Please provide a valid email address.');
+      return;
+    }
+
+    if (!form.message.trim()) {
+      setError('Please enter your message.');
+      return;
+    }
+
+    setSubmitting(true);
 
     try {
       const res = await fetch('/api/contact.php', {
@@ -37,7 +58,7 @@ export default function Contact() {
 
       if (res.ok && data.success) {
         setSent(true);
-        setForm({ name: '', email: '', subject: '', message: '' });
+        setForm({ name: '', email: '', phone: '', subject: '', message: '' });
       } else {
         setError(data.error || 'Failed to submit inquiry. Please try again.');
       }
@@ -129,22 +150,32 @@ export default function Contact() {
                     {error}
                   </div>
                 )}
+                <div className="form-group">
+                  <label htmlFor="name">Full Name <span style={{ color: 'var(--c-gold)' }}>*</span></label>
+                  <input id="name" name="name" className="input" placeholder="Juan dela Cruz" required value={form.name} onChange={handleChange} disabled={submitting} />
+                </div>
+
                 <div className="form-row">
                   <div className="form-group">
-                    <label htmlFor="name">Full Name</label>
-                    <input id="name" name="name" className="input" placeholder="Juan dela Cruz" required value={form.name} onChange={handleChange} disabled={submitting} />
+                    <label htmlFor="email">
+                      Email Address <span className="muted" style={{ fontSize: '0.78rem', fontWeight: 400 }}>(or phone)</span>
+                    </label>
+                    <input id="email" name="email" type="email" className="input" placeholder="juan@email.com" value={form.email} onChange={handleChange} disabled={submitting} />
                   </div>
                   <div className="form-group">
-                    <label htmlFor="email">Email Address</label>
-                    <input id="email" name="email" type="email" className="input" placeholder="juan@email.com" required value={form.email} onChange={handleChange} disabled={submitting} />
+                    <label htmlFor="phone">
+                      Contact Number <span className="muted" style={{ fontSize: '0.78rem', fontWeight: 400 }}>(or email)</span>
+                    </label>
+                    <input id="phone" name="phone" type="tel" className="input" placeholder="0912 345 6789 / +63..." value={form.phone} onChange={handleChange} disabled={submitting} />
                   </div>
                 </div>
+
                 <div className="form-group">
                   <label htmlFor="subject">Subject</label>
                   <input id="subject" name="subject" className="input" placeholder="Membership Inquiry / Project Consultation / etc." value={form.subject} onChange={handleChange} disabled={submitting} />
                 </div>
                 <div className="form-group">
-                  <label htmlFor="message">Message</label>
+                  <label htmlFor="message">Message <span style={{ color: 'var(--c-gold)' }}>*</span></label>
                   <textarea id="message" name="message" className="input" rows="5" placeholder="How can the UAP Mindoro Chapter assist you?" required value={form.message} onChange={handleChange} disabled={submitting} />
                 </div>
                 <button type="submit" className="btn btn-gold" style={{ alignSelf: 'flex-start' }} disabled={submitting}>
@@ -158,3 +189,4 @@ export default function Contact() {
     </main>
   );
 }
+

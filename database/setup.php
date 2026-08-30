@@ -171,6 +171,11 @@ try {
     echo "Notice: " . $e->getMessage() . "\n";
 }
 
+// Explicit check for contact_inquiries nullable email column
+try {
+    $pdo->exec("ALTER TABLE contact_inquiries MODIFY COLUMN email VARCHAR(150) NULL");
+} catch (Throwable $e) {}
+
 // Generate QR codes for all existing website_members if missing
 try {
     require_once __DIR__ . '/../includes/qr_helper.php';

@@ -30,7 +30,13 @@ if (empty($name)) {
     exit;
 }
 
-if (empty($email) || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+if (empty($email) && empty($phone)) {
+    http_response_code(422);
+    echo json_encode(['error' => 'Please provide at least one contact method (Email address or Mobile/Contact number).']);
+    exit;
+}
+
+if (!empty($email) && !filter_var($email, FILTER_VALIDATE_EMAIL)) {
     http_response_code(422);
     echo json_encode(['error' => 'Please provide a valid email address.']);
     exit;
@@ -48,7 +54,7 @@ try {
         CREATE TABLE IF NOT EXISTS contact_inquiries (
             id INT AUTO_INCREMENT PRIMARY KEY,
             name VARCHAR(150) NOT NULL,
-            email VARCHAR(150) NOT NULL,
+            email VARCHAR(150) NULL,
             phone VARCHAR(50) NULL,
             subject VARCHAR(255) NULL,
             message TEXT NOT NULL,
@@ -67,7 +73,7 @@ try {
     ");
     $stmt->execute([
         $name,
-        $email,
+        !empty($email) ? $email : null,
         !empty($phone) ? $phone : null,
         !empty($subject) ? $subject : 'Website Inquiry',
         $message
