@@ -178,8 +178,30 @@ try {
     if ($qrCount > 0) {
         echo "Generated directory QR codes for {$qrCount} member(s).\n";
     }
+// Initialize and deduplicate chapter_milestones table
+try {
+    $msCount = (int)$pdo->query("SELECT COUNT(*) FROM chapter_milestones")->fetchColumn();
+    if ($msCount === 0) {
+        $pdo->exec("
+            INSERT INTO chapter_milestones (id, year, title, content, sort_order) VALUES
+            (1, '2016', 'Chapter Founded',           'UAP Mindoro Chapter established as IAPOA Chapter 121, bringing together registered architects across the Mindoro provinces.', 1),
+            (2, '2018', 'Growing Membership',        'Membership expanded significantly with architects from Calapan City, Puerto Galera, and Occidental Mindoro joining the chapter.', 2),
+            (3, '2020', 'Digital Transformation',    'Adopted digital systems for member management, dues processing, and chapter communications.', 3),
+            (4, '2023', 'New Leadership',            'A new Board of Directors was elected, bringing fresh perspectives and initiatives for chapter growth.', 4),
+            (5, '2024', 'Online Architect Directory','Launched the public Architect Directory to connect clients with verified UAP Mindoro architects.', 5)
+        ");
+        echo "Seeded default chapter milestones.\n";
+    } else {
+        $pdo->exec("
+            DELETE m1 FROM chapter_milestones m1
+            INNER JOIN chapter_milestones m2 
+            WHERE m1.id > m2.id 
+              AND m1.year = m2.year 
+              AND m1.title = m2.title
+        ");
+    }
 } catch (Throwable $e) {
-    echo "Member QR generation notice: " . $e->getMessage() . "\n";
+    echo "Milestones setup notice: " . $e->getMessage() . "\n";
 }
 
 run_sql_files($pdo, __DIR__ . '/seeds', 'seed');
