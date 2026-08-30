@@ -93,45 +93,9 @@ export default function Profile() {
                     </span>
                   )}
                 </div>
-
-                {/* Multiple Social Links */}
-                {(() => {
-                  const socialLinksList = (m.links && m.links.length > 0)
-                    ? m.links.map(l => getSocialLinkInfo(l.url, l.type)).filter(Boolean)
-                    : (socialInfo ? [socialInfo] : []);
-
-                  if (socialLinksList.length === 0) return null;
-
-                  return (
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 12 }}>
-                      {socialLinksList.map((s, idx) => (
-                        <a
-                          key={idx}
-                          href={s.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className={`btn btn-sm arch-social-${s.type}`}
-                          style={{
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: 6,
-                            padding: '6px 14px',
-                            borderRadius: 8,
-                            fontSize: '0.85rem',
-                            fontWeight: 600,
-                            textDecoration: 'none'
-                          }}
-                        >
-                          <s.Icon size={14} />
-                          <span>Visit {s.label} &rarr;</span>
-                        </a>
-                      ))}
-                    </div>
-                  );
-                })()}
               </div>
 
-              {/* Company Logo — positioned in lower-right of hero exactly as drawn */}
+              {/* Company Logo — positioned in lower-right of hero */}
               <div className="profile-company-logo-wrap">
                 {m.company_logo_url ? (
                   <img
@@ -161,6 +125,32 @@ export default function Profile() {
                 </div>
               </div>
             </div>
+
+            {/* Social Showcase Links in One Unified Horizontal Row */}
+            {(() => {
+              const socialLinksList = (m.links && m.links.length > 0)
+                ? m.links.map(l => getSocialLinkInfo(l.url, l.type)).filter(Boolean)
+                : (socialInfo ? [socialInfo] : []);
+
+              if (socialLinksList.length === 0) return null;
+
+              return (
+                <div className="profile-social-links-bar">
+                  {socialLinksList.map((s, idx) => (
+                    <a
+                      key={idx}
+                      href={s.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className={`btn btn-sm arch-social-${s.type} profile-social-btn`}
+                    >
+                      <s.Icon size={14} />
+                      <span>Visit {s.label} &rarr;</span>
+                    </a>
+                  ))}
+                </div>
+              );
+            })()}
           </div>
         </div>
 
