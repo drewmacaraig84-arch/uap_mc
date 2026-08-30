@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { useApi } from '../hooks/useApi';
 import './Footer.css';
 
 const PORTAL_URL = '/auth/login.php';
@@ -6,13 +7,15 @@ const REGISTER_URL = '/auth/register.php';
 
 export default function Footer() {
   const year = new Date().getFullYear();
+  const { data: settings } = useApi('/api/settings.php');
+  const logoSrc = settings?.logo || '/public/logo.jpg';
   return (
     <footer className="footer">
       <div className="footer-top container-wide">
         {/* Brand */}
         <div className="footer-brand">
           <div className="footer-logo-wrap">
-            <img src="/public/logo.jpg" alt="UAP Mindoro" />
+            <img src={logoSrc} alt="UAP Mindoro" />
           </div>
           <p className="footer-brand-name">United Architects<br/>of the Philippines</p>
           <p className="footer-brand-sub">Mindoro Chapter</p>
