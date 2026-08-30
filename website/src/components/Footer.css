@@ -7,8 +7,18 @@
 .footer-top {
   display: grid;
   grid-template-columns: 1.8fr 1fr 1fr;
-  gap: var(--space-7);
-  padding: var(--space-8) var(--space-5);
+  gap: var(--space-8, 36px);
+  padding: clamp(40px, 5vw, 56px) var(--space-5) var(--space-7, 32px);
+  align-items: start;
+}
+
+.footer-brand {
+  display: flex;
+  flex-direction: column;
+}
+
+.footer-col {
+  padding-top: 12px;
 }
 
 .footer-logo-wrap {
