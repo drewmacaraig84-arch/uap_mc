@@ -111,6 +111,17 @@ function showConfirmModal(event, targetAction, options = {}) {
   okBtn.textContent = confirmText;
   okBtn.className = 'btn btn-sm ' + btnClass;
   
+  const iconContainer = document.getElementById('uapConfirmIcon');
+  if (iconContainer) {
+    if (btnClass.includes('btn-danger')) {
+      iconContainer.style.background = 'rgba(239, 68, 68, 0.15)';
+      iconContainer.style.color = '#ef4444';
+    } else {
+      iconContainer.style.background = 'rgba(245, 158, 11, 0.15)';
+      iconContainer.style.color = 'var(--accent-primary, #f59e0b)';
+    }
+  }
+
   if (typeof targetAction === 'function') {
     pendingConfirmAction = targetAction;
   } else if (targetAction && targetAction.tagName === 'FORM') {

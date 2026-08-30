@@ -830,7 +830,12 @@ function switchSettingsTab(tabId, btn) {
                     <button type="button" class="btn btn-sm ms-edit-btn" onclick="editMilestone(<?php echo $ms['id']; ?>)" style="padding: 4px 10px; font-size: 12px;" title="Edit">
                       <?php echo icon('edit', '', 13); ?>
                     </button>
-                    <form method="post" style="margin:0;" onsubmit="return confirm('Delete this milestone?');">
+                    <form method="post" style="margin:0;"
+                          data-confirm="Delete milestone '<?php echo htmlspecialchars($ms['year'] . ': ' . $ms['title'], ENT_QUOTES, 'UTF-8'); ?>'?"
+                          data-confirm-title="Delete Chapter Milestone"
+                          data-confirm-btn="Delete Milestone"
+                          data-confirm-class="btn-danger"
+                          data-confirm-icon="trash">
                       <?php echo csrf_field(); ?>
                       <input type="hidden" name="action" value="delete_milestone">
                       <input type="hidden" name="current_tab" value="websiteTab">
