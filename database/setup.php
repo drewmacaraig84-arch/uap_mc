@@ -136,6 +136,11 @@ try {
         $pdo->exec("ALTER TABLE website_members ADD COLUMN link_url VARCHAR(500) NULL AFTER company_name");
         echo "Added column 'link_url' to 'website_members' table.\n";
     }
+    $colCheck = $pdo->query("SHOW COLUMNS FROM website_members LIKE 'company_logo_path'")->fetch();
+    if (!$colCheck) {
+        $pdo->exec("ALTER TABLE website_members ADD COLUMN company_logo_path VARCHAR(255) NULL AFTER company_name");
+        echo "Added column 'company_logo_path' to 'website_members' table.\n";
+    }
     $colCheck = $pdo->query("SHOW COLUMNS FROM website_members LIKE 'link_type'")->fetch();
     if (!$colCheck) {
         $pdo->exec("ALTER TABLE website_members ADD COLUMN link_type VARCHAR(50) NULL DEFAULT 'auto' AFTER link_url");
@@ -217,6 +222,10 @@ try {
         ");
         echo "Seeded default chapter milestones.\n";
     }
+} catch (Throwable $e) {
+    echo "Milestones setup notice: " . $e->getMessage() . "\n";
+}
+
 // Normalize news display_order to sequential 1, 2, 3... starting at 1
 try {
     $allNews = $pdo->query("SELECT id FROM news_announcements WHERE is_active = 1 ORDER BY display_order ASC, ABS(DATEDIFF(date_posted, CURDATE())) ASC, id DESC")->fetchAll(PDO::FETCH_COLUMN);

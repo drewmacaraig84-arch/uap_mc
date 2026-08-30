@@ -127,6 +127,36 @@ export default function Profile() {
               );
             })()}
           </div>
+
+          {/* Company Logo — right column */}
+          <div className="profile-company-logo-wrap">
+            {m.company_logo_url ? (
+              <img
+                src={m.company_logo_url}
+                alt={m.company_name || 'Company Logo'}
+                className="profile-company-logo-img"
+                onError={(e) => {
+                  e.currentTarget.style.display = 'none';
+                  const ph = e.currentTarget.parentElement?.querySelector('.profile-company-logo-placeholder');
+                  if (ph) ph.style.display = 'flex';
+                }}
+              />
+            ) : null}
+            <div
+              className="profile-company-logo-placeholder"
+              style={{ display: m.company_logo_url ? 'none' : 'flex' }}
+            >
+              <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--c-gold)', opacity: 0.35 }}>
+                <rect x="3" y="3" width="18" height="18" rx="2"/>
+                <path d="M3 9h18M9 21V9"/>
+              </svg>
+              {m.company_name && (
+                <span className="profile-company-logo-initials">
+                  {m.company_name.split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase()}
+                </span>
+              )}
+            </div>
+          </div>
         </div>
 
         {/* Top 2-Column Grid: Professional Background & Profile Details (Same Height) */}

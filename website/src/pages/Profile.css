@@ -17,7 +17,7 @@
 
 .profile-hero {
   display: grid;
-  grid-template-columns: 280px 1fr;
+  grid-template-columns: 280px 1fr 140px;
   gap: var(--space-7);
   padding: var(--space-6);
   margin-bottom: var(--space-5);
@@ -94,6 +94,49 @@
   border: 1px solid var(--c-border-gold);
   background: #fff;
   padding: 4px;
+}
+
+/* Company Logo — right column of hero */
+.profile-company-logo-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 140px;
+  height: 140px;
+  border-radius: 12px;
+  overflow: hidden;
+  align-self: center;
+  flex-shrink: 0;
+}
+
+.profile-company-logo-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  background: #fff;
+  border-radius: 12px;
+}
+
+.profile-company-logo-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, rgba(245,158,11,0.05), rgba(245,158,11,0.02));
+  border: 1.5px dashed rgba(245,158,11,0.18);
+}
+
+.profile-company-logo-initials {
+  font-family: var(--f-display);
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: var(--c-gold);
+  opacity: 0.4;
+  letter-spacing: 0.04em;
 }
 
 /* Details Grid (Top Row - Matched Same Height 2 Columns) */
@@ -291,6 +334,12 @@
   .profile-badges,
   .profile-meta {
     justify-content: center;
+  }
+  .profile-company-logo-wrap {
+    width: 100px;
+    height: 100px;
+    margin: 0 auto;
+    order: -1;
   }
   .profile-details-grid { 
     grid-template-columns: 1fr; 

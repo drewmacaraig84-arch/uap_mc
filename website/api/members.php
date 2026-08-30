@@ -9,7 +9,7 @@ try {
         return '/' . ltrim($path, '/');
     };
 
-    $rows = $pdo->query("SELECT wm.id, wm.name, wm.id_number, wm.role_title, wm.specialty, wm.location, wm.company_name, wm.link_url, wm.link_type, wm.links_json, wm.achievements, wm.awards, wm.user_id, COALESCE(NULLIF(u.profile_photo, ''), NULLIF(wm.photo_path, '')) as photo_path 
+    $rows = $pdo->query("SELECT wm.id, wm.name, wm.id_number, wm.role_title, wm.specialty, wm.location, wm.company_name, wm.company_logo_path, wm.link_url, wm.link_type, wm.links_json, wm.achievements, wm.awards, wm.user_id, COALESCE(NULLIF(u.profile_photo, ''), NULLIF(wm.photo_path, '')) as photo_path 
                            FROM website_members wm 
                            LEFT JOIN users u ON wm.user_id = u.id 
                            WHERE wm.is_published = 1 
@@ -29,6 +29,9 @@ try {
         }
         $m['photo_url'] = $toUrl($photo);
         unset($m['photo_path']);
+
+        $m['company_logo_url'] = $toUrl($m['company_logo_path'] ?? null);
+        unset($m['company_logo_path']);
 
         $links = [];
         if (!empty($m['links_json'])) {

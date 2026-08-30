@@ -78,6 +78,39 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'save_
         $achievements = trim($_POST['achievements'] ?? '');
         $awards = trim($_POST['awards'] ?? '');
 
+        // Handle Company Logo Upload
+        $companyLogoPath = $profile['company_logo_path'] ?? null;
+        $uploadDir = __DIR__ . '/../uploads/members/';
+        if (!is_dir($uploadDir)) mkdir($uploadDir, 0755, true);
+
+        if (isset($_FILES['company_logo']) && $_FILES['company_logo']['error'] === UPLOAD_ERR_OK) {
+            $cloExt = strtolower(pathinfo($_FILES['company_logo']['name'], PATHINFO_EXTENSION));
+            $cloMime = mime_content_type($_FILES['company_logo']['tmp_name']);
+            $allowedExts = ['jpg', 'jpeg', 'png', 'webp'];
+            $allowedMimes = ['image/jpeg', 'image/png', 'image/webp'];
+            if (in_array($cloExt, $allowedExts) && in_array($cloMime, $allowedMimes) && $_FILES['company_logo']['size'] <= 10 * 1024 * 1024) {
+                // Delete old company logo if exists
+                if (!empty($companyLogoPath)) {
+                    $oldFile = __DIR__ . '/../' . ltrim($companyLogoPath, '/');
+                    if (file_exists($oldFile)) @unlink($oldFile);
+                }
+                $cloUnique = 'company_logo_' . $userId . '_' . time() . '.' . $cloExt;
+                $cloTarget = $uploadDir . $cloUnique;
+                if (move_uploaded_file($_FILES['company_logo']['tmp_name'], $cloTarget)) {
+                    $companyLogoPath = 'uploads/members/' . $cloUnique;
+                }
+            }
+        }
+
+        // Handle company logo removal
+        if (!empty($_POST['remove_company_logo'])) {
+            if (!empty($companyLogoPath)) {
+                $oldFile = __DIR__ . '/../' . ltrim($companyLogoPath, '/');
+                if (file_exists($oldFile)) @unlink($oldFile);
+            }
+            $companyLogoPath = null;
+        }
+
         // Check if user has an existing profile photo in users table
         $uStmt = $pdo->prepare("SELECT profile_photo FROM users WHERE id = ?");
         $uStmt->execute([$userId]);
@@ -86,8 +119,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'save_
 
         ensure_user_profile_photo_column($pdo);
         $stmt = $pdo->prepare("INSERT INTO website_members 
-            (user_id, name, id_number, role_title, specialty, location, company_name, link_url, link_type, links_json, achievements, awards, photo_path, is_published)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)
+            (user_id, name, id_number, role_title, specialty, location, company_name, company_logo_path, link_url, link_type, links_json, achievements, awards, photo_path, is_published)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)
             ON DUPLICATE KEY UPDATE
                 name = VALUES(name),
                 id_number = VALUES(id_number),
@@ -95,6 +128,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'save_
                 specialty = VALUES(specialty),
                 location = VALUES(location),
                 company_name = VALUES(company_name),
+                company_logo_path = VALUES(company_logo_path),
                 link_url = VALUES(link_url),
                 link_type = VALUES(link_type),
                 links_json = VALUES(links_json),
@@ -110,6 +144,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'save_
             $specialty,
             $location,
             $companyName !== '' ? $companyName : null,
+            $companyLogoPath,
             $primaryLinkUrl,
             $primaryLinkType,
             $linksJson,
@@ -278,6 +313,7 @@ if (!$profile) {
         'specialty' => '',
         'location' => 'Mindoro',
         'company_name' => '',
+        'company_logo_path' => null,
         'link_url' => '',
         'link_type' => 'auto',
         'links_json' => '',
@@ -391,7 +427,7 @@ include __DIR__ . '/../includes/header.php';
   <?php else: ?>
 
     <!-- 1. DIRECTORY PROFILE DETAILS FORM -->
-    <form method="POST">
+    <form method="POST" enctype="multipart/form-data">
       <?php echo csrf_field(); ?>
       <input type="hidden" name="action" value="save_profile_details">
 
@@ -436,15 +472,59 @@ include __DIR__ . '/../includes/header.php';
         <input type="text" name="name" value="<?php echo htmlspecialchars($profile['name'] ?? ''); ?>" required>
       </div>
 
-      <!-- 2. COMPANY & ADDRESS -->
-      <div class="grid-2">
-        <div class="field">
-          <label>Company / Architectural Firm Name</label>
-          <input type="text" name="company_name" value="<?php echo htmlspecialchars($profile['company_name'] ?? ''); ?>" placeholder="e.g. Ting & Associates Architects, AESTRUKTURA Design Studio">
+      <!-- 2. COMPANY & ADDRESS + COMPANY LOGO -->
+      <div style="background: var(--bg-secondary, rgba(0,0,0,0.12)); border: 1px solid var(--border-color, rgba(255,255,255,0.08)); border-radius: 12px; padding: 18px; margin-bottom: 20px;">
+        <strong style="font-size: 14px; color: var(--text-primary); display: block; margin-bottom: 14px;"><?php echo icon('briefcase', '', 14); ?> Company / Firm Details</strong>
+
+        <div class="grid-2" style="margin-bottom: 14px;">
+          <div class="field" style="margin: 0;">
+            <label>Company / Architectural Firm Name</label>
+            <input type="text" name="company_name" value="<?php echo htmlspecialchars($profile['company_name'] ?? ''); ?>" placeholder="e.g. Ting &amp; Associates Architects, AESTRUKTURA Design Studio">
+          </div>
+          <div class="field" style="margin: 0;">
+            <label>Company / Office Address</label>
+            <input type="text" name="location" value="<?php echo htmlspecialchars($profile['location'] ?? ''); ?>" placeholder="e.g. Calapan City, Oriental Mindoro" required>
+          </div>
         </div>
-        <div class="field">
-          <label>Company / Office Address</label>
-          <input type="text" name="location" value="<?php echo htmlspecialchars($profile['location'] ?? ''); ?>" placeholder="e.g. Calapan City, Oriental Mindoro (or full office address)" required>
+
+        <!-- COMPANY LOGO UPLOAD -->
+        <div style="display: flex; align-items: center; gap: 18px; flex-wrap: wrap; padding-top: 12px; border-top: 1px solid var(--border-color, rgba(255,255,255,0.06));">
+          <!-- Current Logo Preview -->
+          <div id="companyLogoPreviewWrap" style="flex-shrink: 0;">
+            <?php
+              $existingLogo = $profile['company_logo_path'] ?? null;
+              $logoUrl = $existingLogo ? '/' . ltrim($existingLogo, '/') : null;
+            ?>
+            <div id="companyLogoPreview" style="width: 80px; height: 80px; border-radius: 10px; background: <?php echo $logoUrl ? '#fff' : 'rgba(245,158,11,0.07)'; ?>; display: flex; align-items: center; justify-content: center; overflow: hidden; transition: background 0.2s;">
+              <?php if ($logoUrl): ?>
+                <img id="companyLogoImg" src="<?php echo htmlspecialchars($logoUrl); ?>" alt="Company Logo" style="width: 100%; height: 100%; object-fit: contain;">
+              <?php else: ?>
+                <div id="companyLogoPlaceholder" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; color: var(--accent-primary, #f5b800); opacity: 0.6;">
+                  <?php echo icon('image', '', 28); ?>
+                  <span style="font-size: 9px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase;">No Logo</span>
+                </div>
+              <?php endif; ?>
+            </div>
+          </div>
+
+          <div style="flex: 1; min-width: 200px;">
+            <div style="margin-bottom: 6px;">
+              <strong style="font-size: 13.5px; color: var(--text-primary); display: block;">Company / Firm Logo</strong>
+              <span class="muted" style="font-size: 11.5px;">PNG, JPG or WebP, max 10MB. Displayed on your public architect profile.</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+              <label for="companyLogoInput" class="btn btn-sm btn-secondary" style="cursor: pointer; display: inline-flex; align-items: center; gap: 5px; font-size: 12px; padding: 6px 12px; margin: 0;">
+                <?php echo icon('upload', '', 13); ?> <span>Upload Logo</span>
+              </label>
+              <input type="file" name="company_logo" id="companyLogoInput" accept="image/png,image/jpeg,image/webp" style="display: none;" onchange="previewCompanyLogo(this)">
+              <?php if (!empty($existingLogo)): ?>
+                <label style="display: inline-flex; align-items: center; gap: 5px; font-size: 12px;">
+                  <input type="checkbox" name="remove_company_logo" value="1" onchange="if(this.checked){ document.getElementById('companyLogoPreview').style.background='rgba(245,158,11,0.07)'; document.getElementById('companyLogoImg') && (document.getElementById('companyLogoImg').style.display='none'); }">
+                  <span class="muted">Remove current logo</span>
+                </label>
+              <?php endif; ?>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -874,5 +954,29 @@ include __DIR__ . '/../includes/header.php';
   <?php endif; ?>
 
 </div>
+
+<script>
+function previewCompanyLogo(input) {
+  if (!input.files || !input.files[0]) return;
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    var preview = document.getElementById('companyLogoPreview');
+    var placeholder = document.getElementById('companyLogoPlaceholder');
+    var imgEl = document.getElementById('companyLogoImg');
+    if (!preview) return;
+    preview.style.background = '#fff';
+    if (placeholder) placeholder.style.display = 'none';
+    if (!imgEl) {
+      imgEl = document.createElement('img');
+      imgEl.id = 'companyLogoImg';
+      imgEl.style.cssText = 'width:100%;height:100%;object-fit:contain;';
+      preview.appendChild(imgEl);
+    }
+    imgEl.src = e.target.result;
+    imgEl.style.display = '';
+  };
+  reader.readAsDataURL(input.files[0]);
+}
+</script>
 
 <?php include __DIR__ . '/../includes/footer.php'; ?>

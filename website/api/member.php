@@ -39,6 +39,7 @@ try {
         $photo = null;
     }
     $member['photo_url'] = $toUrl($photo);
+    $member['company_logo_url'] = $toUrl($member['company_logo_path'] ?? null);
 
     // Decode multiple social links (up to 3 links)
     $links = [];

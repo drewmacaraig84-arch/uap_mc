@@ -47,7 +47,6 @@
   object-fit: contain;
   background: #fff;
   padding: 1px;
-  border: 1px solid rgba(245,158,11,0.3);
 }
 
 .navbar-brand-text {
@@ -94,8 +93,6 @@
 .navbar-badge-box.has-image {
   background: #fff;
   padding: 1px;
-  border: 1px solid rgba(245, 158, 11, 0.35);
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
 }
 
 .navbar-badge-box.has-image:hover {

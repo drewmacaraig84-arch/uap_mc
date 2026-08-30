@@ -1159,15 +1159,27 @@ function switchSettingsTab(tabId, btn) {
 
   <div class="card">
     <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; flex-wrap: wrap; gap: 10px;">
-      <h3 style="font-size: 15px; margin: 0;">Published News &amp; Announcements (<?php echo count($news); ?>)</h3>
+      <div>
+        <h3 style="font-size: 15px; margin: 0;">Published News &amp; Announcements (<?php echo count($news); ?>)</h3>
+        <span id="newsSortHint" style="font-size: 11.5px; color: var(--text-secondary); display: flex; align-items: center; gap: 5px; margin-top: 4px;">
+          <?php echo icon('move', '', 13); ?>
+          <span>Drag rows to reorder, then click Save News Formation</span>
+        </span>
+      </div>
       <?php if (count($news) > 1): ?>
-        <div style="display: flex; align-items: center; gap: 8px;">
-          <span id="newsSortHint" style="font-size: 11.5px; color: var(--text-secondary); display: flex; align-items: center; gap: 5px;">
-            <?php echo icon('move', '', 13); ?>
-            Drag rows to reorder &mdash; order reflects on the website
+        <form method="post" id="newsReorderForm" style="margin: 0; display: flex; align-items: center; gap: 8px;">
+          <?php echo csrf_field(); ?>
+          <input type="hidden" name="action" value="reorder_news">
+          <input type="hidden" name="order" id="newsOrderInput" value="<?php echo htmlspecialchars(json_encode(array_column($news, 'id'))); ?>">
+          
+          <button type="submit" id="saveNewsOrderBtn" class="btn btn-sm btn-gold" style="font-size: 12.5px; padding: 6px 14px; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 2px 8px rgba(245,158,11,0.25);">
+            <?php echo icon('check', '', 13); ?>
+            <span id="saveNewsOrderBtnText">Save News Formation</span>
+          </button>
+          <span id="newsSortSaved" style="font-size: 12px; color: #22c55e; display: none; align-items: center; gap: 4px; font-weight: 600;">
+            <?php echo icon('check', '', 13); ?> <span>Saved</span>
           </span>
-          <span id="newsSortSaved" style="font-size: 11.5px; color: #22c55e; display: none;">&#10003; Saved</span>
-        </div>
+        </form>
       <?php endif; ?>
     </div>
 
@@ -1634,7 +1646,20 @@ function switchSettingsTab(tabId, btn) {
         if (badge) badge.textContent = i + 1;
       });
 
-      // AJAX POST
+      // Update hidden input for manual form submit
+      var orderInput = document.getElementById('newsOrderInput');
+      if (orderInput) {
+        orderInput.value = JSON.stringify(ids);
+      }
+
+      var saveBtn = document.getElementById('saveNewsOrderBtn');
+      var saveBtnText = document.getElementById('saveNewsOrderBtnText');
+      if (saveBtn && saveBtnText) {
+        saveBtn.style.background = 'var(--accent-primary, #f59e0b)';
+        saveBtnText.textContent = 'Save News Formation *';
+      }
+
+      // Background AJAX POST
       var csrf = '<?php echo csrf_token(); ?>';
       var form = new FormData();
       form.append('csrf_token', csrf);
@@ -1648,14 +1673,12 @@ function switchSettingsTab(tabId, btn) {
       }).then(function(r) { return r.json(); }).then(function(data) {
         if (data.ok) {
           var saved = document.getElementById('newsSortSaved');
-          var hint  = document.getElementById('newsSortHint');
           if (saved) {
-            saved.style.display = 'inline';
-            if (hint) hint.style.display = 'none';
+            saved.style.display = 'inline-flex';
+            if (saveBtnText) saveBtnText.textContent = 'Save News Formation';
             setTimeout(function() {
               saved.style.display = 'none';
-              if (hint) hint.style.display = 'flex';
-            }, 2500);
+            }, 3000);
           }
         }
       }).catch(function(){});
