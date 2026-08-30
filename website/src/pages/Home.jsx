@@ -61,7 +61,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ========== STATS ========== */}
+      {/* ========== STATS & SHOWCASE ========== */}
       <section className="stats-strip">
         <div className="container">
           <div className="stats-grid reveal-stagger">
@@ -73,34 +73,42 @@ export default function Home() {
             ))}
           </div>
         </div>
+
+        {/* Auto-sliding Showcase Images */}
+        {homeImages && homeImages.length > 0 && (
+          <div className="home-showcase-marquee">
+            <div className="home-showcase-track">
+              {/* Duplicate for smooth continuous infinite loop */}
+              {[...homeImages, ...homeImages].map((src, i) => (
+                <div key={i} className="home-showcase-card">
+                  <img
+                    src={src}
+                    alt={`UAP Mindoro activity ${i + 1}`}
+                    loading="lazy"
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </section>
 
       {/* ========== ABOUT MISSION ========== */}
       <section className="section about-section">
         <div className="container about-grid">
           <div className="about-visual reveal-left">
-            <div className="about-img-strip-wrap">
-              {homeImages && homeImages.length > 0 ? (
-                <div className="about-img-strip">
-                  {/* Duplicate for seamless loop */}
-                  {[...homeImages, ...homeImages].map((src, i) => (
-                    <img key={i} src={src} alt={`UAP Mindoro ${i + 1}`} className="about-strip-img" />
-                  ))}
-                </div>
-              ) : (
-                <div className="about-logo-wrap">
-                  <img
-                    src={settings?.logo || '/logo.jpg'}
-                    alt={settings?.org_name || 'UAP Mindoro Chapter'}
-                    onError={(e) => {
-                      if (!e.currentTarget.src.endsWith('/logo.jpg')) {
-                        e.currentTarget.src = '/logo.jpg';
-                      }
-                    }}
-                  />
-                </div>
-              )}
+            <div className="about-logo-wrap">
+              <img 
+                src={settings?.logo || '/public/logo.jpg'} 
+                alt={settings?.org_name || 'UAP Mindoro Chapter'} 
+                onError={(e) => {
+                  if (!e.currentTarget.src.endsWith('/logo.jpg')) {
+                    e.currentTarget.src = '/public/logo.jpg';
+                  }
+                }}
+              />
             </div>
+            <div className="about-accent-ring" />
           </div>
           <div className="about-content reveal-right">
             <p className="eyebrow">Our Mission</p>
