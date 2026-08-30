@@ -37,7 +37,10 @@ export default function About() {
   const { data: settings } = useApi('/api/settings.php');
   const { data: milestonesData } = useApi('/api/milestones.php');
   const aboutText = settings?.about_us || 'The United Architects of the Philippines — Mindoro Chapter (IAPOA Chapter 121) is the official professional organization of licensed architects serving Oriental and Occidental Mindoro.';
-  const timeline = (milestonesData && milestonesData.length > 0) ? milestonesData : DEFAULT_MILESTONES;
+  const rawTimeline = (milestonesData && milestonesData.length > 0) ? milestonesData : DEFAULT_MILESTONES;
+  const timeline = rawTimeline.filter((item, index, self) =>
+    index === self.findIndex((t) => (t.id ? t.id === item.id : (t.year === item.year && t.title === item.title)))
+  );
 
   return (
     <main className="page-container">

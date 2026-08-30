@@ -178,8 +178,27 @@ try {
     if ($qrCount > 0) {
         echo "Generated directory QR codes for {$qrCount} member(s).\n";
     }
-// Initialize and deduplicate chapter_milestones table
+} catch (Throwable $e) {
+    echo "Member QR generation notice: " . $e->getMessage() . "\n";
+}
+
+// Initialize, deduplicate, and enforce unique constraint on chapter_milestones
 try {
+    // 1. Delete all existing duplicates
+    $pdo->exec("
+        DELETE m1 FROM chapter_milestones m1
+        INNER JOIN chapter_milestones m2 
+        WHERE m1.id > m2.id 
+          AND m1.year = m2.year 
+          AND m1.title = m2.title
+    ");
+
+    // 2. Add unique index if not already present
+    try {
+        $pdo->exec("ALTER TABLE chapter_milestones ADD UNIQUE KEY uq_milestone_year_title (year, title)");
+    } catch (Throwable $e) {}
+
+    // 3. Seed only if table is completely empty
     $msCount = (int)$pdo->query("SELECT COUNT(*) FROM chapter_milestones")->fetchColumn();
     if ($msCount === 0) {
         $pdo->exec("
@@ -189,16 +208,9 @@ try {
             (3, '2020', 'Digital Transformation',    'Adopted digital systems for member management, dues processing, and chapter communications.', 3),
             (4, '2023', 'New Leadership',            'A new Board of Directors was elected, bringing fresh perspectives and initiatives for chapter growth.', 4),
             (5, '2024', 'Online Architect Directory','Launched the public Architect Directory to connect clients with verified UAP Mindoro architects.', 5)
+            ON DUPLICATE KEY UPDATE sort_order = VALUES(sort_order)
         ");
         echo "Seeded default chapter milestones.\n";
-    } else {
-        $pdo->exec("
-            DELETE m1 FROM chapter_milestones m1
-            INNER JOIN chapter_milestones m2 
-            WHERE m1.id > m2.id 
-              AND m1.year = m2.year 
-              AND m1.title = m2.title
-        ");
     }
 } catch (Throwable $e) {
     echo "Milestones setup notice: " . $e->getMessage() . "\n";
