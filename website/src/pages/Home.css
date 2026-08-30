@@ -183,7 +183,10 @@
   width: 260px;
   height: 260px;
   border-radius: 6px;
-  overflow: hidden;
+  background: #fff;
+  padding: 2px;
+  border: 1px solid var(--c-border-gold);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
   position: relative;
   z-index: 1;
 }
