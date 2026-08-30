@@ -741,18 +741,18 @@ function switchSettingsTab(tabId, btn) {
       <p class="muted" style="font-size: 12px; margin: 0 0 16px;">These appear on the public About page as the Chapter History timeline. Add, edit, or remove milestones here.</p>
 
       <!-- ADD NEW MILESTONE -->
-      <form method="post" style="background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 10px; padding: 14px; margin-bottom: 18px;">
+      <form method="post" style="background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 10px; padding: 14px; margin-bottom: 24px;">
         <?php echo csrf_field(); ?>
         <input type="hidden" name="action" value="add_milestone">
         <input type="hidden" name="current_tab" value="websiteTab">
-        <strong style="display: block; font-size: 13px; margin-bottom: 12px;">+ Add New Milestone</strong>
+        <strong style="display: block; font-size: 13px; margin-bottom: 12px; color: var(--accent-primary);">+ Add New Milestone</strong>
         <div class="grid-2" style="gap: 12px; margin-bottom: 12px;">
           <div class="field" style="margin: 0;">
-            <label style="font-size: 12px;">Year <span style="color:var(--c-gold)">*</span></label>
+            <label style="font-size: 12px;">Year <span style="color:var(--accent-primary)">*</span></label>
             <input type="text" name="milestone_year" placeholder="e.g. 2016" maxlength="10" required>
           </div>
           <div class="field" style="margin: 0;">
-            <label style="font-size: 12px;">Title <span style="color:var(--c-gold)">*</span></label>
+            <label style="font-size: 12px;">Title <span style="color:var(--accent-primary)">*</span></label>
             <input type="text" name="milestone_title" placeholder="e.g. Chapter Founded" required>
           </div>
         </div>
@@ -765,37 +765,86 @@ function switchSettingsTab(tabId, btn) {
         </button>
       </form>
 
-      <!-- EXISTING MILESTONES LIST -->
+      <!-- EXISTING MILESTONES — styled like the website timeline cards -->
+      <style>
+      .ms-preview-card {
+        position: relative;
+        background: var(--bg-secondary);
+        border: 1px solid var(--border-color);
+        border-left: 3px solid var(--accent-primary, #f2b835);
+        border-radius: 10px;
+        padding: 18px 18px 16px;
+        transition: box-shadow 0.2s;
+      }
+      .ms-preview-card:hover { box-shadow: 0 4px 20px rgba(242,184,53,0.08); }
+      .ms-year-badge {
+        display: inline-block;
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: var(--accent-primary, #f2b835);
+        background: rgba(242,184,53,0.1);
+        border: 1px solid rgba(242,184,53,0.25);
+        padding: 2px 10px;
+        border-radius: 20px;
+        margin-bottom: 8px;
+      }
+      .ms-title {
+        font-size: 15px;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin: 0 0 6px;
+        font-family: var(--font-display, 'Cinzel', serif);
+        text-transform: capitalize;
+      }
+      .ms-dot {
+        position: absolute;
+        left: -10px;
+        top: 20px;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background: var(--accent-primary, #f2b835);
+        box-shadow: 0 0 0 3px rgba(242,184,53,0.2);
+        flex-shrink: 0;
+      }
+      </style>
+
       <?php if (empty($milestones)): ?>
         <p class="muted" style="font-size: 13px; text-align: center; padding: 20px 0;">No milestones yet. Add one above.</p>
       <?php else: ?>
-        <div style="display: flex; flex-direction: column; gap: 12px;">
+        <div style="display: flex; flex-direction: column; gap: 14px; position: relative; padding-left: 18px; border-left: 1px solid rgba(242,184,53,0.2); margin-left: 6px;">
           <?php foreach ($milestones as $ms): ?>
-            <div style="background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 10px; padding: 14px;" id="ms-view-<?php echo $ms['id']; ?>">
-              <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 10px;">
-                <div style="flex: 1;">
-                  <span style="display: inline-block; font-size: 11px; font-weight: 700; color: var(--accent-primary); background: rgba(245,158,11,0.1); padding: 2px 8px; border-radius: 20px; margin-bottom: 4px;"><?php echo htmlspecialchars($ms['year']); ?></span>
-                  <strong style="display: block; font-size: 14px; margin-bottom: 4px;"><?php echo htmlspecialchars($ms['title']); ?></strong>
-                  <p class="muted" style="font-size: 13px; margin: 0; line-height: 1.5;"><?php echo htmlspecialchars($ms['content']); ?></p>
-                </div>
-                <div style="display: flex; gap: 6px; flex-shrink: 0;">
-                  <button type="button" class="btn btn-sm" onclick="editMilestone(<?php echo $ms['id']; ?>)" style="padding: 4px 10px; font-size: 12px;">
-                    <?php echo icon('edit', '', 13); ?>
-                  </button>
-                  <form method="post" style="margin:0;" onsubmit="return confirm('Delete this milestone?');">
-                    <?php echo csrf_field(); ?>
-                    <input type="hidden" name="action" value="delete_milestone">
-                    <input type="hidden" name="current_tab" value="websiteTab">
-                    <input type="hidden" name="milestone_id" value="<?php echo $ms['id']; ?>">
-                    <button type="submit" class="btn btn-sm" style="padding: 4px 10px; font-size: 12px; background: rgba(239,68,68,0.1); border-color: rgba(239,68,68,0.3); color: #ef4444;">
-                      <?php echo icon('trash', '', 13); ?>
+            <div id="ms-view-<?php echo $ms['id']; ?>">
+              <!-- PREVIEW: Matches website timeline card -->
+              <div class="ms-preview-card">
+                <div class="ms-dot"></div>
+                <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 10px;">
+                  <div style="flex: 1;">
+                    <span class="ms-year-badge"><?php echo htmlspecialchars($ms['year']); ?></span>
+                    <h4 class="ms-title"><?php echo htmlspecialchars($ms['title']); ?></h4>
+                    <p class="muted" style="font-size: 13px; margin: 0; line-height: 1.6;"><?php echo htmlspecialchars($ms['content']); ?></p>
+                  </div>
+                  <div style="display: flex; gap: 6px; flex-shrink: 0; margin-top: 2px;">
+                    <button type="button" class="btn btn-sm ms-edit-btn" onclick="editMilestone(<?php echo $ms['id']; ?>)" style="padding: 4px 10px; font-size: 12px;" title="Edit">
+                      <?php echo icon('edit', '', 13); ?>
                     </button>
-                  </form>
+                    <form method="post" style="margin:0;" onsubmit="return confirm('Delete this milestone?');">
+                      <?php echo csrf_field(); ?>
+                      <input type="hidden" name="action" value="delete_milestone">
+                      <input type="hidden" name="current_tab" value="websiteTab">
+                      <input type="hidden" name="milestone_id" value="<?php echo $ms['id']; ?>">
+                      <button type="submit" class="btn btn-sm" style="padding: 4px 10px; font-size: 12px; background: rgba(239,68,68,0.08); border-color: rgba(239,68,68,0.25); color: #ef4444;" title="Delete">
+                        <?php echo icon('trash', '', 13); ?>
+                      </button>
+                    </form>
+                  </div>
                 </div>
               </div>
 
               <!-- INLINE EDIT FORM (hidden by default) -->
-              <form method="post" id="ms-form-<?php echo $ms['id']; ?>" style="display: none; margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--border-color);">
+              <form method="post" id="ms-form-<?php echo $ms['id']; ?>" style="display: none; background: var(--bg-secondary); border: 1px solid var(--accent-primary, #f2b835); border-radius: 10px; padding: 16px; margin-top: 8px;">
                 <?php echo csrf_field(); ?>
                 <input type="hidden" name="action" value="edit_milestone">
                 <input type="hidden" name="current_tab" value="websiteTab">
@@ -818,7 +867,7 @@ function switchSettingsTab(tabId, btn) {
                   <button type="submit" class="btn btn-sm" style="display: inline-flex; align-items: center; gap: 6px;">
                     <?php echo icon('check', '', 13); ?> <span>Save Changes</span>
                   </button>
-                  <button type="button" class="btn btn-sm" onclick="cancelEditMilestone(<?php echo $ms['id']; ?>)" style="background: var(--bg-tertiary); border-color: var(--border-color); color: var(--text-secondary);">
+                  <button type="button" class="btn btn-sm" onclick="cancelEditMilestone(<?php echo $ms['id']; ?>)" style="background: var(--bg-tertiary, var(--bg-secondary)); border-color: var(--border-color); color: var(--text-secondary);">
                     Cancel
                   </button>
                 </div>
@@ -831,16 +880,21 @@ function switchSettingsTab(tabId, btn) {
 
     <script>
     function editMilestone(id) {
-      document.getElementById('ms-view-' + id).querySelector('.btn').style.display = 'none';
+      var viewEl = document.getElementById('ms-view-' + id);
+      viewEl.querySelector('.ms-edit-btn').style.display = 'none';
+      viewEl.querySelector('.ms-preview-card').style.opacity = '0.4';
       document.getElementById('ms-form-' + id).style.display = 'block';
     }
     function cancelEditMilestone(id) {
-      document.getElementById('ms-view-' + id).querySelector('.btn').style.display = '';
+      var viewEl = document.getElementById('ms-view-' + id);
+      viewEl.querySelector('.ms-edit-btn').style.display = '';
+      viewEl.querySelector('.ms-preview-card').style.opacity = '';
       document.getElementById('ms-form-' + id).style.display = 'none';
     }
     </script>
   </div>
 </div>
+
 
 <!-- TAB 3: SPONSORS & PARTNERS -->
 <div id="sponsorsTab" class="settings-panel">
