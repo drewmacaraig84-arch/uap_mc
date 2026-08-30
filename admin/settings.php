@@ -4,10 +4,22 @@ require_admin();
 
 $error = '';
 $success = '';
+$active_tab = $_POST['current_tab'] ?? ($_GET['tab'] ?? null);
 
 if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
     require_csrf();
     $action = $_POST['action'] ?? null;
+
+    // Default active tab based on action if not explicitly sent
+    if (in_array($action, ['upload_logo', 'upload_header_badges', 'update_info'])) {
+        $active_tab = 'brandingTab';
+    } elseif (in_array($action, ['update_about'])) {
+        $active_tab = 'websiteTab';
+    } elseif (in_array($action, ['add_sponsor', 'edit_sponsor', 'delete_sponsor', 'reorder_sponsors'])) {
+        $active_tab = 'sponsorsTab';
+    } elseif (in_array($action, ['add_news', 'edit_news', 'delete_news'])) {
+        $active_tab = 'newsTab';
+    }
 
     // ============ LOGO UPLOAD ============
     if ($action === 'upload_logo' && isset($_FILES['logo'])) {
@@ -380,16 +392,16 @@ include __DIR__ . '/../includes/header.php';
 
 <!-- NAVIGATION TABS -->
 <div style="display: flex; gap: 8px; margin-bottom: 24px; border-bottom: 1px solid var(--border-color); padding-bottom: 12px; flex-wrap: wrap;">
-  <button type="button" class="tab-btn active" onclick="switchSettingsTab('brandingTab', this)">
+  <button type="button" class="tab-btn" data-tab="brandingTab" onclick="switchSettingsTab('brandingTab', this)">
     <?php echo icon('image', '', 16); ?> <span>Branding &amp; Organization</span>
   </button>
-  <button type="button" class="tab-btn" onclick="switchSettingsTab('websiteTab', this)">
+  <button type="button" class="tab-btn" data-tab="websiteTab" onclick="switchSettingsTab('websiteTab', this)">
     <?php echo icon('website_directory', '', 16); ?> <span>Website About Us</span>
   </button>
-  <button type="button" class="tab-btn" onclick="switchSettingsTab('sponsorsTab', this)">
+  <button type="button" class="tab-btn" data-tab="sponsorsTab" onclick="switchSettingsTab('sponsorsTab', this)">
     <?php echo icon('handshake', '', 16); ?> <span>Sponsors &amp; Partners (<?php echo count($sponsors); ?>)</span>
   </button>
-  <button type="button" class="tab-btn" onclick="switchSettingsTab('newsTab', this)">
+  <button type="button" class="tab-btn" data-tab="newsTab" onclick="switchSettingsTab('newsTab', this)">
     <?php echo icon('newspaper', '', 16); ?> <span>News &amp; Updates (<?php echo count($news); ?>)</span>
   </button>
 </div>
@@ -431,14 +443,52 @@ include __DIR__ . '/../includes/header.php';
 function switchSettingsTab(tabId, btn) {
   document.querySelectorAll('.settings-panel').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+
   const target = document.getElementById(tabId);
   if (target) target.classList.add('active');
-  if (btn) btn.classList.add('active');
+
+  const targetBtn = btn || document.querySelector('.tab-btn[data-tab="' + tabId + '"]');
+  if (targetBtn) targetBtn.classList.add('active');
+
+  // Persist tab across page reloads
+  try {
+    localStorage.setItem('admin_settings_tab', tabId);
+  } catch(e) {}
+
+  // Update URL hash without scrolling
+  if (window.history && window.history.replaceState) {
+    window.history.replaceState(null, null, '#' + tabId);
+  }
 }
+
+// Automatically restore the current tab on load or after save
+(function() {
+  function initTab() {
+    const hash = window.location.hash.replace('#', '');
+    const urlParam = new URLSearchParams(window.location.search).get('tab');
+    const phpTab = <?php echo json_encode($active_tab); ?>;
+    let storedTab = null;
+    try {
+      storedTab = localStorage.getItem('admin_settings_tab');
+    } catch(e) {}
+
+    const selectedTab = phpTab || (hash && document.getElementById(hash) ? hash : null) || (urlParam && document.getElementById(urlParam) ? urlParam : null) || (storedTab && document.getElementById(storedTab) ? storedTab : null) || 'brandingTab';
+
+    if (document.getElementById(selectedTab)) {
+      switchSettingsTab(selectedTab);
+    }
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initTab);
+  } else {
+    initTab();
+  }
+})();
 </script>
 
 <!-- TAB 1: BRANDING & ORGANIZATION -->
-<div id="brandingTab" class="settings-panel active">
+<div id="brandingTab" class="settings-panel">
   <div class="grid-2" style="gap: 24px;">
     <!-- LOGO SECTION -->
     <div class="card" style="margin: 0;">
