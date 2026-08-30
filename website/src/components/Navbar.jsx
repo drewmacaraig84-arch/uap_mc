@@ -38,37 +38,35 @@ export default function Navbar() {
   return (
     <header className={`navbar${scrolled ? ' scrolled' : ''}`}>
       <div className="navbar-inner container-wide">
-        {/* Brand & 3 Badges */}
-        <div className="navbar-brand-group">
-          <Link to="/" className="navbar-brand">
-            <img 
-              src={logoSrc} 
-              alt={orgName} 
-              className="navbar-logo" 
-              onError={(e) => {
-                if (!e.currentTarget.src.endsWith('/logo.jpg')) {
-                  e.currentTarget.src = '/logo.jpg';
-                }
-              }} 
-            />
-            <div className="navbar-brand-text">
-              <span className="navbar-brand-title">{orgName.split(' ').slice(0, 2).join(' ')}</span>
-              <span className="navbar-brand-sub">Chapter</span>
-            </div>
-          </Link>
-
-          {/* 3 Header Badges / Placeholders */}
-          <div className="navbar-badges">
-            {badges.map((badge, idx) => (
-              <div key={idx} className={`navbar-badge-item ${badge ? 'has-badge' : 'empty-badge'}`}>
-                {badge ? (
-                  <img src={badge} alt={`Affiliate Badge ${idx + 1}`} className="navbar-badge-img" />
-                ) : (
-                  <div className="navbar-badge-placeholder" title={`Header Image Slot ${idx + 1}`} />
-                )}
-              </div>
-            ))}
+        {/* Brand */}
+        <Link to="/" className="navbar-brand">
+          <img 
+            src={logoSrc} 
+            alt={orgName} 
+            className="navbar-logo" 
+            onError={(e) => {
+              if (!e.currentTarget.src.endsWith('/logo.jpg')) {
+                e.currentTarget.src = '/logo.jpg';
+              }
+            }} 
+          />
+          <div className="navbar-brand-text">
+            <span className="navbar-brand-title">{orgName.split(' ').slice(0, 2).join(' ')}</span>
+            <span className="navbar-brand-sub">Chapter</span>
           </div>
+        </Link>
+
+        {/* 3 Header Badges / Placeholders (Centered between Brand and Nav) */}
+        <div className="navbar-badges">
+          {badges.map((badge, idx) => (
+            <div key={idx} className={`navbar-badge-item ${badge ? 'has-badge' : 'empty-badge'}`}>
+              {badge ? (
+                <img src={badge} alt={`Affiliate Badge ${idx + 1}`} className="navbar-badge-img" />
+              ) : (
+                <div className="navbar-badge-placeholder" title={`Header Image Slot ${idx + 1}`} />
+              )}
+            </div>
+          ))}
         </div>
 
         {/* Desktop Nav */}

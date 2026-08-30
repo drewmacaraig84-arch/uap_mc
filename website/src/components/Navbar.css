@@ -26,17 +26,10 @@
 }
 
 /* Brand */
-.navbar-brand-group {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  flex-shrink: 0;
-}
-
 .navbar-brand {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 14px;
   flex-shrink: 0;
 }
 
@@ -50,11 +43,15 @@
   border: 1px solid rgba(245,158,11,0.3);
 }
 
-/* Badges next to brand */
+/* Badges centered between brand and nav links */
 .navbar-badges {
   display: flex;
   align-items: center;
-  gap: 8px;
+  justify-content: center;
+  gap: 14px;
+  margin: 0 auto;
+  padding: 0 24px;
+  flex-shrink: 0;
 }
 
 .navbar-badge-item {
@@ -219,27 +216,32 @@
 
 .drawer-cta { margin-top: var(--space-3); }
 
+@media (max-width: 1024px) {
+  .navbar-badges {
+    padding: 0 10px;
+    gap: 10px;
+  }
+}
+
 @media (max-width: 768px) {
   .navbar-links { display: none; }
   .navbar-cta   { display: none; }
   .navbar-hamburger { display: flex; }
   
-  .navbar-brand-group {
-    gap: 10px;
-  }
-
   .navbar-logo {
     width: 36px;
     height: 36px;
   }
 
-  .navbar-badge-item {
-    width: 34px;
-    height: 34px;
+  .navbar-badges {
+    margin: 0;
+    padding: 0;
+    gap: 8px;
   }
 
-  .navbar-badges {
-    gap: 6px;
+  .navbar-badge-item {
+    width: 32px;
+    height: 32px;
   }
 
   .navbar-brand-title {
