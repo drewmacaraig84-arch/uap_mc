@@ -1,6 +1,6 @@
--- Migration 016: Reset display_order for ALL news_announcements based on date proximity
--- Closest date to TODAY = position 1 (top of website and admin list)
--- Uses a temporary table to work around MySQL's restriction on self-JOIN updates
+-- Migration 017: Re-apply display_order reset for news_announcements by date proximity
+-- Needed because migration 016 only updated rows where display_order = 0
+-- This fully resets ALL rows: closest event date to TODAY = position 1 (shown first)
 
 DROP TEMPORARY TABLE IF EXISTS _news_rank_tmp;
 
