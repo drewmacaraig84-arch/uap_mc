@@ -118,7 +118,7 @@
 
 .home-showcase-track {
   display: flex;
-  gap: 14px;
+  gap: 12px;
   width: max-content;
   animation: showcase-scroll 45s linear infinite;
   will-change: transform;
@@ -130,8 +130,8 @@
 
 .home-showcase-card {
   flex-shrink: 0;
-  width: 120px;
-  height: 120px;
+  width: 125px;
+  height: 125px;
   aspect-ratio: 1 / 1;
   border-radius: var(--r-md, 8px);
   overflow: hidden;
@@ -143,7 +143,7 @@
 
 .home-showcase-card:hover {
   transform: translateY(-3px) scale(1.03);
-  box-shadow: 0 6px 24px rgba(245, 158, 11, 0.25);
+  box-shadow: 0 6px 20px rgba(245, 158, 11, 0.25);
 }
 
 .home-showcase-card img {
@@ -325,7 +325,7 @@
 }
 
 @media (max-width: 480px) {
-  .home-showcase-card { width: 80px; height: 80px; }
+  .home-showcase-card { width: 75px; height: 75px; }
   .hero-actions {
     flex-direction: column;
     width: 100%;

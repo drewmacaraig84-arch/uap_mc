@@ -16,11 +16,6 @@ export default function Navbar() {
   const { data: settings } = useApi('/api/settings.php');
   const logoSrc = settings?.logo || '/public/logo.jpg';
   const orgName = settings?.org_name || 'UAP Mindoro';
-  const badges = [
-    settings?.header_badge_1,
-    settings?.header_badge_2,
-    settings?.header_badge_3,
-  ];
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const location = useLocation();
@@ -38,35 +33,45 @@ export default function Navbar() {
   return (
     <header className={`navbar${scrolled ? ' scrolled' : ''}`}>
       <div className="navbar-inner container-wide">
-        {/* Brand */}
-        <Link to="/" className="navbar-brand">
-          <img 
-            src={logoSrc} 
-            alt={orgName} 
-            className="navbar-logo" 
-            onError={(e) => {
-              if (!e.currentTarget.src.endsWith('/logo.jpg')) {
-                e.currentTarget.src = '/logo.jpg';
-              }
-            }} 
-          />
-          <div className="navbar-brand-text">
-            <span className="navbar-brand-title">{orgName.split(' ').slice(0, 2).join(' ')}</span>
-            <span className="navbar-brand-sub">Chapter</span>
-          </div>
-        </Link>
-
-        {/* 3 Header Badges / Placeholders (Centered between Brand and Nav) */}
-        <div className="navbar-badges">
-          {badges.map((badge, idx) => (
-            <div key={idx} className={`navbar-badge-item ${badge ? 'has-badge' : 'empty-badge'}`}>
-              {badge ? (
-                <img src={badge} alt={`Affiliate Badge ${idx + 1}`} className="navbar-badge-img" />
-              ) : (
-                <div className="navbar-badge-placeholder" title={`Header Image Slot ${idx + 1}`} />
-              )}
+        {/* Brand & 3 Badges */}
+        <div className="navbar-brand-group">
+          <Link to="/" className="navbar-brand">
+            <img 
+              src={logoSrc} 
+              alt={orgName} 
+              className="navbar-logo" 
+              onError={(e) => {
+                if (!e.currentTarget.src.endsWith('/logo.jpg')) {
+                  e.currentTarget.src = '/logo.jpg';
+                }
+              }} 
+            />
+            <div className="navbar-brand-text">
+              <span className="navbar-brand-title">{orgName.split(' ').slice(0, 2).join(' ')}</span>
+              <span className="navbar-brand-sub">Chapter</span>
             </div>
-          ))}
+          </Link>
+
+          {/* 3 Header Image Slots */}
+          <div className="navbar-badges">
+            {[1, 2, 3].map((num) => {
+              const badgeSrc = settings?.[`header_image_${num}`];
+              return (
+                <div key={num} className={`navbar-badge-box${badgeSrc ? ' has-image' : ' placeholder'}`}>
+                  {badgeSrc ? (
+                    <img 
+                      src={badgeSrc} 
+                      alt={`Badge ${num}`} 
+                      className="navbar-badge-img" 
+                      onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                    />
+                  ) : (
+                    <div className="navbar-badge-placeholder-box" title={`Header slot ${num}`} />
+                  )}
+                </div>
+              );
+            })}
+          </div>
         </div>
 
         {/* Desktop Nav */}

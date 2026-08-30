@@ -14,9 +14,9 @@ try {
 
     echo json_encode([
         'logo'                   => $toUrl($rows['logo'] ?? 'public/logo.jpg'),
-        'header_badge_1'         => $toUrl($rows['header_badge_1'] ?? null),
-        'header_badge_2'         => $toUrl($rows['header_badge_2'] ?? null),
-        'header_badge_3'         => $toUrl($rows['header_badge_3'] ?? null),
+        'header_image_1'         => $toUrl($rows['header_image_1'] ?? null),
+        'header_image_2'         => $toUrl($rows['header_image_2'] ?? null),
+        'header_image_3'         => $toUrl($rows['header_image_3'] ?? null),
         'org_name'               => $rows['org_name'] ?? 'UAP Mindoro Chapter',
         'about_us'               => $rows['about_us'] ?? '',
         'contact_address'        => $rows['contact_address'] ?? 'Calapan City, Oriental Mindoro, Philippines 5200',
