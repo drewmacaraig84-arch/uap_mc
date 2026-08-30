@@ -1,4 +1,4 @@
-import { lazy, Suspense } from 'react';
+import { useState, useEffect, lazy, Suspense } from 'react';
 import { Link } from 'react-router-dom';
 import { useApi } from '../hooks/useApi';
 import ArchitectCard from '../components/ArchitectCard';
@@ -6,6 +6,7 @@ import NewsCard from '../components/NewsCard';
 import AutoCarousel from '../components/AutoCarousel';
 import { IconBuilding, IconLeaf, IconHandshake } from '../components/Icons';
 import './Home.css';
+import './News.css';
 
 const HeroCanvas = lazy(() => import('../components/HeroCanvas'));
 
@@ -14,6 +15,29 @@ export default function Home() {
   const { data: members, loading: mLoad } = useApi('/api/members.php');
   const { data: news, loading: nLoad } = useApi('/api/news.php');
   const { data: homeImages } = useApi('/api/home_images.php');
+  const [selectedNews, setSelectedNews] = useState(null);
+
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') setSelectedNews(null);
+    };
+    if (selectedNews) {
+      window.addEventListener('keydown', handleKeyDown);
+      document.body.style.overflow = 'hidden';
+    }
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      document.body.style.overflow = '';
+    };
+  }, [selectedNews]);
+
+  const selectedDate = selectedNews?.date_posted
+    ? new Date(selectedNews.date_posted).toLocaleDateString('en-PH', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      })
+    : '';
 
   const featured = members || [];
   const latestNews = news || [];
@@ -184,7 +208,7 @@ export default function Home() {
           ) : latestNews.length > 0 ? (
             <AutoCarousel
               items={latestNews}
-              renderItem={(n) => <NewsCard item={n} />}
+              renderItem={(n) => <NewsCard item={n} onClick={() => setSelectedNews(n)} />}
               cardMinWidth={320}
               gap={24}
               autoSlideInterval={3000}
@@ -197,6 +221,53 @@ export default function Home() {
           )}
         </div>
       </section>
+
+      {/* FULL ANNOUNCEMENT MODAL */}
+      {selectedNews && (
+        <div className="news-modal-backdrop" onClick={() => setSelectedNews(null)}>
+          <div
+            className="news-modal-card card"
+            onClick={(e) => e.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="home-news-modal-heading"
+          >
+            <button
+              type="button"
+              className="news-modal-close"
+              onClick={() => setSelectedNews(null)}
+              aria-label="Close modal"
+            >
+              &times;
+            </button>
+
+            <div className="news-modal-header">
+              <span className="news-modal-date">{selectedDate}</span>
+              <h2 id="home-news-modal-heading" className="news-modal-title">
+                {selectedNews.title}
+              </h2>
+            </div>
+
+            <div className="news-modal-divider" />
+
+            <div className="news-modal-content">
+              {selectedNews.summary.split('\n').map((paragraph, index) => (
+                paragraph.trim() ? <p key={index}>{paragraph}</p> : <br key={index} />
+              ))}
+            </div>
+
+            <div className="news-modal-footer">
+              <button
+                type="button"
+                className="btn btn-outline"
+                onClick={() => setSelectedNews(null)}
+              >
+                Close Announcement
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ========== CTA BANNER ========== */}
       <section className="cta-section">

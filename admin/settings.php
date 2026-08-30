@@ -381,7 +381,7 @@ $office_hours_saturday_val = $settings_rows['office_hours_saturday'] ?? '9:00 AM
 $office_hours_sunday_val = $settings_rows['office_hours_sunday'] ?? 'Closed';
 
 $sponsors = $pdo->query("SELECT * FROM sponsors WHERE is_active = 1 ORDER BY display_order ASC")->fetchAll();
-$news = $pdo->query("SELECT * FROM news_announcements WHERE is_active = 1 ORDER BY display_order ASC")->fetchAll();
+$news = $pdo->query("SELECT * FROM news_announcements WHERE is_active = 1 ORDER BY id DESC")->fetchAll();
 $milestones = [];
 try {
     $milestones = $pdo->query("SELECT * FROM chapter_milestones ORDER BY sort_order ASC, year ASC")->fetchAll();

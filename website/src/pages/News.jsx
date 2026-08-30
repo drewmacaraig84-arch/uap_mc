@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import { useApi } from '../hooks/useApi';
 import NewsCard from '../components/NewsCard';
 import { IconNewspaper } from '../components/Icons';
@@ -5,6 +6,30 @@ import './News.css';
 
 export default function News() {
   const { data: news, loading, error } = useApi('/api/news.php');
+  const [selectedNews, setSelectedNews] = useState(null);
+
+  // Close modal with Escape key and prevent background scroll
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') setSelectedNews(null);
+    };
+    if (selectedNews) {
+      window.addEventListener('keydown', handleKeyDown);
+      document.body.style.overflow = 'hidden';
+    }
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      document.body.style.overflow = '';
+    };
+  }, [selectedNews]);
+
+  const selectedDate = selectedNews?.date_posted
+    ? new Date(selectedNews.date_posted).toLocaleDateString('en-PH', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      })
+    : '';
 
   return (
     <main className="page-container">
@@ -31,7 +56,9 @@ export default function News() {
           </div>
         ) : news?.length > 0 ? (
           <div className="grid-3 reveal-stagger">
-            {news.map((n) => <NewsCard key={n.id} item={n} />)}
+            {news.map((n) => (
+              <NewsCard key={n.id} item={n} onClick={() => setSelectedNews(n)} />
+            ))}
           </div>
         ) : (
           <div className="news-state reveal-pop">
@@ -43,6 +70,54 @@ export default function News() {
           </div>
         )}
       </div>
+
+      {/* FULL ANNOUNCEMENT MODAL */}
+      {selectedNews && (
+        <div className="news-modal-backdrop" onClick={() => setSelectedNews(null)}>
+          <div
+            className="news-modal-card card"
+            onClick={(e) => e.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="news-modal-heading"
+          >
+            <button
+              type="button"
+              className="news-modal-close"
+              onClick={() => setSelectedNews(null)}
+              aria-label="Close modal"
+            >
+              &times;
+            </button>
+
+            <div className="news-modal-header">
+              <span className="news-modal-date">{selectedDate}</span>
+              <h2 id="news-modal-heading" className="news-modal-title">
+                {selectedNews.title}
+              </h2>
+            </div>
+
+            <div className="news-modal-divider" />
+
+            <div className="news-modal-content">
+              {selectedNews.summary.split('\n').map((paragraph, index) => (
+                paragraph.trim() ? <p key={index}>{paragraph}</p> : <br key={index} />
+              ))}
+            </div>
+
+            <div className="news-modal-footer">
+              <button
+                type="button"
+                className="btn btn-outline"
+                onClick={() => setSelectedNews(null)}
+              >
+                Close Announcement
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }
+
