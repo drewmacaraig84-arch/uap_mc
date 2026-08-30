@@ -9,11 +9,6 @@ import './Home.css';
 
 const HeroCanvas = lazy(() => import('../components/HeroCanvas'));
 
-const STATS = [
-  { value: '2016', label: 'Chapter Founded' },
-  { value: 'UAP', label: 'National Organization' },
-];
-
 export default function Home() {
   const { data: settings } = useApi('/api/settings.php');
   const { data: members, loading: mLoad } = useApi('/api/members.php');
@@ -61,21 +56,9 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ========== STATS & SHOWCASE ========== */}
-      <section className="stats-strip">
-        <div className="container">
-          <div className="stats-grid reveal-stagger">
-            {STATS.map((s) => (
-              <div key={s.label} className="stat-item">
-                <span className="stat-value text-gold">{s.value}</span>
-                <span className="stat-label">{s.label}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Auto-sliding Showcase Images */}
-        {homeImages && homeImages.length > 0 && (
+      {/* ========== SHOWCASE SLIDER STRIP ========== */}
+      {homeImages && homeImages.length > 0 && (
+        <section className="showcase-strip">
           <div className="home-showcase-marquee">
             <div className="home-showcase-track">
               {/* Duplicate for smooth continuous infinite loop */}
@@ -90,8 +73,8 @@ export default function Home() {
               ))}
             </div>
           </div>
-        )}
-      </section>
+        </section>
+      )}
 
       {/* ========== ABOUT MISSION ========== */}
       <section className="section about-section">
