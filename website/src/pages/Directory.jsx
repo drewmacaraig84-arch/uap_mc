@@ -37,7 +37,7 @@ export default function Directory() {
           <p className="eyebrow">Mindoro Chapter</p>
           <h1 className="display-2">Architect <span className="text-gold">Directory</span></h1>
           <p className="body-lg muted" style={{ marginTop: 12, maxWidth: 520 }}>
-            Verified, licensed architects of the UAP Mindoro Chapter in good standing.
+            Verified, licensed architects of the UAP Mindoro Chapter.
           </p>
         </div>
       </div>
