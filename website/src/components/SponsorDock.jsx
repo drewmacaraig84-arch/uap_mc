@@ -5,7 +5,7 @@ import { IconStar, IconSparkles, IconHandshake, IconChevronDown, IconChevronUp, 
 import './SponsorDock.css';
 
 /* ── Timing constants ── */
-const DURATION_PLATINUM = 180; // seconds total for a platinum sponsor
+const DURATION_PLATINUM = 60;  // seconds total for a platinum sponsor (1 minute)
 const DURATION_REGULAR  = 30;  // seconds for a regular sponsor
 const DURATION_PRODUCT  = 5;   // seconds per product slide before repeating
 
