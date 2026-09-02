@@ -41,6 +41,13 @@ function ensure_user_profile_photo_column($pdo) {
             // Auto-clean any project photos mistakenly set as member profile avatar
             $pdo->exec("UPDATE website_members SET photo_path = NULL WHERE photo_path LIKE '%proj_%'");
         }
+        $newsTableCheck = $pdo->query("SHOW TABLES LIKE 'news_announcements'")->fetch();
+        if ($newsTableCheck) {
+            $colNewsImg = $pdo->query("SHOW COLUMNS FROM news_announcements LIKE 'image_path'")->fetch();
+            if (!$colNewsImg) {
+                $pdo->exec("ALTER TABLE news_announcements ADD COLUMN image_path VARCHAR(255) NULL AFTER summary");
+            }
+        }
     } catch (Throwable $e) {}
 }
 

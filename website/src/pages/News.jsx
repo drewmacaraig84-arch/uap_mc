@@ -75,7 +75,7 @@ export default function News() {
       {selectedNews && (
         <div className="news-modal-backdrop" onClick={() => setSelectedNews(null)}>
           <div
-            className="news-modal-card card"
+            className={`news-modal-card card ${selectedNews.image_url ? 'has-modal-hero' : ''}`}
             onClick={(e) => e.stopPropagation()}
             role="dialog"
             aria-modal="true"
@@ -90,29 +90,46 @@ export default function News() {
               &times;
             </button>
 
-            <div className="news-modal-header">
-              <span className="news-modal-date">{selectedDate}</span>
-              <h2 id="news-modal-heading" className="news-modal-title">
-                {selectedNews.title}
-              </h2>
-            </div>
+            {/* High-Resolution Hero Banner */}
+            {selectedNews.image_url && (
+              <div className="news-modal-hero-wrap">
+                <img
+                  src={selectedNews.image_url}
+                  alt={selectedNews.title}
+                  className="news-modal-hero-img"
+                  onError={(e) => {
+                    e.currentTarget.parentElement.style.display = 'none';
+                  }}
+                />
+                <div className="news-modal-hero-overlay" />
+              </div>
+            )}
 
-            <div className="news-modal-divider" />
+            <div className="news-modal-body">
+              <div className="news-modal-header">
+                <span className="news-modal-date">{selectedDate}</span>
+                <h2 id="news-modal-heading" className="news-modal-title">
+                  {selectedNews.title}
+                </h2>
+              </div>
 
-            <div className="news-modal-content">
-              {selectedNews.summary.split('\n').map((paragraph, index) => (
-                paragraph.trim() ? <p key={index}>{paragraph}</p> : <br key={index} />
-              ))}
-            </div>
+              <div className="news-modal-divider" />
 
-            <div className="news-modal-footer">
-              <button
-                type="button"
-                className="btn btn-outline"
-                onClick={() => setSelectedNews(null)}
-              >
-                Close Announcement
-              </button>
+              <div className="news-modal-content">
+                {selectedNews.summary.split('\n').map((paragraph, index) => (
+                  paragraph.trim() ? <p key={index}>{paragraph}</p> : <br key={index} />
+                ))}
+              </div>
+
+              <div className="news-modal-footer">
+                <button
+                  type="button"
+                  className="btn btn-outline"
+                  onClick={() => setSelectedNews(null)}
+                >
+                  Close Announcement
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -120,4 +137,5 @@ export default function News() {
     </main>
   );
 }
+
 

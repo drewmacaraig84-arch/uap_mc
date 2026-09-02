@@ -188,7 +188,8 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
                     $pDesc = trim($p['description'] ?? '');
                     $pLink = trim($p['link_url'] ?? '');
                     $pId = !empty($p['id']) ? trim($p['id']) : ('prod_' . time() . '_' . bin2hex(random_bytes(3)));
-                    $imgPath = '';
+                    $existingImg = trim($p['existing_image'] ?? '');
+                    $imgPath = $existingImg;
 
                     if (isset($_FILES['products']['name'][$k]['image']) && $_FILES['products']['error'][$k]['image'] === UPLOAD_ERR_OK) {
                         $fName = $_FILES['products']['name'][$k]['image'];
@@ -318,8 +319,22 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
 
     // ============ NEWS & ANNOUNCEMENTS MANAGEMENT ============
     if ($action === 'add_news' && !empty($_POST['news_title'] ?? '')) {
-        $stmt = $pdo->prepare("INSERT INTO news_announcements (title, summary, date_posted, display_order) VALUES (?, ?, ?, (SELECT COALESCE(MAX(display_order), 0) + 1 FROM news_announcements n2))");
-        $stmt->execute([$_POST['news_title'], $_POST['news_summary'] ?? '', $_POST['news_date'] ?? null]);
+        $image_path = null;
+        $uploadDir = __DIR__ . '/../uploads/news/';
+        if (!is_dir($uploadDir)) @mkdir($uploadDir, 0775, true);
+        $allowedExts = ['jpg', 'jpeg', 'png', 'webp'];
+        if (isset($_FILES['news_image']) && $_FILES['news_image']['error'] === UPLOAD_ERR_OK) {
+            $ext = strtolower(pathinfo($_FILES['news_image']['name'], PATHINFO_EXTENSION));
+            if (in_array($ext, $allowedExts) && $_FILES['news_image']['size'] <= 12 * 1024 * 1024) {
+                $fileName = 'news_' . time() . '_' . bin2hex(random_bytes(3)) . '.' . $ext;
+                if (move_uploaded_file($_FILES['news_image']['tmp_name'], $uploadDir . $fileName)) {
+                    $image_path = 'uploads/news/' . $fileName;
+                }
+            }
+        }
+
+        $stmt = $pdo->prepare("INSERT INTO news_announcements (title, summary, image_path, date_posted, display_order) VALUES (?, ?, ?, ?, (SELECT COALESCE(MAX(display_order), 0) + 1 FROM news_announcements n2))");
+        $stmt->execute([$_POST['news_title'], $_POST['news_summary'] ?? '', $image_path, $_POST['news_date'] ?? null]);
         $success = 'News announcement added successfully.';
     }
 
@@ -328,12 +343,48 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
         $title = trim($_POST['news_title']);
         $summary = trim($_POST['news_summary'] ?? '');
         $date = !empty($_POST['news_date']) ? $_POST['news_date'] : date('Y-m-d');
-        $stmt = $pdo->prepare("UPDATE news_announcements SET title = ?, summary = ?, date_posted = ? WHERE id = ?");
-        $stmt->execute([$title, $summary, $date, $news_id]);
+
+        $stmtCur = $pdo->prepare("SELECT image_path FROM news_announcements WHERE id = ?");
+        $stmtCur->execute([$news_id]);
+        $curImage = $stmtCur->fetchColumn();
+        $image_path = $curImage;
+
+        if (!empty($_POST['remove_news_image'])) {
+            if ($curImage && file_exists(__DIR__ . '/../' . ltrim($curImage, '/'))) {
+                @unlink(__DIR__ . '/../' . ltrim($curImage, '/'));
+            }
+            $image_path = null;
+        }
+
+        if (isset($_FILES['news_image']) && $_FILES['news_image']['error'] === UPLOAD_ERR_OK) {
+            $ext = strtolower(pathinfo($_FILES['news_image']['name'], PATHINFO_EXTENSION));
+            $allowedExts = ['jpg', 'jpeg', 'png', 'webp'];
+            if (in_array($ext, $allowedExts) && $_FILES['news_image']['size'] <= 12 * 1024 * 1024) {
+                $uploadDir = __DIR__ . '/../uploads/news/';
+                if (!is_dir($uploadDir)) @mkdir($uploadDir, 0775, true);
+                $fileName = 'news_' . time() . '_' . bin2hex(random_bytes(3)) . '.' . $ext;
+                if (move_uploaded_file($_FILES['news_image']['tmp_name'], $uploadDir . $fileName)) {
+                    if ($curImage && file_exists(__DIR__ . '/../' . ltrim($curImage, '/'))) {
+                        @unlink(__DIR__ . '/../' . ltrim($curImage, '/'));
+                    }
+                    $image_path = 'uploads/news/' . $fileName;
+                }
+            }
+        }
+
+        $stmt = $pdo->prepare("UPDATE news_announcements SET title = ?, summary = ?, image_path = ?, date_posted = ? WHERE id = ?");
+        $stmt->execute([$title, $summary, $image_path, $date, $news_id]);
         $success = 'News announcement updated successfully.';
     }
 
     if ($action === 'delete_news' && !empty($_POST['news_id'] ?? '')) {
+        $stmtCur = $pdo->prepare("SELECT image_path FROM news_announcements WHERE id = ?");
+        $stmtCur->execute([$_POST['news_id']]);
+        $curImage = $stmtCur->fetchColumn();
+        if ($curImage && file_exists(__DIR__ . '/../' . ltrim($curImage, '/'))) {
+            @unlink(__DIR__ . '/../' . ltrim($curImage, '/'));
+        }
+
         $stmt = $pdo->prepare("DELETE FROM news_announcements WHERE id = ?");
         $stmt->execute([$_POST['news_id']]);
 
@@ -1134,22 +1185,34 @@ function switchSettingsTab(tabId, btn) {
     </div>
     <p class="muted" style="margin-bottom: 16px; font-size: 13px;">Create news articles and updates that appear on the website and member portals.</p>
 
-    <form method="post" style="background: var(--bg-secondary); padding: 18px; border-radius: 12px; border: 1px solid var(--border-color);">
+    <form method="post" enctype="multipart/form-data" style="background: var(--bg-secondary); padding: 18px; border-radius: 12px; border: 1px solid var(--border-color);">
       <?php echo csrf_field(); ?>
       <input type="hidden" name="action" value="add_news">
       <div class="grid-2" style="gap: 14px; margin-bottom: 14px;">
         <div class="field" style="margin: 0;">
-          <label>News Headline / Title</label>
+          <label>News Headline / Title *</label>
           <input type="text" name="news_title" placeholder="e.g. UAP Mindoro Chapter General Assembly 2026" required>
         </div>
         <div class="field" style="margin: 0;">
-          <label>Date of Event / Publication</label>
+          <label>Date of Event / Publication *</label>
           <input type="date" name="news_date" value="<?php echo date('Y-m-d'); ?>" required>
         </div>
       </div>
+      
+      <div class="field" style="margin-bottom: 14px;">
+        <label>Cover / Announcement Poster Image (Optional)</label>
+        <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+          <div id="addNewsImgPreviewWrap" style="width: 56px; height: 56px; border-radius: 8px; background: rgba(0,0,0,0.25); border: 1px dashed var(--border-color); display: none; align-items: center; justify-content: center; overflow: hidden; flex-shrink: 0;">
+            <img id="addNewsImgPreview" src="" style="width:100%; height:100%; object-fit:cover;">
+          </div>
+          <input type="file" name="news_image" accept=".jpg,.jpeg,.png,.webp" onchange="previewNewsUpload(this, 'addNewsImgPreview', 'addNewsImgPreviewWrap')" style="padding: 6px; font-size: 12px; flex: 1; min-width: 200px;">
+        </div>
+        <span class="muted" style="font-size: 11px; display: block; margin-top: 4px;">PNG, JPG or WebP (up to 12MB). Displayed as cover card on the website and inside the full announcement reader.</span>
+      </div>
+
       <div class="field" style="margin-bottom: 16px;">
-        <label>Summary / Content</label>
-        <textarea name="news_summary" rows="3" placeholder="Brief summary of the announcement, venue details, and registration instructions." required style="width: 100%; padding: 12px; font-family: inherit; font-size: 14px; line-height: 1.5;"></textarea>
+        <label>Summary / Content *</label>
+        <textarea name="news_summary" rows="4" placeholder="Full announcement narrative, venue details, schedule, agenda, and instructions..." required style="width: 100%; padding: 12px; font-family: inherit; font-size: 14px; line-height: 1.5;"></textarea>
       </div>
       <button class="btn btn-sm" type="submit" style="display: inline-flex; align-items: center; gap: 6px;">
         <?php echo icon('plus', '', 14); ?> <span>Publish News</span>
@@ -1187,11 +1250,11 @@ function switchSettingsTab(tabId, btn) {
       <div id="newsSortable" style="display: flex; flex-direction: column; gap: 10px;">
         <?php $newsPos = 0; foreach ($news as $item): $newsPos++; ?>
           <div class="news-sortable-item" data-id="<?php echo $item['id']; ?>"
-               style="background: var(--bg-secondary); padding: 14px 16px; border-radius: 12px; border: 1px solid var(--border-color); display: flex; align-items: flex-start; gap: 12px; cursor: grab; transition: box-shadow 0.2s, border-color 0.2s;">
+               style="background: var(--bg-secondary); padding: 14px 16px; border-radius: 12px; border: 1px solid var(--border-color); display: flex; align-items: center; gap: 12px; cursor: grab; transition: box-shadow 0.2s, border-color 0.2s;">
 
             <!-- Drag Handle -->
             <div class="drag-handle" title="Drag to reorder"
-                 style="flex-shrink: 0; margin-top: 2px; color: var(--text-secondary); opacity: 0.5; cursor: grab; padding: 2px 0;">
+                 style="flex-shrink: 0; color: var(--text-secondary); opacity: 0.5; cursor: grab; padding: 2px 0;">
               <svg width="14" height="20" viewBox="0 0 14 20" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
                 <circle cx="4" cy="4" r="2"/><circle cx="10" cy="4" r="2"/>
                 <circle cx="4" cy="10" r="2"/><circle cx="10" cy="10" r="2"/>
@@ -1200,9 +1263,20 @@ function switchSettingsTab(tabId, btn) {
             </div>
 
             <!-- Order Badge -->
-            <div class="news-order-badge" style="flex-shrink: 0; width: 26px; height: 26px; border-radius: 6px; background: rgba(245,158,11,0.12); color: var(--accent-primary, #f59e0b); font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center; margin-top: 1px;">
+            <div class="news-order-badge" style="flex-shrink: 0; width: 26px; height: 26px; border-radius: 6px; background: rgba(245,158,11,0.12); color: var(--accent-primary, #f59e0b); font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center;">
               <?php echo $newsPos; ?>
             </div>
+
+            <!-- Image Thumbnail -->
+            <?php if (!empty($item['image_path'])): ?>
+              <div style="width: 48px; height: 48px; border-radius: 8px; overflow: hidden; background: #000; flex-shrink: 0; border: 1px solid rgba(255,255,255,0.08);">
+                <img src="<?php echo htmlspecialchars(BASE_URL . '/' . ltrim($item['image_path'], '/')); ?>" alt="" style="width: 100%; height: 100%; object-fit: cover;">
+              </div>
+            <?php else: ?>
+              <div style="width: 48px; height: 48px; border-radius: 8px; background: rgba(245,158,11,0.06); border: 1px dashed rgba(245,158,11,0.2); display: flex; align-items: center; justify-content: center; color: var(--accent-primary, #f59e0b); flex-shrink: 0; opacity: 0.7;">
+                <?php echo icon('newspaper', '', 18); ?>
+              </div>
+            <?php endif; ?>
 
             <!-- Content -->
             <div style="flex: 1; min-width: 0;">
@@ -1210,7 +1284,7 @@ function switchSettingsTab(tabId, btn) {
                 <strong style="font-size: 14.5px; color: var(--text-primary);"><?php echo htmlspecialchars($item['title']); ?></strong>
                 <span class="badge" style="font-size: 11px; flex-shrink: 0;"><?php echo date('M d, Y', strtotime($item['date_posted'])); ?></span>
               </div>
-              <p class="muted" style="margin: 0; font-size: 12.5px; line-height: 1.5; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 500px;">
+              <p class="muted" style="margin: 0; font-size: 12.5px; line-height: 1.5; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 480px;">
                 <?php echo htmlspecialchars($item['summary']); ?>
               </p>
             </div>
@@ -1222,6 +1296,7 @@ function switchSettingsTab(tabId, btn) {
                         'id' => $item['id'],
                         'title' => $item['title'],
                         'summary' => $item['summary'],
+                        'image_path' => $item['image_path'] ?? null,
                         'date_posted' => $item['date_posted']
                       ]), ENT_QUOTES, 'UTF-8'); ?>)"
                       style="font-size: 12px; padding: 5px 10px; display: inline-flex; align-items: center; gap: 4px;">
@@ -1258,7 +1333,7 @@ function switchSettingsTab(tabId, btn) {
 
 <!-- EDIT NEWS MODAL -->
 <div id="editNewsModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.75); z-index:99999; align-items:center; justify-content:center; padding:20px; backdrop-filter:blur(6px);">
-  <div style="background:var(--card-bg, #18243a); border:1px solid var(--border-color, rgba(255,255,255,0.15)); border-radius:14px; max-width:540px; width:100%; overflow:hidden; box-shadow:0 25px 50px -12px rgba(0,0,0,0.6); color:var(--text-primary);">
+  <div style="background:var(--card-bg, #18243a); border:1px solid var(--border-color, rgba(255,255,255,0.15)); border-radius:14px; max-width:580px; width:100%; max-height:90vh; overflow-y:auto; box-shadow:0 25px 50px -12px rgba(0,0,0,0.6); color:var(--text-primary);">
     <div style="padding:22px;">
       <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:16px;">
         <div style="display:flex; align-items:center; gap:10px;">
@@ -1270,24 +1345,41 @@ function switchSettingsTab(tabId, btn) {
         <button type="button" onclick="closeEditNewsModal()" style="background:transparent; border:none; color:var(--text-secondary); cursor:pointer; font-size:20px; padding:4px;">&times;</button>
       </div>
 
-      <form method="post" id="editNewsForm">
+      <form method="post" enctype="multipart/form-data" id="editNewsForm">
         <?php echo csrf_field(); ?>
         <input type="hidden" name="action" value="edit_news">
         <input type="hidden" name="news_id" id="edit_news_id" value="">
 
         <div class="field" style="margin-bottom:12px;">
-          <label>News Headline / Title</label>
+          <label>News Headline / Title *</label>
           <input type="text" name="news_title" id="edit_news_title" required style="width:100%;">
         </div>
 
         <div class="field" style="margin-bottom:12px;">
-          <label>Date of Event / Publication</label>
+          <label>Date of Event / Publication *</label>
           <input type="date" name="news_date" id="edit_news_date" required style="width:100%;">
         </div>
 
+        <!-- Cover Image Edit & Preview -->
+        <div class="field" style="margin-bottom:14px;">
+          <label>Cover / Announcement Image</label>
+          <div id="editNewsCurrentImgWrap" style="display:none; align-items:center; gap:12px; margin-bottom:8px; padding:8px 12px; background:rgba(0,0,0,0.25); border-radius:8px; border:1px solid rgba(255,255,255,0.06);">
+            <img id="editNewsCurrentImg" src="" style="width:50px; height:50px; object-fit:cover; border-radius:6px;">
+            <div style="flex:1;">
+              <span style="font-size:12px; font-weight:600; display:block; color:var(--text-primary);">Current Attached Image</span>
+              <label style="font-size:11.5px; color:#ef4444; cursor:pointer; display:inline-flex; align-items:center; gap:4px; margin-top:2px;">
+                <input type="checkbox" name="remove_news_image" value="1" id="edit_remove_news_image">
+                <span>Remove attached image</span>
+              </label>
+            </div>
+          </div>
+          <input type="file" name="news_image" accept=".jpg,.jpeg,.png,.webp" style="padding:6px; width:100%; font-size:12px;">
+          <span class="muted" style="font-size:11px; display:block; margin-top:3px;">Select a new image file to replace the current one.</span>
+        </div>
+
         <div class="field" style="margin-bottom:18px;">
-          <label>Summary / Content</label>
-          <textarea name="news_summary" id="edit_news_summary" rows="4" required style="width:100%; padding:10px; font-family:inherit; font-size:13.5px; line-height:1.5;"></textarea>
+          <label>Summary / Content *</label>
+          <textarea name="news_summary" id="edit_news_summary" rows="5" required style="width:100%; padding:10px; font-family:inherit; font-size:13.5px; line-height:1.5;"></textarea>
         </div>
 
         <div style="display:flex; justify-content:flex-end; gap:10px;">
@@ -1547,11 +1639,40 @@ function switchSettingsTab(tabId, btn) {
     updateProductCounter(containerId, isPlatinum);
   }
 
+  function previewNewsUpload(input, imgId, wrapId) {
+    if (!input.files || !input.files[0]) return;
+    var reader = new FileReader();
+    reader.onload = function(e) {
+      var img = document.getElementById(imgId);
+      var wrap = document.getElementById(wrapId);
+      if (img && wrap) {
+        img.src = e.target.result;
+        wrap.style.display = 'flex';
+      }
+    };
+    reader.readAsDataURL(input.files[0]);
+  }
+
   function openEditNewsModal(data) {
     document.getElementById('edit_news_id').value = data.id;
     document.getElementById('edit_news_title').value = data.title || '';
     document.getElementById('edit_news_date').value = data.date_posted ? data.date_posted.substring(0, 10) : '';
     document.getElementById('edit_news_summary').value = data.summary || '';
+    
+    var curImgWrap = document.getElementById('editNewsCurrentImgWrap');
+    var curImg = document.getElementById('editNewsCurrentImg');
+    var removeChk = document.getElementById('edit_remove_news_image');
+    if (removeChk) removeChk.checked = false;
+
+    if (data.image_path) {
+      var fullUrl = data.image_path.indexOf('http') === 0 ? data.image_path : ('<?php echo BASE_URL; ?>/' + data.image_path.replace(/^\//, ''));
+      if (curImg) curImg.src = fullUrl;
+      if (curImgWrap) curImgWrap.style.display = 'flex';
+    } else {
+      if (curImgWrap) curImgWrap.style.display = 'none';
+      if (curImg) curImg.src = '';
+    }
+
     document.getElementById('editNewsModal').style.display = 'flex';
   }
 

@@ -157,7 +157,25 @@ export default function SponsorDetail() {
                           src={prod.image_url}
                           alt={prod.name}
                           className="sponsor-product-img"
+                          onError={(e) => {
+                            if (sponsor.logo_url) {
+                              e.currentTarget.src = sponsor.logo_url;
+                              e.currentTarget.style.objectFit = 'contain';
+                              e.currentTarget.style.padding = '24px';
+                            } else {
+                              e.currentTarget.style.display = 'none';
+                            }
+                          }}
                         />
+                      ) : sponsor.logo_url ? (
+                        <div className="sponsor-product-fallback-wrap">
+                          <img
+                            src={sponsor.logo_url}
+                            alt={sponsor.name}
+                            className="sponsor-product-fallback-logo"
+                          />
+                          <span className="sponsor-product-fallback-badge">Catalog Specification</span>
+                        </div>
                       ) : (
                         <div className="sponsor-product-placeholder">
                           <IconGrid size={32} />

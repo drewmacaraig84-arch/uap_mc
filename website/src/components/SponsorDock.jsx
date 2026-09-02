@@ -247,11 +247,43 @@ export default function SponsorDock() {
 
                   {activeProduct && (
                     <div className="spotlight-product-card reveal-pop" key={`${activeSponsorIdx}-${activeProductIdx}`}>
-                      {activeProduct.image_url && (
-                        <div className="spotlight-product-img-wrap">
-                          <img src={activeProduct.image_url} alt={activeProduct.name} className="spotlight-product-img" />
-                        </div>
-                      )}
+                      <div className="spotlight-product-img-wrap">
+                        {activeProduct.image_url ? (
+                          <img
+                            src={activeProduct.image_url}
+                            alt={activeProduct.name}
+                            className="spotlight-product-img"
+                            onError={(e) => {
+                              if (activeSponsor.logo_url) {
+                                e.currentTarget.src = activeSponsor.logo_url;
+                                e.currentTarget.style.objectFit = 'contain';
+                                e.currentTarget.style.padding = '20px';
+                              } else {
+                                e.currentTarget.style.display = 'none';
+                              }
+                            }}
+                          />
+                        ) : activeSponsor.logo_url ? (
+                          <div className="spotlight-product-fallback-wrap">
+                            <img
+                              src={activeSponsor.logo_url}
+                              alt={activeSponsor.name}
+                              className="spotlight-product-fallback-logo"
+                            />
+                            <span className="spotlight-product-fallback-badge">Catalog Item</span>
+                          </div>
+                        ) : (
+                          <div className="spotlight-product-fallback-wrap">
+                            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--c-gold)', opacity: 0.5 }}>
+                              <rect x="3" y="3" width="7" height="7"></rect>
+                              <rect x="14" y="3" width="7" height="7"></rect>
+                              <rect x="14" y="14" width="7" height="7"></rect>
+                              <rect x="3" y="14" width="7" height="7"></rect>
+                            </svg>
+                            <span className="spotlight-product-fallback-badge">Specification</span>
+                          </div>
+                        )}
+                      </div>
                       <div className="spotlight-product-body">
                         <span className="spotlight-product-name">{activeProduct.name}</span>
                         {activeProduct.description && (

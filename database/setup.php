@@ -172,6 +172,11 @@ try {
         $pdo->exec("ALTER TABLE sponsors ADD COLUMN products_json LONGTEXT NULL AFTER is_platinum");
         echo "Added column 'products_json' to 'sponsors' table.\n";
     }
+    $colCheck = $pdo->query("SHOW COLUMNS FROM news_announcements LIKE 'image_path'")->fetch();
+    if (!$colCheck) {
+        $pdo->exec("ALTER TABLE news_announcements ADD COLUMN image_path VARCHAR(255) NULL AFTER summary");
+        echo "Added column 'image_path' to 'news_announcements' table.\n";
+    }
 } catch (Throwable $e) {
     echo "Notice: " . $e->getMessage() . "\n";
 }
@@ -252,6 +257,7 @@ try {
         $projectRoot . '/uploads/avatars',
         $projectRoot . '/uploads/members',
         $projectRoot . '/uploads/sponsors',
+        $projectRoot . '/uploads/news',
         $projectRoot . '/uploads/proofs',
         $projectRoot . '/uploads/receipts',
         $projectRoot . '/receipts',
