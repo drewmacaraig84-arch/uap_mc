@@ -195,7 +195,8 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
                         $fName = $_FILES['products']['name'][$k]['image'];
                         $fExt = strtolower(pathinfo($fName, PATHINFO_EXTENSION));
                         if (in_array($fExt, $allowedExts) && $_FILES['products']['size'][$k]['image'] <= 12 * 1024 * 1024) {
-                            $pFileName = 'prod_' . time() . '_' . $k . '_' . bin2hex(random_bytes(3)) . '.' . $fExt;
+                            $cleanK = preg_replace('/[^a-zA-Z0-9_-]/', '', $k);
+                            $pFileName = 'prod_' . time() . '_' . $cleanK . '_' . bin2hex(random_bytes(3)) . '.' . $fExt;
                             $pDest = $uploadDir . $pFileName;
                             if (move_uploaded_file($_FILES['products']['tmp_name'][$k]['image'], $pDest)) {
                                 $imgPath = 'uploads/sponsors/' . $pFileName;
