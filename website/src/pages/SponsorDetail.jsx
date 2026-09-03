@@ -73,17 +73,25 @@ export default function SponsorDetail() {
         <div className="container">
           <div className={`sponsor-detail-hero-card ${isPlatinum ? 'is-platinum-card' : ''}`}>
             <div className="sponsor-detail-logo-wrap">
-              {sponsor.logo_url ? (
+              {sponsor.logo_url && (
                 <img
                   src={sponsor.logo_url}
                   alt={sponsor.name}
                   className="sponsor-detail-logo-img"
+                  onError={(e) => {
+                    e.currentTarget.style.display = 'none';
+                    if (e.currentTarget.nextElementSibling) {
+                      e.currentTarget.nextElementSibling.style.display = 'flex';
+                    }
+                  }}
                 />
-              ) : (
-                <div className="sponsor-detail-logo-placeholder">
-                  {sponsor.name.slice(0, 2).toUpperCase()}
-                </div>
               )}
+              <div 
+                className="sponsor-detail-logo-placeholder"
+                style={{ display: sponsor.logo_url ? 'none' : 'flex' }}
+              >
+                {sponsor.name.slice(0, 2).toUpperCase()}
+              </div>
             </div>
 
             <div className="sponsor-detail-hero-info">
@@ -152,35 +160,25 @@ export default function SponsorDetail() {
                 {products.map((prod, idx) => (
                   <div key={prod.id || idx} className="sponsor-product-card">
                     <div className="sponsor-product-img-wrap">
-                      {prod.image_url ? (
+                      {prod.image_url && (
                         <img
                           src={prod.image_url}
                           alt={prod.name}
                           className="sponsor-product-img"
                           onError={(e) => {
-                            if (sponsor.logo_url) {
-                              e.currentTarget.src = sponsor.logo_url;
-                              e.currentTarget.style.objectFit = 'contain';
-                              e.currentTarget.style.padding = '24px';
-                            } else {
-                              e.currentTarget.style.display = 'none';
-                            }
+                            e.currentTarget.style.display = 'none';
+                            const fallback = e.currentTarget.parentElement.querySelector('.sponsor-product-fallback-wrap');
+                            if (fallback) fallback.style.display = 'flex';
                           }}
                         />
-                      ) : sponsor.logo_url ? (
-                        <div className="sponsor-product-fallback-wrap">
-                          <img
-                            src={sponsor.logo_url}
-                            alt={sponsor.name}
-                            className="sponsor-product-fallback-logo"
-                          />
-                          <span className="sponsor-product-fallback-badge">Catalog Specification</span>
-                        </div>
-                      ) : (
-                        <div className="sponsor-product-placeholder">
-                          <IconGrid size={32} />
-                        </div>
                       )}
+                      <div 
+                        className="sponsor-product-fallback-wrap"
+                        style={{ display: prod.image_url ? 'none' : 'flex' }}
+                      >
+                        <IconGrid size={28} style={{ color: 'var(--c-gold)', opacity: 0.7, marginBottom: 4 }} />
+                        <span className="sponsor-product-fallback-badge">Catalog Specification</span>
+                      </div>
                     </div>
 
                     <div className="sponsor-product-body">

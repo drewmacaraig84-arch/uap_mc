@@ -114,13 +114,25 @@ export default function Sponsors() {
                   >
                     <div className="sponsor-card-top">
                       <div className="sponsor-card-img-wrap">
-                        {sponsor.logo_url ? (
-                          <img src={sponsor.logo_url} alt={sponsor.name} className="sponsor-card-img" />
-                        ) : (
-                          <div className="sponsor-card-placeholder">
-                            {sponsor.name.slice(0, 2).toUpperCase()}
-                          </div>
+                        {sponsor.logo_url && (
+                          <img 
+                            src={sponsor.logo_url} 
+                            alt={sponsor.name} 
+                            className="sponsor-card-img" 
+                            onError={(e) => {
+                              e.currentTarget.style.display = 'none';
+                              if (e.currentTarget.nextElementSibling) {
+                                e.currentTarget.nextElementSibling.style.display = 'flex';
+                              }
+                            }}
+                          />
                         )}
+                        <div 
+                          className="sponsor-card-placeholder" 
+                          style={{ display: sponsor.logo_url ? 'none' : 'flex' }}
+                        >
+                          {sponsor.name.slice(0, 2).toUpperCase()}
+                        </div>
                       </div>
                       
                       {isPlatinum ? (

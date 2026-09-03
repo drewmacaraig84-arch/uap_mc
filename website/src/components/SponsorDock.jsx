@@ -211,10 +211,25 @@ export default function SponsorDock() {
                 {/* Logo — left side */}
                 <Link to={`/partners/${activeSponsor.id}`} className="spotlight-logo-wrap" title={`Visit ${activeSponsor.name}`}>
                   <div className="spotlight-logo-inner">
-                    {activeSponsor.logo_url
-                      ? <img src={activeSponsor.logo_url} alt={activeSponsor.name} className="spotlight-logo-img" />
-                      : <span className="spotlight-logo-fallback">{activeSponsor.name.slice(0, 2).toUpperCase()}</span>
-                    }
+                    {activeSponsor.logo_url && (
+                      <img 
+                        src={activeSponsor.logo_url} 
+                        alt={activeSponsor.name} 
+                        className="spotlight-logo-img"
+                        onError={(e) => {
+                          e.currentTarget.style.display = 'none';
+                          if (e.currentTarget.nextElementSibling) {
+                            e.currentTarget.nextElementSibling.style.display = 'flex';
+                          }
+                        }}
+                      />
+                    )}
+                    <span 
+                      className="spotlight-logo-fallback" 
+                      style={{ display: activeSponsor.logo_url ? 'none' : 'flex' }}
+                    >
+                      {activeSponsor.name.slice(0, 2).toUpperCase()}
+                    </span>
                   </div>
                 </Link>
 
@@ -248,41 +263,30 @@ export default function SponsorDock() {
                   {activeProduct && (
                     <div className="spotlight-product-card reveal-pop" key={`${activeSponsorIdx}-${activeProductIdx}`}>
                       <div className="spotlight-product-img-wrap">
-                        {activeProduct.image_url ? (
+                        {activeProduct.image_url && (
                           <img
                             src={activeProduct.image_url}
                             alt={activeProduct.name}
                             className="spotlight-product-img"
                             onError={(e) => {
-                              if (activeSponsor.logo_url) {
-                                e.currentTarget.src = activeSponsor.logo_url;
-                                e.currentTarget.style.objectFit = 'contain';
-                                e.currentTarget.style.padding = '20px';
-                              } else {
-                                e.currentTarget.style.display = 'none';
-                              }
+                              e.currentTarget.style.display = 'none';
+                              const fallback = e.currentTarget.parentElement.querySelector('.spotlight-product-fallback-wrap');
+                              if (fallback) fallback.style.display = 'flex';
                             }}
                           />
-                        ) : activeSponsor.logo_url ? (
-                          <div className="spotlight-product-fallback-wrap">
-                            <img
-                              src={activeSponsor.logo_url}
-                              alt={activeSponsor.name}
-                              className="spotlight-product-fallback-logo"
-                            />
-                            <span className="spotlight-product-fallback-badge">Catalog Item</span>
-                          </div>
-                        ) : (
-                          <div className="spotlight-product-fallback-wrap">
-                            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--c-gold)', opacity: 0.5 }}>
-                              <rect x="3" y="3" width="7" height="7"></rect>
-                              <rect x="14" y="3" width="7" height="7"></rect>
-                              <rect x="14" y="14" width="7" height="7"></rect>
-                              <rect x="3" y="14" width="7" height="7"></rect>
-                            </svg>
-                            <span className="spotlight-product-fallback-badge">Specification</span>
-                          </div>
                         )}
+                        <div 
+                          className="spotlight-product-fallback-wrap"
+                          style={{ display: activeProduct.image_url ? 'none' : 'flex' }}
+                        >
+                          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--c-gold)', opacity: 0.7, marginBottom: 4 }}>
+                            <rect x="3" y="3" width="7" height="7"></rect>
+                            <rect x="14" y="3" width="7" height="7"></rect>
+                            <rect x="14" y="14" width="7" height="7"></rect>
+                            <rect x="3" y="14" width="7" height="7"></rect>
+                          </svg>
+                          <span className="spotlight-product-fallback-badge">Catalog Material</span>
+                        </div>
                       </div>
                       <div className="spotlight-product-body">
                         <span className="spotlight-product-name">{activeProduct.name}</span>
@@ -372,10 +376,25 @@ export default function SponsorDock() {
                     title={`View ${sponsor.name}`}
                   >
                     <div className="sponsor-ticker-img-wrap">
-                      {sponsor.logo_url
-                        ? <img src={sponsor.logo_url} alt={sponsor.name} className="sponsor-ticker-img" />
-                        : <div className="sponsor-ticker-placeholder">{sponsor.name.slice(0, 2).toUpperCase()}</div>
-                      }
+                      {sponsor.logo_url && (
+                        <img 
+                          src={sponsor.logo_url} 
+                          alt={sponsor.name} 
+                          className="sponsor-ticker-img" 
+                          onError={(e) => {
+                            e.currentTarget.style.display = 'none';
+                            if (e.currentTarget.nextElementSibling) {
+                              e.currentTarget.nextElementSibling.style.display = 'flex';
+                            }
+                          }}
+                        />
+                      )}
+                      <div 
+                        className="sponsor-ticker-placeholder" 
+                        style={{ display: sponsor.logo_url ? 'none' : 'flex' }}
+                      >
+                        {sponsor.name.slice(0, 2).toUpperCase()}
+                      </div>
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
                       <span className="sponsor-ticker-name">{sponsor.name}</span>
