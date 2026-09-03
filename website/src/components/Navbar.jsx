@@ -14,10 +14,11 @@ const NAV_LINKS = [
 
 export default function Navbar() {
   const { data: settings } = useApi('/api/settings.php');
-  const logoSrc = settings?.logo || '/public/logo.jpg';
   const orgName = settings?.org_name || 'UAP Mindoro';
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [badgeErrors, setBadgeErrors] = useState({});
+  const [logoError, setLogoError] = useState(false);
   const location = useLocation();
 
   // Close menu on route change
@@ -30,20 +31,30 @@ export default function Navbar() {
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
+  const logoSrc = logoError ? '/logo.jpg' : (settings?.logo || '/public/logo.jpg');
+
+  const activeBadges = [1, 2, 3]
+    .map((num) => ({
+      num,
+      src: settings?.[`header_image_${num}`],
+    }))
+    .filter((b) => Boolean(b.src) && !badgeErrors[b.num]);
+
   return (
     <header className={`navbar${scrolled ? ' scrolled' : ''}`}>
       <div className="navbar-inner container-wide">
-        {/* Brand & 3 Badges */}
+        {/* Brand & Badges */}
         <div className="navbar-brand-group">
           <Link to="/" className="navbar-brand">
             <img 
+              key={logoSrc}
               src={logoSrc} 
               alt={orgName} 
               className="navbar-logo" 
-              onError={(e) => {
-                if (!e.currentTarget.src.endsWith('/logo.jpg')) {
-                  e.currentTarget.src = '/logo.jpg';
-                }
+              loading="eager"
+              decoding="async"
+              onError={() => {
+                if (!logoError) setLogoError(true);
               }} 
             />
             <div className="navbar-brand-text">
@@ -52,26 +63,26 @@ export default function Navbar() {
             </div>
           </Link>
 
-          {/* 3 Header Image Slots */}
-          <div className="navbar-badges">
-            {[1, 2, 3].map((num) => {
-              const badgeSrc = settings?.[`header_image_${num}`];
-              return (
-                <div key={num} className={`navbar-badge-box${badgeSrc ? ' has-image' : ' placeholder'}`}>
-                  {badgeSrc ? (
-                    <img 
-                      src={badgeSrc} 
-                      alt={`Badge ${num}`} 
-                      className="navbar-badge-img" 
-                      onError={(e) => { e.currentTarget.style.display = 'none'; }}
-                    />
-                  ) : (
-                    <div className="navbar-badge-placeholder-box" title={`Header slot ${num}`} />
-                  )}
+          {/* Header Badges / Partner Logos */}
+          {activeBadges.length > 0 && (
+            <div className="navbar-badges">
+              {activeBadges.map(({ num, src }) => (
+                <div key={num} className="navbar-badge-box has-image">
+                  <img 
+                    key={src}
+                    src={src} 
+                    alt={`Affiliation badge ${num}`} 
+                    className="navbar-badge-img" 
+                    loading="eager"
+                    decoding="async"
+                    onError={() => {
+                      setBadgeErrors((prev) => ({ ...prev, [num]: true }));
+                    }}
+                  />
                 </div>
-              );
-            })}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Desktop Nav */}

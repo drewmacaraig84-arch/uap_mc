@@ -9,6 +9,11 @@ if (!file_exists($uapRoot)) {
 }
 require_once $uapRoot;
 
+// Release PHP session lock immediately so parallel public API requests don't block each other
+if (session_status() === PHP_SESSION_ACTIVE) {
+    @session_write_close();
+}
+
 // CORS headers for Vite dev server
 $origin = $_SERVER['HTTP_ORIGIN'] ?? '';
 $allowed = ['http://localhost:5173', 'http://127.0.0.1:5173'];

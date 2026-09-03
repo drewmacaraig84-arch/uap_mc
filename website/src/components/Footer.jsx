@@ -15,7 +15,15 @@ export default function Footer() {
         {/* Brand */}
         <div className="footer-brand">
           <div className="footer-logo-wrap">
-            <img src={logoSrc} alt="UAP Mindoro" />
+            <img 
+              src={logoSrc} 
+              alt="UAP Mindoro" 
+              onError={(e) => {
+                if (!e.currentTarget.src.endsWith('/logo.jpg')) {
+                  e.currentTarget.src = '/logo.jpg';
+                }
+              }}
+            />
           </div>
           <p className="footer-brand-name">United Architects<br/>of the Philippines</p>
           <p className="footer-brand-sub">Mindoro Chapter</p>

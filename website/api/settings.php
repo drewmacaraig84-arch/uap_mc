@@ -1,5 +1,7 @@
 <?php
 require_once __DIR__ . '/config.php';
+header("Cache-Control: public, max-age=60, stale-while-revalidate=300");
+
 try {
     $rows = $pdo->query("SELECT setting_key, setting_value FROM site_settings")->fetchAll(PDO::FETCH_KEY_PAIR);
 
@@ -7,8 +9,9 @@ try {
     // .htaccess uses RewriteBase / so we just prepend /
     // Vite dev proxy also maps /public/* and /uploads/* correctly
     $toUrl = function($path) {
-        if (!$path) return null;
-        if (str_starts_with($path, 'http://') || str_starts_with($path, 'https://')) return $path;
+        if (!$path || trim((string)$path) === '') return null;
+        $path = trim((string)$path);
+        if (str_starts_with($path, 'http://') || str_starts_with($path, 'https://') || str_starts_with($path, 'data:')) return $path;
         return '/' . ltrim($path, '/');
     };
 
