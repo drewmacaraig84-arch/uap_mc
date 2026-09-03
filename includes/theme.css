@@ -792,7 +792,7 @@ nav::-webkit-scrollbar-thumb {
   color: var(--text-primary);
 }
 
-input, select, textarea {
+input:not([type="checkbox"]):not([type="radio"]), select, textarea {
   width: 100%;
   padding: 10px 14px;
   border-radius: 9px;
@@ -805,9 +805,21 @@ input, select, textarea {
   transition: all 0.2s ease;
 }
 
-input:focus, select:focus, textarea:focus {
+input:not([type="checkbox"]):not([type="radio"]):focus, select:focus, textarea:focus {
   border-color: var(--accent-primary);
   box-shadow: 0 0 0 3px var(--accent-glow);
+}
+
+input[type="checkbox"], input[type="radio"] {
+  width: 16px !important;
+  height: 16px !important;
+  min-width: 16px !important;
+  max-width: 16px !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  flex-shrink: 0 !important;
+  cursor: pointer;
+  accent-color: var(--accent-primary, #f5b800);
 }
 
 /* Tables */

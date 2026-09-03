@@ -1021,20 +1021,20 @@ function switchSettingsTab(tabId, btn) {
       <!-- SPONSOR TIER & PRODUCTS -->
       <div style="background: rgba(0,0,0,0.25); border: 1px solid var(--border-color, rgba(255,255,255,0.12)); border-radius: 10px; padding: 14px; margin-bottom: 16px;">
         <label style="font-weight: 700; font-size: 13px; display: block; margin-bottom: 8px; color: var(--text-primary);">Select Partnership Tier &amp; Showcase Level</label>
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-          <label id="add_tier_plat_label" style="display: flex; align-items: flex-start; gap: 10px; padding: 10px 12px; border-radius: 8px; border: 1px solid rgba(245,158,11,0.5); background: rgba(245,158,11,0.09); cursor: pointer;">
-            <input type="radio" name="is_platinum" value="1" id="add_tier_platinum" onchange="setSponsorTier('add', true)" checked style="margin-top: 3px; accent-color: var(--accent-primary, #f5b800);">
-            <div>
-              <strong style="color: var(--accent-primary, #f5b800); font-size: 13px; display: block;">★ Platinum Partner</strong>
-              <span class="muted" style="font-size: 11.5px; display: block; line-height: 1.35; margin-top: 2px;">3-Minute Website Spotlight • Up to <strong>10 Promotional Products</strong> in Carousel</span>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px;">
+          <label id="add_tier_plat_label" style="display: flex; align-items: flex-start; gap: 12px; padding: 12px 14px; border-radius: 8px; border: 1px solid rgba(245,158,11,0.5); background: rgba(245,158,11,0.09); cursor: pointer;">
+            <input type="radio" name="is_platinum" value="1" id="add_tier_platinum" onchange="setSponsorTier('add', true)" checked style="width: 16px; height: 16px; min-width: 16px; max-width: 16px; margin: 3px 0 0 0; accent-color: var(--accent-primary, #f5b800); flex-shrink: 0;">
+            <div style="flex: 1; min-width: 0;">
+              <strong style="color: var(--accent-primary, #f5b800); font-size: 13.5px; display: block; margin-bottom: 2px;">★ Platinum Partner</strong>
+              <span class="muted" style="font-size: 12px; display: block; line-height: 1.4;">3-Minute Website Spotlight • Up to <strong>10 Promotional Products</strong> in Carousel</span>
             </div>
           </label>
 
-          <label id="add_tier_reg_label" style="display: flex; align-items: flex-start; gap: 10px; padding: 10px 12px; border-radius: 8px; border: 1px solid var(--border-color, rgba(255,255,255,0.1)); background: rgba(255,255,255,0.02); cursor: pointer;">
-            <input type="radio" name="is_platinum" value="0" id="add_tier_regular" onchange="setSponsorTier('add', false)" style="margin-top: 3px; accent-color: var(--accent-primary, #f5b800);">
-            <div>
-              <strong style="color: var(--text-primary); font-size: 13px; display: block;">Featured / Regular Partner</strong>
-              <span class="muted" style="font-size: 11.5px; display: block; line-height: 1.35; margin-top: 2px;">30-Second Website Spotlight • <strong>1 Promotional Product</strong> Showcase</span>
+          <label id="add_tier_reg_label" style="display: flex; align-items: flex-start; gap: 12px; padding: 12px 14px; border-radius: 8px; border: 1px solid var(--border-color, rgba(255,255,255,0.1)); background: rgba(255,255,255,0.02); cursor: pointer;">
+            <input type="radio" name="is_platinum" value="0" id="add_tier_regular" onchange="setSponsorTier('add', false)" style="width: 16px; height: 16px; min-width: 16px; max-width: 16px; margin: 3px 0 0 0; accent-color: var(--accent-primary, #f5b800); flex-shrink: 0;">
+            <div style="flex: 1; min-width: 0;">
+              <strong style="color: var(--text-primary); font-size: 13.5px; display: block; margin-bottom: 2px;">Featured / Regular Partner</strong>
+              <span class="muted" style="font-size: 12px; display: block; line-height: 1.4;">30-Second Website Spotlight • <strong>1 Promotional Product</strong> Showcase</span>
             </div>
           </label>
         </div>
@@ -1443,23 +1443,22 @@ function switchSettingsTab(tabId, btn) {
           <input type="file" name="sponsor_logo" accept="image/png, image/jpeg, image/webp" style="padding:6px; width:100%;">
         </div>
 
-        <!-- SPONSOR TIER & PRODUCTS -->
         <div style="background: rgba(0,0,0,0.25); border: 1px solid var(--border-color, rgba(255,255,255,0.12)); border-radius: 10px; padding: 14px; margin-bottom: 16px;">
           <label style="font-weight: 700; font-size: 13px; display: block; margin-bottom: 8px; color: var(--text-primary);">Partnership Tier &amp; Showcase Level</label>
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-            <label id="edit_tier_plat_label" style="display: flex; align-items: flex-start; gap: 10px; padding: 10px 12px; border-radius: 8px; border: 1px solid rgba(245,158,11,0.5); background: rgba(245,158,11,0.09); cursor: pointer;">
-              <input type="radio" name="is_platinum" value="1" id="edit_tier_platinum" onchange="setSponsorTier('edit', true)" style="margin-top: 3px; accent-color: var(--accent-primary, #f5b800);">
-              <div>
-                <strong style="color: var(--accent-primary, #f5b800); font-size: 13px; display: block;">★ Platinum Partner</strong>
-                <span class="muted" style="font-size: 11.5px; display: block; line-height: 1.35; margin-top: 2px;">3-Minute Website Spotlight • Up to <strong>10 Promotional Products</strong></span>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px;">
+            <label id="edit_tier_plat_label" style="display: flex; align-items: flex-start; gap: 12px; padding: 12px 14px; border-radius: 8px; border: 1px solid rgba(245,158,11,0.5); background: rgba(245,158,11,0.09); cursor: pointer;">
+              <input type="radio" name="is_platinum" value="1" id="edit_tier_platinum" onchange="setSponsorTier('edit', true)" style="width: 16px; height: 16px; min-width: 16px; max-width: 16px; margin: 3px 0 0 0; accent-color: var(--accent-primary, #f5b800); flex-shrink: 0;">
+              <div style="flex: 1; min-width: 0;">
+                <strong style="color: var(--accent-primary, #f5b800); font-size: 13.5px; display: block; margin-bottom: 2px;">★ Platinum Partner</strong>
+                <span class="muted" style="font-size: 12px; display: block; line-height: 1.4;">3-Minute Website Spotlight • Up to <strong>10 Promotional Products</strong></span>
               </div>
             </label>
 
-            <label id="edit_tier_reg_label" style="display: flex; align-items: flex-start; gap: 10px; padding: 10px 12px; border-radius: 8px; border: 1px solid var(--border-color, rgba(255,255,255,0.1)); background: rgba(255,255,255,0.02); cursor: pointer;">
-              <input type="radio" name="is_platinum" value="0" id="edit_tier_regular" onchange="setSponsorTier('edit', false)" style="margin-top: 3px; accent-color: var(--accent-primary, #f5b800);">
-              <div>
-                <strong style="color: var(--text-primary); font-size: 13px; display: block;">Featured / Regular Partner</strong>
-                <span class="muted" style="font-size: 11.5px; display: block; line-height: 1.35; margin-top: 2px;">30-Second Website Spotlight • <strong>1 Promotional Product</strong> Showcase</span>
+            <label id="edit_tier_reg_label" style="display: flex; align-items: flex-start; gap: 12px; padding: 12px 14px; border-radius: 8px; border: 1px solid var(--border-color, rgba(255,255,255,0.1)); background: rgba(255,255,255,0.02); cursor: pointer;">
+              <input type="radio" name="is_platinum" value="0" id="edit_tier_regular" onchange="setSponsorTier('edit', false)" style="width: 16px; height: 16px; min-width: 16px; max-width: 16px; margin: 3px 0 0 0; accent-color: var(--accent-primary, #f5b800); flex-shrink: 0;">
+              <div style="flex: 1; min-width: 0;">
+                <strong style="color: var(--text-primary); font-size: 13.5px; display: block; margin-bottom: 2px;">Featured / Regular Partner</strong>
+                <span class="muted" style="font-size: 12px; display: block; line-height: 1.4;">30-Second Website Spotlight • <strong>1 Promotional Product</strong> Showcase</span>
               </div>
             </label>
           </div>
