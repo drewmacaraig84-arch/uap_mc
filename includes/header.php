@@ -8,7 +8,7 @@ require_once __DIR__ . '/icons.php';
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title><?php echo htmlspecialchars($page_title); ?></title>
-<link rel="stylesheet" href="<?php echo BASE_URL; ?>/includes/theme.css">
+<link rel="stylesheet" href="<?php echo BASE_URL; ?>/includes/theme.css?v=<?php echo @filemtime(__DIR__ . '/theme.css') ?: time(); ?>">
 <script>
 // Apply theme immediately before page renders to prevent flash
 (function() {
