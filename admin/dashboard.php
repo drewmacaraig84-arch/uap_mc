@@ -7,11 +7,11 @@ require_admin();
 $totalVerifiedCollections = (float)$pdo->query("SELECT COALESCE(SUM(amount_paid), 0) FROM payments WHERE status = 'verified'")->fetchColumn();
 
 // Pending counts
-$pendingPaymentsCount = (int)$pdo->query("SELECT COUNT(*) FROM payments WHERE status = 'pending'")->fetchColumn();
+$pendingPaymentsCount = (int)$pdo->query("SELECT COUNT(*) FROM payments p JOIN member_dues md ON p.member_due_id = md.id JOIN users u ON md.user_id = u.id WHERE p.status = 'pending'")->fetchColumn();
 $pendingMembersCount = (int)$pdo->query("SELECT COUNT(*) FROM users WHERE role = 'member' AND status = 'pending'")->fetchColumn();
 $pendingDirectoryAppsCount = 0;
 try {
-    $pendingDirectoryAppsCount = (int)$pdo->query("SELECT COUNT(*) FROM directory_applications WHERE status = 'pending_fee'")->fetchColumn();
+    $pendingDirectoryAppsCount = (int)$pdo->query("SELECT COUNT(*) FROM directory_applications da JOIN users u ON da.user_id = u.id WHERE da.status = 'pending_fee'")->fetchColumn();
 } catch (Throwable $e) {}
 $pendingInquiriesCount = 0;
 try {

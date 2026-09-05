@@ -32,7 +32,7 @@ $stmt = $pdo->prepare("
 $stmt->execute($params);
 $payments = $stmt->fetchAll();
 
-$pendingCount = (int)$pdo->query("SELECT COUNT(*) FROM payments WHERE status = 'pending'")->fetchColumn();
+$pendingCount = (int)$pdo->query("SELECT COUNT(*) FROM payments p JOIN member_dues md ON p.member_due_id = md.id JOIN users u ON md.user_id = u.id WHERE p.status = 'pending'")->fetchColumn();
 $verifiedCount = (int)$pdo->query("SELECT COUNT(*) FROM payments WHERE status = 'verified'")->fetchColumn();
 $rejectedCount = (int)$pdo->query("SELECT COUNT(*) FROM payments WHERE status = 'rejected'")->fetchColumn();
 

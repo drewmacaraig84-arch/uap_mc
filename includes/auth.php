@@ -51,6 +51,12 @@ function ensure_user_profile_photo_column($pdo) {
 
         $daTableCheck = $pdo->query("SHOW TABLES LIKE 'directory_applications'")->fetch();
         if ($daTableCheck) {
+            // Auto-prune orphaned directory applications or website members where user was deleted
+            try {
+                $pdo->exec("DELETE FROM directory_applications WHERE user_id NOT IN (SELECT id FROM users)");
+                $pdo->exec("DELETE FROM website_members WHERE user_id IS NOT NULL AND user_id NOT IN (SELECT id FROM users)");
+            } catch (Throwable $e) {}
+
             $colRej = $pdo->query("SHOW COLUMNS FROM directory_applications LIKE 'rejected_at'")->fetch();
             if (!$colRej) {
                 try { $pdo->exec("ALTER TABLE directory_applications ADD COLUMN reapply_allowed TINYINT(1) NOT NULL DEFAULT 1 AFTER notes"); } catch (Throwable $e) {}

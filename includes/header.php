@@ -45,10 +45,10 @@ require_once __DIR__ . '/icons.php';
             $pending_approvals_count = (int)$pdo->query("SELECT COUNT(*) FROM users WHERE role = 'member' AND status = 'pending'")->fetchColumn();
 
             $pending_payments = $pdo->query("SELECT p.id, p.submitted_at, u.name, u.id_number, d.title FROM payments p JOIN member_dues md ON p.member_due_id = md.id JOIN users u ON md.user_id = u.id JOIN dues d ON md.due_id = d.id WHERE p.status = 'pending' ORDER BY p.submitted_at DESC LIMIT 5")->fetchAll();
-            $pending_payments_count = (int)$pdo->query("SELECT COUNT(*) FROM payments WHERE status = 'pending'")->fetchColumn();
+            $pending_payments_count = (int)$pdo->query("SELECT COUNT(*) FROM payments p JOIN member_dues md ON p.member_due_id = md.id JOIN users u ON md.user_id = u.id WHERE p.status = 'pending'")->fetchColumn();
 
             $pending_directory_apps = $pdo->query("SELECT da.id, u.name, u.id_number, da.created_at FROM directory_applications da JOIN users u ON da.user_id = u.id WHERE da.status = 'pending_fee' ORDER BY da.created_at DESC LIMIT 5")->fetchAll();
-            $pending_directory_count = (int)$pdo->query("SELECT COUNT(*) FROM directory_applications WHERE status = 'pending_fee'")->fetchColumn();
+            $pending_directory_count = (int)$pdo->query("SELECT COUNT(*) FROM directory_applications da JOIN users u ON da.user_id = u.id WHERE da.status = 'pending_fee'")->fetchColumn();
 
             $pending_inquiries = $pdo->query("SELECT id, name, email, subject, created_at FROM contact_inquiries WHERE status = 'unread' ORDER BY created_at DESC LIMIT 5")->fetchAll();
             $pending_inquiries_count = (int)$pdo->query("SELECT COUNT(*) FROM contact_inquiries WHERE status = 'unread'")->fetchColumn();

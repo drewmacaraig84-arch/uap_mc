@@ -40,6 +40,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'delet
             $pdo->exec("DELETE FROM member_dues WHERE id IN ($in)");
         }
 
+        $pdo->prepare("DELETE FROM directory_applications WHERE user_id = ?")->execute([$user_id]);
+        $pdo->prepare("DELETE FROM website_members WHERE user_id = ?")->execute([$user_id]);
         $pdo->prepare("DELETE FROM users WHERE id = ? AND role = 'member'")->execute([$user_id]);
         $pdo->commit();
         if (function_exists('set_flash')) {
