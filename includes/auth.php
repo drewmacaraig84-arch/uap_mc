@@ -48,6 +48,17 @@ function ensure_user_profile_photo_column($pdo) {
                 $pdo->exec("ALTER TABLE news_announcements ADD COLUMN image_path VARCHAR(255) NULL AFTER summary");
             }
         }
+
+        $daTableCheck = $pdo->query("SHOW TABLES LIKE 'directory_applications'")->fetch();
+        if ($daTableCheck) {
+            $colRej = $pdo->query("SHOW COLUMNS FROM directory_applications LIKE 'rejected_at'")->fetch();
+            if (!$colRej) {
+                try { $pdo->exec("ALTER TABLE directory_applications ADD COLUMN reapply_allowed TINYINT(1) NOT NULL DEFAULT 1 AFTER notes"); } catch (Throwable $e) {}
+                try { $pdo->exec("ALTER TABLE directory_applications ADD COLUMN reapply_after DATE NULL AFTER reapply_allowed"); } catch (Throwable $e) {}
+                try { $pdo->exec("ALTER TABLE directory_applications ADD COLUMN dismissed_notification TINYINT(1) NOT NULL DEFAULT 0 AFTER reapply_after"); } catch (Throwable $e) {}
+                try { $pdo->exec("ALTER TABLE directory_applications ADD COLUMN rejected_at TIMESTAMP NULL AFTER dismissed_notification"); } catch (Throwable $e) {}
+            }
+        }
     } catch (Throwable $e) {}
 }
 

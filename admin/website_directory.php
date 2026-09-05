@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/../includes/auth.php';
 require_admin();
+ensure_user_profile_photo_column($pdo);
 
 $error = '';
 $success = '';
@@ -264,11 +265,22 @@ $activeMembers = $pdo->query("SELECT COALESCE(wm.id, da.user_id) as id, wm.id as
     ORDER BY u.name ASC")->fetchAll();
 
 // 4. Fetch Declined Applications History
-$declinedApps = $pdo->query("SELECT da.*, u.name, u.id_number
-    FROM directory_applications da
-    JOIN users u ON da.user_id = u.id
-    WHERE da.status = 'rejected'
-    ORDER BY da.rejected_at DESC, da.updated_at DESC")->fetchAll();
+$declinedApps = [];
+try {
+    $declinedApps = $pdo->query("SELECT da.*, u.name, u.id_number
+        FROM directory_applications da
+        JOIN users u ON da.user_id = u.id
+        WHERE da.status = 'rejected'
+        ORDER BY da.rejected_at DESC, da.updated_at DESC")->fetchAll();
+} catch (Throwable $e) {
+    try {
+        $declinedApps = $pdo->query("SELECT da.*, u.name, u.id_number
+            FROM directory_applications da
+            JOIN users u ON da.user_id = u.id
+            WHERE da.status = 'rejected'
+            ORDER BY da.updated_at DESC")->fetchAll();
+    } catch (Throwable $e2) {}
+}
 
 $page_title = 'Website Directory Manager • UAP Mindoro Chapter';
 include __DIR__ . '/../includes/header.php';

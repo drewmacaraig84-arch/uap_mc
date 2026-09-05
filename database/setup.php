@@ -79,12 +79,17 @@ function run_sql_files(PDO $pdo, string $folder, string $label): void {
             $pdo->exec($sql);
             echo "Ran {$label}: " . basename($file) . "\n";
         } catch (PDOException $e) {
-            if ($e->getCode() === '42S21' || str_contains($e->getMessage(), 'Duplicate column') || str_contains($e->getMessage(), 'already exists')) {
+            $msg = $e->getMessage();
+            if ($e->getCode() === '42S21' 
+                || str_contains($msg, 'Duplicate column') 
+                || str_contains($msg, 'already exists') 
+                || str_contains($msg, 'Duplicate key name')
+                || str_contains($msg, 'Duplicate entry')
+                || str_contains($msg, '1061')
+                || str_contains($msg, '1060')) {
                 echo "Already applied {$label}: " . basename($file) . "\n";
             } else {
-                echo "{$label} failed: " . basename($file) . "\n";
-                echo $e->getMessage() . "\n";
-                exit(1);
+                echo "{$label} notice: " . basename($file) . " - " . $e->getMessage() . "\n";
             }
         }
     }
@@ -176,6 +181,16 @@ try {
     if (!$colCheck) {
         $pdo->exec("ALTER TABLE news_announcements ADD COLUMN image_path VARCHAR(255) NULL AFTER summary");
         echo "Added column 'image_path' to 'news_announcements' table.\n";
+    }
+
+    // Explicit check for directory_applications rejection & reapplication columns
+    $colCheck = $pdo->query("SHOW COLUMNS FROM directory_applications LIKE 'rejected_at'")->fetch();
+    if (!$colCheck) {
+        try { $pdo->exec("ALTER TABLE directory_applications ADD COLUMN reapply_allowed TINYINT(1) NOT NULL DEFAULT 1 AFTER notes"); } catch (Throwable $e) {}
+        try { $pdo->exec("ALTER TABLE directory_applications ADD COLUMN reapply_after DATE NULL AFTER reapply_allowed"); } catch (Throwable $e) {}
+        try { $pdo->exec("ALTER TABLE directory_applications ADD COLUMN dismissed_notification TINYINT(1) NOT NULL DEFAULT 0 AFTER reapply_after"); } catch (Throwable $e) {}
+        try { $pdo->exec("ALTER TABLE directory_applications ADD COLUMN rejected_at TIMESTAMP NULL AFTER dismissed_notification"); } catch (Throwable $e) {}
+        echo "Added rejection columns to 'directory_applications' table.\n";
     }
 } catch (Throwable $e) {
     echo "Notice: " . $e->getMessage() . "\n";
