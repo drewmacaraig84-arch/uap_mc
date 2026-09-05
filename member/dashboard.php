@@ -18,6 +18,18 @@ $stmt = $pdo->prepare("
 $stmt->execute([current_user_id()]);
 $dues = $stmt->fetchAll();
 
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'dismiss_directory_rejection') {
+    require_csrf();
+    $pdo->prepare("UPDATE directory_applications SET dismissed_notification = 1 WHERE user_id = ?")->execute([current_user_id()]);
+    header("Location: dashboard.php");
+    exit;
+}
+
+// Check for active directory rejection notification
+$dirAppStmt = $pdo->prepare("SELECT * FROM directory_applications WHERE user_id = ? AND status = 'rejected' AND dismissed_notification = 0 LIMIT 1");
+$dirAppStmt->execute([current_user_id()]);
+$rejectedDirApp = $dirAppStmt->fetch();
+
 $page_title = 'My Dues • UAP Mindoro Chapter';
 include __DIR__ . '/../includes/header.php';
 ?>
@@ -40,6 +52,54 @@ include __DIR__ . '/../includes/header.php';
     ?>
   </div>
 </div>
+
+<?php if ($rejectedDirApp): ?>
+  <?php
+    $canReapply = ((int)$rejectedDirApp['reapply_allowed'] === 1) && (empty($rejectedDirApp['reapply_after']) || strtotime($rejectedDirApp['reapply_after']) <= strtotime(date('Y-m-d')));
+    $isLocked = !(int)$rejectedDirApp['reapply_allowed'];
+    $reapplyDate = $rejectedDirApp['reapply_after'];
+  ?>
+  <div class="alert" style="margin-top: 12px; background: rgba(239,68,68,0.06); border: 1px solid rgba(239,68,68,0.25); border-left: 4px solid #ef4444; border-radius: 8px; padding: 14px 16px; display: flex; align-items: flex-start; justify-content: space-between; gap: 14px;">
+    <div style="display: flex; align-items: flex-start; gap: 12px; flex: 1;">
+      <div style="color: #ef4444; margin-top: 2px; flex-shrink: 0;"><?php echo icon('alert', '', 20); ?></div>
+      <div style="flex: 1;">
+        <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap;">
+          <strong style="font-size: 14px; color: #ef4444;">Website Directory Application Update</strong>
+          <?php if (!empty($rejectedDirApp['rejected_at'])): ?>
+            <span class="muted" style="font-size: 11.5px;"><?php echo date('M d, Y', strtotime($rejectedDirApp['rejected_at'])); ?></span>
+          <?php endif; ?>
+        </div>
+        <p style="margin: 4px 0 0 0; font-size: 13px; color: var(--text-secondary); line-height: 1.5;">
+          Your application for the Public Architect Website Directory was reviewed and declined by Chapter Administration.
+        </p>
+        <?php if (!empty($rejectedDirApp['notes'])): ?>
+          <div style="margin-top: 8px; padding: 8px 12px; background: rgba(0,0,0,0.15); border-radius: 6px; border-left: 3px solid #ef4444;">
+            <strong style="font-size: 11.5px; color: #ef4444; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 2px;">Admin Remarks:</strong>
+            <div style="font-size: 13px; color: var(--text-primary);"><?php echo nl2br(htmlspecialchars($rejectedDirApp['notes'])); ?></div>
+          </div>
+        <?php endif; ?>
+        <div style="margin-top: 10px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+          <?php if ($isLocked): ?>
+            <span class="muted" style="font-size: 12px;">Re-application is currently restricted. Please consult the chapter secretariat.</span>
+          <?php elseif (!empty($reapplyDate) && strtotime($reapplyDate) > strtotime(date('Y-m-d'))): ?>
+            <span class="muted" style="font-size: 12px;">You will be eligible to submit a new application on or after <strong><?php echo date('F d, Y', strtotime($reapplyDate)); ?></strong>.</span>
+          <?php else: ?>
+            <a href="website_directory.php" class="btn btn-sm btn-primary" style="display: inline-flex; align-items: center; gap: 5px; font-size: 12px; padding: 5px 12px;">
+              <?php echo icon('sparkles', '', 12); ?> <span>Re-Apply for Directory</span>
+            </a>
+          <?php endif; ?>
+        </div>
+      </div>
+    </div>
+    <form method="post" style="margin: 0; flex-shrink: 0;">
+      <?php echo csrf_field(); ?>
+      <input type="hidden" name="action" value="dismiss_directory_rejection">
+      <button type="submit" class="btn btn-sm btn-secondary" style="font-size: 11px; padding: 4px 8px;" title="Dismiss notification">
+        <?php echo icon('x', '', 12); ?> <span>Dismiss</span>
+      </button>
+    </form>
+  </div>
+<?php endif; ?>
 
 <?php if ($standing['is_revoked']): ?>
   <div class="alert alert-error" style="margin-top: 12px; display: flex; align-items: flex-start; gap: 10px; border-left: 4px solid #ef4444;">

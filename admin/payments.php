@@ -243,6 +243,11 @@ include __DIR__ . '/../includes/header.php';
     </div>
     <div style="padding:18px;overflow-y:auto;text-align:center;background:rgba(0,0,0,0.1);">
       <img id="modalProofImg" src="" alt="Proof Preview" style="max-width:100%;max-height:65vh;object-fit:contain;border-radius:10px;border:1px solid var(--border-color);">
+      <div id="modalProofFallback" style="display:none; padding:32px 16px; text-align:center; background:rgba(239,68,68,0.06); border:1px dashed rgba(239,68,68,0.3); border-radius:10px;">
+        <div style="font-size:24px; color:#ef4444; margin-bottom:8px;">⚠️</div>
+        <strong style="color:var(--text-primary); font-size:14px; display:block;">Proof Image Not Found in Storage</strong>
+        <p class="muted" style="font-size:12px; margin:6px 0 0 0;">The uploaded screenshot file is not found on the server. You can verify this transaction using the reference number below.</p>
+      </div>
       <div id="modalRefInfo" style="margin-top:10px;font-size:13px;color:var(--text-secondary);"></div>
     </div>
     <div style="padding:12px 20px;display:flex;justify-content:flex-end;border-top:1px solid var(--border-color);gap:8px;">
@@ -256,7 +261,15 @@ include __DIR__ . '/../includes/header.php';
 
 <script>
 function openProofModal(imgSrc, memberName, refNo) {
-  document.getElementById('modalProofImg').src = imgSrc;
+  var img = document.getElementById('modalProofImg');
+  var fallback = document.getElementById('modalProofFallback');
+  if (fallback) fallback.style.display = 'none';
+  img.style.display = 'block';
+  img.onerror = function() {
+    this.style.display = 'none';
+    if (fallback) fallback.style.display = 'block';
+  };
+  img.src = imgSrc;
   document.getElementById('modalDirectLink').href = imgSrc;
   document.getElementById('modalMemberTitle').innerText = 'Payment Proof: ' + memberName;
   document.getElementById('modalRefInfo').innerText = refNo ? 'Reference Number: ' + refNo : '';
@@ -265,7 +278,11 @@ function openProofModal(imgSrc, memberName, refNo) {
 
 function closeProofModal() {
   document.getElementById('proofModal').style.display = 'none';
-  document.getElementById('modalProofImg').src = '';
+  var img = document.getElementById('modalProofImg');
+  if (img) {
+    img.src = '';
+    img.onerror = null;
+  }
 }
 
 document.getElementById('proofModal').addEventListener('click', function(e) {

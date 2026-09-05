@@ -9,8 +9,8 @@ $isUnlocked = has_unlocked_website_directory($pdo, $userId);
 $error = '';
 $success = '';
 
-// Handle Application Submission
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'apply_directory') {
+// Handle Application Submission & Re-application
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && in_array($_POST['action'] ?? '', ['apply_directory', 'reapply_directory'], true)) {
     require_csrf();
     if (!$app) {
         $stmt = $pdo->prepare("INSERT INTO directory_applications (user_id, status) VALUES (?, 'pending_fee')
@@ -18,6 +18,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'apply
         $stmt->execute([$userId]);
         $success = 'Application submitted successfully! The Chapter Admin will review and assign your advertising fee shortly.';
         $app = get_directory_application($pdo, $userId);
+    } elseif ($app['status'] === 'rejected') {
+        $allowed = (int)($app['reapply_allowed'] ?? 1);
+        $reapplyDate = $app['reapply_after'] ?? null;
+        $canReapply = ($allowed === 1) && (empty($reapplyDate) || strtotime($reapplyDate) <= strtotime(date('Y-m-d')));
+
+        if (!$allowed) {
+            $error = 'Re-application is currently restricted by Chapter Administration. Please consult the chapter secretariat for assistance.';
+        } elseif (!$canReapply) {
+            $error = 'You will be eligible to re-apply on or after ' . date('F d, Y', strtotime($reapplyDate)) . '.';
+        } else {
+            $stmt = $pdo->prepare("UPDATE directory_applications 
+                                   SET status = 'pending_fee', 
+                                       fee_amount = NULL, 
+                                       member_due_id = NULL, 
+                                       notes = NULL, 
+                                       reapply_allowed = 1, 
+                                       reapply_after = NULL, 
+                                       dismissed_notification = 0, 
+                                       rejected_at = NULL, 
+                                       created_at = NOW() 
+                                   WHERE user_id = ?");
+            $stmt->execute([$userId]);
+            $success = 'Your directory application has been re-submitted! The Chapter Admin will review it shortly.';
+            $app = get_directory_application($pdo, $userId);
+        }
     }
 }
 
@@ -419,8 +444,64 @@ include __DIR__ . '/../includes/header.php';
       </div>
 
     <?php elseif ($app['status'] === 'rejected'): ?>
-      <div class="alert alert-error">
-        <strong>Application Declined:</strong> <?php echo htmlspecialchars($app['remarks'] ?? 'Please contact the chapter admin for more details.'); ?>
+      <?php
+        $reapplyAllowed = (int)($app['reapply_allowed'] ?? 1);
+        $reapplyDate = $app['reapply_after'] ?? null;
+        $canReapply = ($reapplyAllowed === 1) && (empty($reapplyDate) || strtotime($reapplyDate) <= strtotime(date('Y-m-d')));
+        $adminNotes = trim($app['notes'] ?? '');
+      ?>
+      <div style="background: rgba(239,68,68,0.06); border: 1px solid rgba(239,68,68,0.25); border-radius: 12px; padding: 24px; margin-bottom: 24px;">
+        <div style="display:flex; align-items:flex-start; gap:16px;">
+          <div style="width:44px; height:44px; border-radius:12px; background:rgba(239,68,68,0.12); color:#ef4444; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+            <?php echo icon('x', '', 22); ?>
+          </div>
+          <div style="flex:1;">
+            <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px;">
+              <h3 style="margin:0; font-size:16px; color:var(--text-primary);">Website Directory Application Declined</h3>
+              <?php if (!empty($app['rejected_at'])): ?>
+                <span class="muted" style="font-size:12px;">Declined on <?php echo date('M d, Y', strtotime($app['rejected_at'])); ?></span>
+              <?php endif; ?>
+            </div>
+
+            <?php if (!empty($adminNotes)): ?>
+              <div style="margin: 12px 0; padding: 12px 14px; background: rgba(0,0,0,0.15); border-radius: 8px; border-left: 3px solid #ef4444;">
+                <div style="font-size:11.5px; font-weight:700; text-transform:uppercase; letter-spacing:0.5px; color:#ef4444; margin-bottom:4px;">Remarks from Chapter Admin:</div>
+                <div style="font-size:13.5px; color:var(--text-primary); line-height:1.5;"><?php echo nl2br(htmlspecialchars($adminNotes)); ?></div>
+              </div>
+            <?php else: ?>
+              <p style="margin: 8px 0 12px; font-size: 13.5px; color: var(--text-secondary);">
+                Your previous directory submission was reviewed and declined by the chapter administrator.
+              </p>
+            <?php endif; ?>
+
+            <!-- Re-application status box -->
+            <div style="margin-top: 16px; padding-top: 14px; border-top: 1px solid rgba(239,68,68,0.15); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
+              <?php if (!$reapplyAllowed): ?>
+                <div style="display:flex; align-items:center; gap:8px; color:var(--text-secondary); font-size:13px;">
+                  <?php echo icon('alert', '', 16); ?>
+                  <span>Re-application is currently restricted for this submission. Please reach out to chapter officers for inquiries.</span>
+                </div>
+              <?php elseif (!empty($reapplyDate) && strtotime($reapplyDate) > strtotime(date('Y-m-d'))): ?>
+                <div style="display:flex; align-items:center; gap:8px; color:var(--text-secondary); font-size:13px;">
+                  <?php echo icon('clock', '', 16); ?>
+                  <span>You can re-apply on or after <strong><?php echo date('F d, Y', strtotime($reapplyDate)); ?></strong>.</span>
+                </div>
+              <?php else: ?>
+                <div>
+                  <strong style="display:block; font-size:13px; color:var(--text-primary);">Eligible to Re-apply</strong>
+                  <span class="muted" style="font-size:12px;">You can submit a new directory application for administrator review anytime.</span>
+                </div>
+                <form method="POST" style="margin:0;">
+                  <?php echo csrf_field(); ?>
+                  <input type="hidden" name="action" value="reapply_directory">
+                  <button class="btn btn-primary" type="submit" style="display:inline-flex; align-items:center; gap:6px; padding:8px 18px; font-weight:700;">
+                    <?php echo icon('sparkles', '', 14); ?> <span>Submit New Application</span>
+                  </button>
+                </form>
+              <?php endif; ?>
+            </div>
+          </div>
+        </div>
       </div>
     <?php endif; ?>
 

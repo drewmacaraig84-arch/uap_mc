@@ -7,43 +7,47 @@ export default defineConfig({
     port: 5173,
     proxy: {
       '/api': {
-        target: 'http://localhost/UAP-MINDORO/uap_mc/website',
+        target: 'http://localhost/UAP-MC/website',
         changeOrigin: true,
         secure: false,
       },
       '/auth': {
-        target: 'http://localhost/UAP-MINDORO/uap_mc',
+        target: 'http://localhost/UAP-MC',
         changeOrigin: true,
         secure: false,
       },
       '/admin': {
-        target: 'http://localhost/UAP-MINDORO/uap_mc',
+        target: 'http://localhost/UAP-MC',
         changeOrigin: true,
         secure: false,
       },
       '/member': {
-        target: 'http://localhost/UAP-MINDORO/uap_mc',
+        target: 'http://localhost/UAP-MC',
         changeOrigin: true,
         secure: false,
       },
       '/includes': {
-        target: 'http://localhost/UAP-MINDORO/uap_mc',
+        target: 'http://localhost/UAP-MC',
         changeOrigin: true,
         secure: false,
       },
       '/uploads': {
-        target: 'http://localhost/UAP-MINDORO/uap_mc',
+        target: 'http://localhost/UAP-MC',
         changeOrigin: true,
         secure: false,
       },
       '/public': {
-        target: 'http://localhost/UAP-MINDORO/uap_mc',
+        target: 'http://localhost/UAP-MC',
         changeOrigin: true,
         secure: false,
       },
-      // Catch-all: PHP pages generate absolute URLs like /UAP-MINDORO/uap_mc/includes/theme.css
-      // Forward them to Apache so stylesheets, fonts, and images resolve correctly in dev mode
+      // Backward compatibility for legacy /UAP-MINDORO and /UAP-MC absolute links
       '/UAP-MINDORO': {
+        target: 'http://localhost',
+        changeOrigin: true,
+        secure: false,
+      },
+      '/UAP-MC': {
         target: 'http://localhost',
         changeOrigin: true,
         secure: false,

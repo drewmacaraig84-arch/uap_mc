@@ -20,7 +20,7 @@ if [ ! -f /var/www/html/includes/config.php ] && [ -f /var/www/html/includes/con
 fi
 
 # Ensure storage directories exist and have proper permissions
-mkdir -p /var/www/html/uploads/qr_codes /var/www/html/uploads/avatars /var/www/html/uploads/members /var/www/html/uploads/sponsors /var/www/html/uploads/proofs /var/www/html/uploads/receipts /var/www/html/uploads/home_images /var/www/html/receipts /var/www/html/public
+mkdir -p /var/www/html/uploads/qr_codes /var/www/html/uploads/avatars /var/www/html/uploads/members /var/www/html/uploads/sponsors /var/www/html/uploads/proofs /var/www/html/uploads/receipts /var/www/html/uploads/news /var/www/html/uploads/home_images /var/www/html/uploads/header_badges /var/www/html/receipts /var/www/html/public
 
 # If Railway mounted an empty or fresh volume, restore default seed assets (QR codes, logos, sample avatars)
 if [ -d /var/www/html/seed_assets/uploads ]; then

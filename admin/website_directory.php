@@ -139,10 +139,103 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Action 3: Reject Application
     if ($action === 'reject_app') {
         $appId = (int)($_POST['app_id'] ?? 0);
+        $notes = trim($_POST['notes'] ?? '');
+        $reapplyTiming = $_POST['reapply_timing'] ?? 'immediate';
+        $customDate = trim($_POST['reapply_custom_date'] ?? '');
+
+        $reapplyAllowed = 1;
+        $reapplyAfter = null;
+
+        if ($reapplyTiming === 'never') {
+            $reapplyAllowed = 0;
+            $reapplyAfter = null;
+        } elseif ($reapplyTiming === '14days') {
+            $reapplyAllowed = 1;
+            $reapplyAfter = date('Y-m-d', strtotime('+14 days'));
+        } elseif ($reapplyTiming === '30days') {
+            $reapplyAllowed = 1;
+            $reapplyAfter = date('Y-m-d', strtotime('+30 days'));
+        } elseif ($reapplyTiming === 'custom' && !empty($customDate)) {
+            $reapplyAllowed = 1;
+            $reapplyAfter = $customDate;
+        } else {
+            $reapplyAllowed = 1;
+            $reapplyAfter = null;
+        }
+
         if ($appId > 0) {
-            $stmt = $pdo->prepare("UPDATE directory_applications SET status = 'rejected' WHERE id = ?");
-            $stmt->execute([$appId]);
-            $success = 'Directory application rejected.';
+            try {
+                $pdo->beginTransaction();
+
+                // Check if application exists
+                $aStmt = $pdo->prepare("SELECT da.*, u.name FROM directory_applications da JOIN users u ON da.user_id = u.id WHERE da.id = ?");
+                $aStmt->execute([$appId]);
+                $appRow = $aStmt->fetch();
+
+                if ($appRow) {
+                    // If there's an assigned unpaid member_due, delete it so the member isn't stuck with an unpaid due
+                    if (!empty($appRow['member_due_id'])) {
+                        $mDueId = (int)$appRow['member_due_id'];
+                        $mdCheck = $pdo->prepare("SELECT due_id, status FROM member_dues WHERE id = ?");
+                        $mdCheck->execute([$mDueId]);
+                        $mdRow = $mdCheck->fetch();
+
+                        if ($mdRow && $mdRow['status'] !== 'paid') {
+                            $dueId = (int)$mdRow['due_id'];
+                            $pdo->prepare("DELETE FROM member_dues WHERE id = ?")->execute([$mDueId]);
+                            if ($dueId > 0) {
+                                $pdo->prepare("DELETE FROM dues WHERE id = ? AND title = 'Website Directory Advertising Fee'")->execute([$dueId]);
+                            }
+                        }
+                    }
+
+                    // Update directory application
+                    $upd = $pdo->prepare("UPDATE directory_applications 
+                                          SET status = 'rejected', 
+                                              fee_amount = NULL, 
+                                              member_due_id = NULL, 
+                                              notes = ?, 
+                                              reapply_allowed = ?, 
+                                              reapply_after = ?, 
+                                              dismissed_notification = 0, 
+                                              rejected_at = NOW() 
+                                          WHERE id = ?");
+                    $upd->execute([$notes ?: null, $reapplyAllowed, $reapplyAfter, $appId]);
+
+                    $pdo->commit();
+                    $success = 'Directory application for ' . htmlspecialchars($appRow['name']) . ' declined and removed from pending queues.';
+                } else {
+                    if ($pdo->inTransaction()) $pdo->rollBack();
+                    $error = 'Application record not found.';
+                }
+            } catch (Throwable $e) {
+                if ($pdo->inTransaction()) $pdo->rollBack();
+                $error = 'Failed to reject application: ' . $e->getMessage();
+            }
+        }
+    }
+
+    // Action 4: Reopen Declined Application
+    if ($action === 'reopen_app') {
+        $appId = (int)($_POST['app_id'] ?? 0);
+        if ($appId > 0) {
+            try {
+                $upd = $pdo->prepare("UPDATE directory_applications 
+                                      SET status = 'pending_fee', 
+                                          fee_amount = NULL, 
+                                          member_due_id = NULL, 
+                                          notes = NULL, 
+                                          reapply_allowed = 1, 
+                                          reapply_after = NULL, 
+                                          dismissed_notification = 0, 
+                                          rejected_at = NULL, 
+                                          created_at = NOW() 
+                                      WHERE id = ?");
+                $upd->execute([$appId]);
+                $success = 'Application reopened and returned to pending review.';
+            } catch (Throwable $e) {
+                $error = 'Failed to reopen application: ' . $e->getMessage();
+            }
         }
     }
 }
@@ -169,6 +262,13 @@ $activeMembers = $pdo->query("SELECT COALESCE(wm.id, da.user_id) as id, wm.id as
     LEFT JOIN directory_applications da ON da.user_id = u.id
     WHERE wm.is_published = 1 OR da.status = 'paid'
     ORDER BY u.name ASC")->fetchAll();
+
+// 4. Fetch Declined Applications History
+$declinedApps = $pdo->query("SELECT da.*, u.name, u.id_number
+    FROM directory_applications da
+    JOIN users u ON da.user_id = u.id
+    WHERE da.status = 'rejected'
+    ORDER BY da.rejected_at DESC, da.updated_at DESC")->fetchAll();
 
 $page_title = 'Website Directory Manager • UAP Mindoro Chapter';
 include __DIR__ . '/../includes/header.php';
@@ -285,12 +385,17 @@ include __DIR__ . '/../includes/header.php';
                     <span class="muted" style="font-size:11px;">Due:</span>
                     <input type="date" name="due_date" value="<?php echo date('Y-m-d', strtotime('+14 days')); ?>" style="padding:5px 8px; font-size:12px; width: 140px;">
                   </div>
+                </form>
               </td>
               <td style="white-space:nowrap; text-align: right;">
-                  <button type="submit" class="btn btn-sm btn-success" style="display: inline-flex; align-items: center; gap: 4px;">
+                <div style="display:inline-flex; align-items:center; gap:6px;">
+                  <button type="submit" form="feeForm_<?php echo $p['id']; ?>" class="btn btn-sm btn-success" style="display: inline-flex; align-items: center; gap: 4px;">
                     <?php echo icon('check', '', 12); ?> <span>Assign Fee</span>
                   </button>
-                </form>
+                  <button type="button" class="btn btn-sm btn-danger" style="display: inline-flex; align-items: center; gap: 4px;" onclick="openRejectModal(<?php echo (int)$p['id']; ?>, '<?php echo htmlspecialchars(addslashes($p['name'])); ?>', '<?php echo htmlspecialchars(addslashes($p['id_number'])); ?>')">
+                    <?php echo icon('x', '', 12); ?> <span>Reject</span>
+                  </button>
+                </div>
               </td>
             </tr>
           <?php endforeach; ?>
@@ -364,6 +469,10 @@ include __DIR__ . '/../includes/header.php';
                       <?php echo icon('check', '', 11); ?> <span>Unlock</span>
                     </button>
                   </form>
+
+                  <button type="button" class="btn btn-sm btn-danger" style="font-size:11px; padding:5px 9px; display: inline-flex; align-items: center; gap: 4px;" onclick="openRejectModal(<?php echo (int)$pa['id']; ?>, '<?php echo htmlspecialchars(addslashes($pa['name'])); ?>', '<?php echo htmlspecialchars(addslashes($pa['id_number'])); ?>')">
+                    <?php echo icon('x', '', 11); ?> <span>Reject</span>
+                  </button>
                 </div>
               </td>
             </tr>
@@ -458,5 +567,174 @@ include __DIR__ . '/../includes/header.php';
     </div>
   <?php endif; ?>
 </div>
+
+<!-- ================= QUEUE 4: DECLINED APPLICATIONS HISTORY ================= -->
+<div class="card" style="margin-top: 24px;">
+  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+    <div style="display: flex; align-items: center; gap: 8px;">
+      <span style="color: #ef4444;"><?php echo icon('x', '', 18); ?></span>
+      <h2 style="font-size:16px; margin:0;">Declined Applications History</h2>
+    </div>
+    <span class="badge-pill badge-unpaid"><?php echo count($declinedApps); ?> Declined</span>
+  </div>
+
+  <?php if (empty($declinedApps)): ?>
+    <p class="muted" style="font-size:13px; text-align: center; padding: 20px;">No applications have been declined.</p>
+  <?php else: ?>
+    <div class="table-shell">
+      <table>
+        <thead>
+          <tr>
+            <th>Member</th>
+            <th>PRC ID No.</th>
+            <th>Declined Date</th>
+            <th>Reason / Notes</th>
+            <th>Re-Application Rule</th>
+            <th style="text-align: right;">Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          <?php foreach ($declinedApps as $da): ?>
+            <tr>
+              <td><strong style="color: var(--text-primary);"><?php echo htmlspecialchars($da['name']); ?></strong></td>
+              <td><code><?php echo htmlspecialchars($da['id_number']); ?></code></td>
+              <td><span class="muted" style="font-size:12px;"><?php echo $da['rejected_at'] ? date('M d, Y h:i A', strtotime($da['rejected_at'])) : date('M d, Y', strtotime($da['updated_at'])); ?></span></td>
+              <td style="max-width:260px;">
+                <?php if (!empty($da['notes'])): ?>
+                  <span style="font-size:12.5px; color:var(--text-primary);"><?php echo htmlspecialchars($da['notes']); ?></span>
+                <?php else: ?>
+                  <span class="muted" style="font-size:12px; font-style:italic;">No remarks provided</span>
+                <?php endif; ?>
+              </td>
+              <td>
+                <?php if (!$da['reapply_allowed']): ?>
+                  <span class="badge-pill badge-unpaid" style="font-size:11px;">Locked (Not Allowed)</span>
+                <?php elseif (!empty($da['reapply_after']) && strtotime($da['reapply_after']) > strtotime(date('Y-m-d'))): ?>
+                  <span class="badge-pill badge-pending" style="font-size:11px;">Allowed after <?php echo date('M d, Y', strtotime($da['reapply_after'])); ?></span>
+                <?php else: ?>
+                  <span class="badge-pill badge-paid" style="font-size:11px;">Eligible to Re-apply</span>
+                <?php endif; ?>
+              </td>
+              <td style="text-align: right; white-space:nowrap;">
+                <form method="post" style="display:inline-block;"
+                      data-confirm="Reopen directory application for <?php echo htmlspecialchars($da['name']); ?> and return to pending fee assignment?"
+                      data-confirm-title="Reopen Application"
+                      data-confirm-btn="Reopen"
+                      data-confirm-class="btn-primary">
+                  <?php echo csrf_field(); ?>
+                  <input type="hidden" name="action" value="reopen_app">
+                  <input type="hidden" name="app_id" value="<?php echo $da['id']; ?>">
+                  <button type="submit" class="btn btn-sm btn-secondary" style="font-size:11px; padding:4px 8px; display:inline-flex; align-items:center; gap:4px;">
+                    <?php echo icon('sparkles', '', 11); ?> <span>Reopen</span>
+                  </button>
+                </form>
+              </td>
+            </tr>
+          <?php endforeach; ?>
+        </tbody>
+      </table>
+    </div>
+  <?php endif; ?>
+</div>
+
+<!-- REJECT DIRECTORY APPLICATION MODAL -->
+<div id="rejectModal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.75);z-index:9999;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(6px);">
+  <div style="background:var(--card-bg, #131d33);border-radius:16px;max-width:520px;width:100%;overflow:hidden;box-shadow:0 25px 50px -12px rgba(0,0,0,0.6);border:1px solid var(--border-color);">
+    <form method="post" action="website_directory.php">
+      <?php echo csrf_field(); ?>
+      <input type="hidden" name="action" value="reject_app">
+      <input type="hidden" name="app_id" id="rejectModalAppId" value="">
+      
+      <div style="padding:16px 20px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border-color);">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span style="color:#ef4444;"><?php echo icon('x', '', 18); ?></span>
+          <h3 style="margin:0;font-size:16px;color:var(--text-primary);">Decline Directory Application</h3>
+        </div>
+        <button type="button" onclick="closeRejectModal()" style="border:none;background:transparent;cursor:pointer;color:var(--text-primary);display:flex;align-items:center;padding:4px;">
+          <?php echo icon('x', '', 18); ?>
+        </button>
+      </div>
+
+      <div style="padding:20px;">
+        <p style="margin:0 0 14px 0; font-size:13px; color:var(--text-secondary);">
+          You are declining the directory application for <strong id="rejectModalMemberName" style="color:var(--text-primary);"></strong> (<code id="rejectModalIdNumber"></code>).
+        </p>
+
+        <!-- Optional Reason / Remarks -->
+        <div style="margin-bottom:16px;">
+          <label style="display:block; font-size:12px; font-weight:600; margin-bottom:6px; color:var(--text-primary);">
+            Rejection Reason / Notes <span class="muted" style="font-weight:normal;">(Optional &mdash; visible to member)</span>
+          </label>
+          <textarea name="notes" id="rejectNotes" rows="3" placeholder="e.g. Please update your profile photo, or complete chapter good-standing requirements before re-applying..." style="width:100%; padding:10px; border-radius:8px; font-size:13px; border:1px solid var(--border-color); background:var(--input-bg, rgba(0,0,0,0.2)); color:var(--text-primary); box-sizing:border-box;"></textarea>
+        </div>
+
+        <!-- Re-application Timing -->
+        <div style="margin-bottom:12px;">
+          <label style="display:block; font-size:12px; font-weight:600; margin-bottom:6px; color:var(--text-primary);">
+            When can the member re-apply?
+          </label>
+          <select name="reapply_timing" id="reapplyTimingSelect" onchange="toggleReapplyCustomDate(this)" style="width:100%; padding:9px 12px; border-radius:8px; font-size:13px; border:1px solid var(--border-color); background:var(--card-bg, #1e293b); color:var(--text-primary); box-sizing:border-box;">
+            <option value="immediate">Allow re-application immediately</option>
+            <option value="14days">Allow re-application after 14 days</option>
+            <option value="30days">Allow re-application after 30 days</option>
+            <option value="custom">Set custom re-application date...</option>
+            <option value="never">Do not allow re-application (Locked)</option>
+          </select>
+        </div>
+
+        <div id="reapplyCustomDateWrap" style="display:none; margin-bottom:16px;">
+          <label style="display:block; font-size:12px; font-weight:600; margin-bottom:4px; color:var(--text-primary);">
+            Earliest Re-Application Date
+          </label>
+          <input type="date" name="reapply_custom_date" id="reapplyCustomDate" min="<?php echo date('Y-m-d', strtotime('+1 day')); ?>" style="width:100%; padding:8px 10px; border-radius:8px; font-size:13px; border:1px solid var(--border-color); background:var(--input-bg, rgba(0,0,0,0.2)); color:var(--text-primary); box-sizing:border-box;">
+        </div>
+
+        <div style="background:rgba(239,68,68,0.06); border:1px solid rgba(239,68,68,0.2); border-radius:8px; padding:10px 12px; font-size:12px; color:var(--text-secondary);">
+          <?php echo icon('alert', '', 14); ?> This will immediately remove the request from your active queue and admin notification bell. A notification banner will be shown on the member's portal.
+        </div>
+      </div>
+
+      <div style="padding:14px 20px;display:flex;justify-content:flex-end;gap:10px;border-top:1px solid var(--border-color);background:rgba(0,0,0,0.05);">
+        <button type="button" class="btn btn-secondary" onclick="closeRejectModal()">Cancel</button>
+        <button type="submit" class="btn btn-danger" style="display:inline-flex;align-items:center;gap:6px;">
+          <?php echo icon('x', '', 14); ?> <span>Decline Application</span>
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+function openRejectModal(appId, memberName, idNumber) {
+  document.getElementById('rejectModalAppId').value = appId;
+  document.getElementById('rejectModalMemberName').innerText = memberName;
+  document.getElementById('rejectModalIdNumber').innerText = idNumber;
+  document.getElementById('rejectNotes').value = '';
+  document.getElementById('reapplyTimingSelect').value = 'immediate';
+  document.getElementById('reapplyCustomDateWrap').style.display = 'none';
+  document.getElementById('rejectModal').style.display = 'flex';
+}
+
+function closeRejectModal() {
+  document.getElementById('rejectModal').style.display = 'none';
+}
+
+function toggleReapplyCustomDate(select) {
+  var wrap = document.getElementById('reapplyCustomDateWrap');
+  if (select.value === 'custom') {
+    wrap.style.display = 'block';
+    document.getElementById('reapplyCustomDate').required = true;
+  } else {
+    wrap.style.display = 'none';
+    document.getElementById('reapplyCustomDate').required = false;
+  }
+}
+
+document.getElementById('rejectModal').addEventListener('click', function(e) {
+  if (e.target === this) {
+    closeRejectModal();
+  }
+});
+</script>
 
 <?php include __DIR__ . '/../includes/footer.php'; ?>

@@ -260,6 +260,8 @@ try {
         $projectRoot . '/uploads/news',
         $projectRoot . '/uploads/proofs',
         $projectRoot . '/uploads/receipts',
+        $projectRoot . '/uploads/home_images',
+        $projectRoot . '/uploads/header_badges',
         $projectRoot . '/receipts',
         $projectRoot . '/public'
     ];
@@ -369,6 +371,32 @@ try {
             echo "Generated/refreshed {$qrCount} member directory QR codes with full domain URL.\n";
         }
     }
+
+    // 6. Clean up missing header badge references in site_settings
+    try {
+        $stmtBadges = $pdo->query("SELECT setting_value FROM site_settings WHERE setting_key = 'header_badges'");
+        $rawBadges = $stmtBadges->fetchColumn();
+        if ($rawBadges) {
+            $badges = json_decode($rawBadges, true);
+            if (is_array($badges)) {
+                $changed = false;
+                foreach ($badges as $slot => $bPath) {
+                    if (!empty($bPath)) {
+                        $resolved = function_exists('resolve_media_filesystem_path') ? resolve_media_filesystem_path($bPath) : null;
+                        if (!$resolved || !file_exists($resolved)) {
+                            $badges[$slot] = '';
+                            $changed = true;
+                        }
+                    }
+                }
+                if ($changed) {
+                    $upd = $pdo->prepare("UPDATE site_settings SET setting_value = ? WHERE setting_key = 'header_badges'");
+                    $upd->execute([json_encode($badges)]);
+                    echo "Cleaned up missing header badge references in site_settings.\n";
+                }
+            }
+        }
+    } catch (Throwable $e) {}
 } catch (Throwable $e) {
     echo "Asset verification notice: " . $e->getMessage() . "\n";
 }

@@ -307,17 +307,21 @@ if (session_status() === PHP_SESSION_NONE && php_sapi_name() !== 'cli') {
 $scriptFilename = $_SERVER['SCRIPT_FILENAME'] ?? '';
 $scriptName = $_SERVER['SCRIPT_NAME'] ?? '';
 
-$scriptDir   = $scriptFilename ? str_replace('\\', '/', dirname(realpath($scriptFilename))) : '';
-$projectRoot = str_replace('\\', '/', realpath(__DIR__ . '/..'));
-$relative    = $scriptDir ? ltrim(str_replace($projectRoot, '', $scriptDir), '/') : '';
-$depth       = ($relative === '') ? 0 : substr_count($relative, '/') + 1;
-
-$baseUrl = $scriptName ? str_replace('\\', '/', dirname($scriptName)) : '';
-for ($i = 0; $i < $depth; $i++) {
-    $baseUrl = dirname($baseUrl);
-}
-if ($baseUrl === '/' || $baseUrl === '\\' || $baseUrl === '.' || empty($baseUrl)) {
+if (php_sapi_name() === 'cli' || empty($scriptName) || preg_match('/^[a-zA-Z]:/i', $scriptName)) {
     $baseUrl = '';
+} else {
+    $scriptDir   = $scriptFilename ? str_replace('\\', '/', dirname(realpath($scriptFilename))) : '';
+    $projectRoot = str_replace('\\', '/', realpath(__DIR__ . '/..'));
+    $relative    = $scriptDir ? ltrim(str_ireplace($projectRoot, '', $scriptDir), '/') : '';
+    $depth       = ($relative === '') ? 0 : substr_count($relative, '/') + 1;
+
+    $baseUrl = $scriptName ? str_replace('\\', '/', dirname($scriptName)) : '';
+    for ($i = 0; $i < $depth; $i++) {
+        $baseUrl = dirname($baseUrl);
+    }
+    if ($baseUrl === '/' || $baseUrl === '\\' || $baseUrl === '.' || empty($baseUrl) || preg_match('/^[a-zA-Z]:/i', $baseUrl)) {
+        $baseUrl = '';
+    }
 }
 
 define('BASE_URL', defined('BASE_URL_OVERRIDE') ? BASE_URL_OVERRIDE : $baseUrl);
@@ -365,7 +369,7 @@ function get_public_base_url() {
         
         // In local development (Laragon)
         if (str_contains($host, 'localhost') || str_contains($host, '127.0.0.1')) {
-            $base = defined('BASE_URL') ? BASE_URL : '/UAP-MINDORO/uap_mc';
+            $base = defined('BASE_URL') && BASE_URL !== '' ? BASE_URL : (str_contains($_SERVER['REQUEST_URI'] ?? '', '/UAP-MC') ? '/UAP-MC' : '');
             return rtrim($proto . $host . $base, '/');
         }
         
@@ -388,7 +392,7 @@ function get_public_base_url() {
         return 'https://uapmc-production.up.railway.app';
     }
     
-    return 'http://localhost/UAP-MINDORO/uap_mc';
+    return 'http://localhost/UAP-MC';
 }
 
 /**
@@ -397,7 +401,7 @@ function get_public_base_url() {
 function resolve_media_filesystem_path($relativePath) {
     if (empty($relativePath)) return null;
     $cleanPath = ltrim(str_replace('\\', '/', $relativePath), '/');
-    $root = dirname(__DIR__);
+    $root = str_replace('\\', '/', dirname(__DIR__));
     
     if (file_exists($root . '/' . $cleanPath)) {
         return $root . '/' . $cleanPath;
@@ -410,6 +414,9 @@ function resolve_media_filesystem_path($relativePath) {
         $root . '/uploads/avatars/' . $filename,
         $root . '/uploads/members/' . $filename,
         $root . '/uploads/sponsors/' . $filename,
+        $root . '/uploads/news/' . $filename,
+        $root . '/uploads/receipts/' . $filename,
+        $root . '/uploads/home_images/' . $filename,
         $root . '/uploads/proofs/' . $filename,
         $root . '/public/' . $filename,
     ];
@@ -428,31 +435,31 @@ function resolve_media_filesystem_path($relativePath) {
  */
 function media_url($path, $fallback = '') {
     if (empty($path)) {
-        return $fallback ? (str_starts_with($fallback, 'http') ? $fallback : BASE_URL . '/' . ltrim($fallback, '/')) : '';
+        return $fallback ? (str_starts_with($fallback, 'http') ? $fallback : (BASE_URL !== '' ? BASE_URL : '') . '/' . ltrim($fallback, '/')) : '';
     }
     if (str_starts_with($path, 'http://') || str_starts_with($path, 'https://') || str_starts_with($path, 'data:')) {
         return $path;
     }
     
     $cleanPath = ltrim(str_replace('\\', '/', $path), '/');
-    $root = dirname(__DIR__);
+    $root = str_replace('\\', '/', dirname(__DIR__));
+    $prefix = (BASE_URL !== '' ? rtrim(BASE_URL, '/') : '');
     
     if (file_exists($root . '/' . $cleanPath)) {
-        return BASE_URL . '/' . $cleanPath;
+        return $prefix . '/' . $cleanPath;
     }
     
     $fsPath = resolve_media_filesystem_path($cleanPath);
     if ($fsPath) {
-        $cleanRoot = str_replace('\\', '/', $root);
         $cleanFs = str_replace('\\', '/', $fsPath);
-        $foundRel = ltrim(str_replace($cleanRoot, '', $cleanFs), '/');
-        return BASE_URL . '/' . $foundRel;
+        $foundRel = ltrim(str_ireplace($root, '', $cleanFs), '/');
+        return $prefix . '/' . $foundRel;
     }
     
     if ($fallback && !file_exists($root . '/' . $cleanPath)) {
-        return str_starts_with($fallback, 'http') ? $fallback : BASE_URL . '/' . ltrim($fallback, '/');
+        return str_starts_with($fallback, 'http') ? $fallback : $prefix . '/' . ltrim($fallback, '/');
     }
-    return BASE_URL . '/' . $cleanPath;
+    return $prefix . '/' . $cleanPath;
 }
 
 require_once __DIR__ . '/csrf.php';

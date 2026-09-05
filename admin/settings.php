@@ -94,6 +94,8 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
                             cache_delete("site_setting:{$fieldKey}");
                         }
                         $updatedCount++;
+                    } else {
+                        $error = "Failed to save uploaded image for Slot {$i}. Please check write permissions on uploads folder.";
                     }
                 } else {
                     $error = "Image for Slot {$i} must be a valid JPG, PNG, or WebP file.";
@@ -694,14 +696,17 @@ function switchSettingsTab(tabId, btn) {
       <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 18px; margin-bottom: 20px;">
         <?php for ($i = 1; $i <= 3; $i++): 
           $badge_val = trim($settings_rows["header_image_{$i}"] ?? '');
-          $badge_src = $badge_val ? (str_starts_with($badge_val, 'http') ? htmlspecialchars($badge_val) : (BASE_URL . '/' . htmlspecialchars(ltrim($badge_val, '/')))) : null;
+          $badge_fs = $badge_val ? resolve_media_filesystem_path($badge_val) : null;
+          $badge_exists = $badge_val && ($badge_fs || str_starts_with($badge_val, 'http'));
+          $badge_src = $badge_exists ? media_url($badge_val) : null;
         ?>
           <div style="background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 12px; padding: 16px;">
             <div style="display: flex; align-items: center; gap: 14px; margin-bottom: 14px;">
-              <div style="width: 50px; height: 50px; border-radius: 6px; background: #fff; border: 1px solid rgba(245,158,11,0.4); display: flex; align-items: center; justify-content: center; overflow: hidden; flex-shrink: 0; box-shadow: 0 2px 8px rgba(0,0,0,0.15);">
+              <div style="width: 50px; height: 50px; border-radius: 6px; background: #fff; border: 1px solid <?php echo ($badge_val && !$badge_exists) ? '#ef4444' : 'rgba(245,158,11,0.4)'; ?>; display: flex; align-items: center; justify-content: center; overflow: hidden; flex-shrink: 0; box-shadow: 0 2px 8px rgba(0,0,0,0.15);">
                 <?php if ($badge_src): ?>
-                  <img src="<?php echo $badge_src; ?>" alt="Header Slot <?php echo $i; ?>" style="max-width: 100%; max-height: 100%; object-fit: contain;" onerror="this.style.display='none'; if(this.nextElementSibling) this.nextElementSibling.style.display='flex';">
-                  <span style="display: none; font-size: 10px; font-weight: 700; color: #ef4444; text-align: center; line-height: 1.1;">File<br>Missing</span>
+                  <img src="<?php echo htmlspecialchars($badge_src); ?>" alt="Header Slot <?php echo $i; ?>" style="max-width: 100%; max-height: 100%; object-fit: contain;">
+                <?php elseif ($badge_val && !$badge_exists): ?>
+                  <span style="font-size: 10px; font-weight: 700; color: #ef4444; text-align: center; line-height: 1.1;">File<br>Missing</span>
                 <?php else: ?>
                   <span style="font-size: 11px; font-weight: 700; color: #9ca3af; text-align: center; line-height: 1.1;">Slot <?php echo $i; ?><br><small style="font-size:9px;">Empty</small></span>
                 <?php endif; ?>
@@ -709,7 +714,15 @@ function switchSettingsTab(tabId, btn) {
               <div>
                 <strong style="font-size: 13px; display: block; color: var(--text-primary);">Header Image <?php echo $i; ?></strong>
                 <span class="muted" style="font-size: 11.5px; display: block; margin-top: 2px;">
-                  <?php echo $badge_val ? '<span style="color:#10b981; font-weight:600;">● Active</span>' : '<span style="color:#9ca3af;">○ Not Set</span>'; ?>
+                  <?php 
+                    if ($badge_src) {
+                        echo '<span style="color:#10b981; font-weight:600;">● Active</span>';
+                    } elseif ($badge_val && !$badge_exists) {
+                        echo '<span style="color:#ef4444; font-weight:600;">▲ Missing from Storage</span>';
+                    } else {
+                        echo '<span style="color:#9ca3af;">○ Not Set</span>';
+                    }
+                  ?>
                 </span>
               </div>
             </div>
@@ -721,8 +734,8 @@ function switchSettingsTab(tabId, btn) {
 
             <?php if ($badge_val): ?>
               <label style="display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: #ef4444; cursor: pointer; margin-top: 4px;">
-                <input type="checkbox" name="clear_header_image_<?php echo $i; ?>" value="1">
-                <span>Remove this image</span>
+                <input type="checkbox" name="clear_header_image_<?php echo $i; ?>" value="1" <?php echo ($badge_val && !$badge_exists) ? 'checked' : ''; ?>>
+                <span><?php echo ($badge_val && !$badge_exists) ? 'Clear missing reference' : 'Remove this image'; ?></span>
               </label>
             <?php endif; ?>
           </div>
@@ -1116,7 +1129,7 @@ function switchSettingsTab(tabId, btn) {
 
             <div style="height: 90px; display: flex; align-items: center; justify-content: center; background: #fff; border-radius: 4px; padding: 4px; margin-bottom: 12px; border: 1px solid rgba(255,255,255,0.15); overflow: hidden;">
               <?php if (!empty($sponsor['logo_path'])): ?>
-                <img src="<?php echo str_starts_with($sponsor['logo_path'], 'http') ? htmlspecialchars($sponsor['logo_path']) : (BASE_URL . '/' . htmlspecialchars(ltrim($sponsor['logo_path'], '/'))); ?>" alt="<?php echo htmlspecialchars($sponsor['name']); ?>" style="max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 3px;" onerror="this.style.display='none'; if(this.nextElementSibling) this.nextElementSibling.style.display='flex';">
+                <img src="<?php echo htmlspecialchars(media_url($sponsor['logo_path'])); ?>" alt="<?php echo htmlspecialchars($sponsor['name']); ?>" style="max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 3px;" onerror="this.style.display='none'; if(this.nextElementSibling) this.nextElementSibling.style.display='flex';">
                 <div style="display: none; color: #9ca3af; font-size: 11px; font-weight: 700; flex-direction: column; align-items: center; justify-content: center; gap: 2px;">
                   <span style="color: #ef4444;">⚠️ Image Missing</span>
                   <small style="font-size: 9px; color: #6b7280;">Re-upload in Edit</small>
