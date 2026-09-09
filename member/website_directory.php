@@ -106,23 +106,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'save_
         // Handle Company Logo Upload
         $companyLogoPath = $profile['company_logo_path'] ?? null;
         $uploadDir = __DIR__ . '/../uploads/members/';
-        if (!is_dir($uploadDir)) mkdir($uploadDir, 0755, true);
+        if (!is_dir($uploadDir)) @mkdir($uploadDir, 0775, true);
 
-        if (isset($_FILES['company_logo']) && $_FILES['company_logo']['error'] === UPLOAD_ERR_OK) {
-            $cloExt = strtolower(pathinfo($_FILES['company_logo']['name'], PATHINFO_EXTENSION));
-            $cloMime = mime_content_type($_FILES['company_logo']['tmp_name']);
-            $allowedExts = ['jpg', 'jpeg', 'png', 'webp'];
-            $allowedMimes = ['image/jpeg', 'image/png', 'image/webp'];
-            if (in_array($cloExt, $allowedExts) && in_array($cloMime, $allowedMimes) && $_FILES['company_logo']['size'] <= 10 * 1024 * 1024) {
-                // Delete old company logo if exists
-                if (!empty($companyLogoPath)) {
-                    $oldFile = __DIR__ . '/../' . ltrim($companyLogoPath, '/');
-                    if (file_exists($oldFile)) @unlink($oldFile);
-                }
-                $cloUnique = 'company_logo_' . $userId . '_' . time() . '.' . $cloExt;
-                $cloTarget = $uploadDir . $cloUnique;
-                if (move_uploaded_file($_FILES['company_logo']['tmp_name'], $cloTarget)) {
-                    $companyLogoPath = 'uploads/members/' . $cloUnique;
+        if (isset($_FILES['company_logo']) && $_FILES['company_logo']['error'] !== UPLOAD_ERR_NO_FILE) {
+            if ($_FILES['company_logo']['error'] === UPLOAD_ERR_INI_SIZE || $_FILES['company_logo']['error'] === UPLOAD_ERR_FORM_SIZE) {
+                $error = 'Company logo file size exceeds the server upload limit.';
+            } elseif ($_FILES['company_logo']['error'] !== UPLOAD_ERR_OK) {
+                $error = 'Failed to upload company logo (error code: ' . $_FILES['company_logo']['error'] . ').';
+            } else {
+                $cloExt = strtolower(pathinfo($_FILES['company_logo']['name'], PATHINFO_EXTENSION));
+                $cloMime = mime_content_type($_FILES['company_logo']['tmp_name']);
+                $allowedExts = ['jpg', 'jpeg', 'png', 'webp'];
+                $allowedMimes = ['image/jpeg', 'image/png', 'image/webp'];
+                if (in_array($cloExt, $allowedExts) && in_array($cloMime, $allowedMimes) && $_FILES['company_logo']['size'] <= 25 * 1024 * 1024) {
+                    // Delete old company logo if exists
+                    if (!empty($companyLogoPath)) {
+                        $oldFile = __DIR__ . '/../' . ltrim($companyLogoPath, '/');
+                        if (file_exists($oldFile)) @unlink($oldFile);
+                    }
+                    $cloUnique = 'company_logo_' . $userId . '_' . time() . '.' . $cloExt;
+                    $cloTarget = $uploadDir . $cloUnique;
+                    if (move_uploaded_file($_FILES['company_logo']['tmp_name'], $cloTarget)) {
+                        @chmod($cloTarget, 0664);
+                        $companyLogoPath = 'uploads/members/' . $cloUnique;
+                    }
+                } else {
+                    $error = 'Company logo must be a valid JPG, PNG, or WebP file under 25MB.';
                 }
             }
         }
@@ -237,14 +246,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'save_
                 }
 
                 // Handle Newly Uploaded Cover Photo
-                if (isset($_FILES['projects']['name'][$pKey]['cover']) && $_FILES['projects']['error'][$pKey]['cover'] === UPLOAD_ERR_OK) {
-                    $cName = $_FILES['projects']['name'][$pKey]['cover'];
-                    $cExt = strtolower(pathinfo($cName, PATHINFO_EXTENSION));
-                    if (in_array($cExt, $allowedExts) && $_FILES['projects']['size'][$pKey]['cover'] <= 12 * 1024 * 1024) {
-                        $uniqueName = 'proj_cover_' . $userId . '_' . time() . '_' . bin2hex(random_bytes(3)) . '.' . $cExt;
-                        $targetPath = $uploadDir . $uniqueName;
-                        if (move_uploaded_file($_FILES['projects']['tmp_name'][$pKey]['cover'], $targetPath)) {
-                            $coverPhoto = 'uploads/members/' . $uniqueName;
+                if (isset($_FILES['projects']['error'][$pKey]['cover']) && $_FILES['projects']['error'][$pKey]['cover'] !== UPLOAD_ERR_NO_FILE) {
+                    if ($_FILES['projects']['error'][$pKey]['cover'] === UPLOAD_ERR_INI_SIZE || $_FILES['projects']['error'][$pKey]['cover'] === UPLOAD_ERR_FORM_SIZE) {
+                        $error = 'Project cover photo exceeds the server upload limit.';
+                    } elseif ($_FILES['projects']['error'][$pKey]['cover'] === UPLOAD_ERR_OK) {
+                        $cName = $_FILES['projects']['name'][$pKey]['cover'];
+                        $cExt = strtolower(pathinfo($cName, PATHINFO_EXTENSION));
+                        if (in_array($cExt, $allowedExts) && $_FILES['projects']['size'][$pKey]['cover'] <= 25 * 1024 * 1024) {
+                            $uniqueName = 'proj_cover_' . $userId . '_' . time() . '_' . bin2hex(random_bytes(3)) . '.' . $cExt;
+                            $targetPath = $uploadDir . $uniqueName;
+                            if (move_uploaded_file($_FILES['projects']['tmp_name'][$pKey]['cover'], $targetPath)) {
+                                @chmod($targetPath, 0664);
+                                $coverPhoto = 'uploads/members/' . $uniqueName;
+                            }
                         }
                     }
                 }
@@ -255,10 +269,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'save_
                         if (count($additionalPhotos) + (!empty($coverPhoto) ? 1 : 0) >= 5) break; // Limit to 5 total photos including cover
                         if (isset($_FILES['projects']['error'][$pKey]['photos'][$fIdx]) && $_FILES['projects']['error'][$pKey]['photos'][$fIdx] === UPLOAD_ERR_OK && !empty($filename)) {
                             $ext = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
-                            if (in_array($ext, $allowedExts) && $_FILES['projects']['size'][$pKey]['photos'][$fIdx] <= 12 * 1024 * 1024) {
+                            if (in_array($ext, $allowedExts) && $_FILES['projects']['size'][$pKey]['photos'][$fIdx] <= 25 * 1024 * 1024) {
                                 $uniqueName = 'proj_photo_' . $userId . '_' . time() . '_' . $fIdx . '_' . bin2hex(random_bytes(3)) . '.' . $ext;
                                 $targetPath = $uploadDir . $uniqueName;
                                 if (move_uploaded_file($_FILES['projects']['tmp_name'][$pKey]['photos'][$fIdx], $targetPath)) {
+                                    @chmod($targetPath, 0664);
                                     $additionalPhotos[] = 'uploads/members/' . $uniqueName;
                                 }
                             }

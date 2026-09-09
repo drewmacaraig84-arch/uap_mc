@@ -23,7 +23,9 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
 
     // ============ LOGO UPLOAD ============
     if ($action === 'upload_logo' && isset($_FILES['logo'])) {
-        if ($_FILES['logo']['error'] !== UPLOAD_ERR_OK) {
+        if ($_FILES['logo']['error'] === UPLOAD_ERR_INI_SIZE || $_FILES['logo']['error'] === UPLOAD_ERR_FORM_SIZE) {
+            $error = 'Logo file size exceeds the server upload limit.';
+        } elseif ($_FILES['logo']['error'] !== UPLOAD_ERR_OK) {
             $error = 'Please choose a logo image to upload.';
         } else {
             $ext = strtolower(pathinfo($_FILES['logo']['name'], PATHINFO_EXTENSION));

@@ -19,8 +19,33 @@ if [ ! -f /var/www/html/includes/config.php ] && [ -f /var/www/html/includes/con
     cp /var/www/html/includes/config.example.php /var/www/html/includes/config.php
 fi
 
+# Auto-bridge if a volume was mounted at /uploads or /data instead of /var/www/html/uploads
+for ALT_DIR in /uploads /data; do
+    if [ -d "$ALT_DIR" ] && [ "$ALT_DIR" != "/var/www/html/uploads" ] && [ ! -L "/var/www/html/uploads" ]; then
+        if grep -qs " $ALT_DIR " /proc/mounts || [ "$(ls -A "$ALT_DIR" 2>/dev/null)" ]; then
+            echo "Notice: Volume mount detected at ${ALT_DIR}. Bridging to /var/www/html/uploads..."
+            if [ -d /var/www/html/uploads ] && [ ! -L /var/www/html/uploads ]; then
+                cp -rn /var/www/html/uploads/* "$ALT_DIR/" 2>/dev/null || true
+                rm -rf /var/www/html/uploads
+            fi
+            ln -sfn "$ALT_DIR" /var/www/html/uploads
+            break
+        fi
+    fi
+done
+
 # Ensure storage directories exist and have proper permissions
-mkdir -p /var/www/html/uploads/qr_codes /var/www/html/uploads/avatars /var/www/html/uploads/members /var/www/html/uploads/sponsors /var/www/html/uploads/proofs /var/www/html/uploads/receipts /var/www/html/uploads/news /var/www/html/uploads/home_images /var/www/html/uploads/header_badges /var/www/html/receipts /var/www/html/public
+mkdir -p /var/www/html/uploads/qr_codes \
+         /var/www/html/uploads/avatars \
+         /var/www/html/uploads/members \
+         /var/www/html/uploads/sponsors \
+         /var/www/html/uploads/proofs \
+         /var/www/html/uploads/receipts \
+         /var/www/html/uploads/news \
+         /var/www/html/uploads/home_images \
+         /var/www/html/uploads/header_badges \
+         /var/www/html/receipts \
+         /var/www/html/public
 
 # If Railway mounted an empty or fresh volume, restore default seed assets (QR codes, logos, sample avatars)
 if [ -d /var/www/html/seed_assets/uploads ]; then
@@ -39,8 +64,11 @@ if [ -d /var/www/html/uploads/qr_codes ]; then
     cp -rn /var/www/html/uploads/qr_* /var/www/html/uploads/qr_codes/ 2>/dev/null || true
 fi
 
+# Set ownership and read/write permissions for Apache www-data
 chown -R www-data:www-data /var/www/html/uploads /var/www/html/receipts /var/www/html/public 2>/dev/null || true
+[ -d /uploads ] && chown -R www-data:www-data /uploads 2>/dev/null || true
 chmod -R 775 /var/www/html/uploads /var/www/html/receipts /var/www/html/public 2>/dev/null || true
+[ -d /uploads ] && chmod -R 775 /uploads 2>/dev/null || true
 
 # Run database setup & migrations if database is reachable
 echo "Running database initialization and migrations..."

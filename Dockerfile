@@ -37,6 +37,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && a2enmod mpm_prefork 2>/dev/null || true \
     && rm -rf /var/lib/apt/lists/*
 
+# Configure PHP upload limits, memory limits, and execution timeouts
+RUN printf "upload_max_filesize = 64M\npost_max_size = 64M\nmemory_limit = 256M\nmax_execution_time = 300\nmax_input_time = 300\n" > /usr/local/etc/php/conf.d/uploads.ini
+
 # Configure Apache VirtualHost with AllowOverride All, ServerName, and DirectoryIndex index.html
 RUN echo "ServerName localhost" >> /etc/apache2/apache2.conf \
     && echo "DirectoryIndex index.html index.php" >> /etc/apache2/apache2.conf \

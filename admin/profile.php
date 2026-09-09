@@ -46,36 +46,43 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
 
                 // Handle New Photo Upload
-                if (!empty($_FILES['profile_photo']['name']) && $_FILES['profile_photo']['error'] === UPLOAD_ERR_OK) {
-                    $allowedExts = ['jpg', 'jpeg', 'png', 'webp'];
-                    $fileTmp = $_FILES['profile_photo']['tmp_name'];
-                    $fileSize = $_FILES['profile_photo']['size'];
-                    $ext = strtolower(pathinfo($_FILES['profile_photo']['name'], PATHINFO_EXTENSION));
-
-                    if (!in_array($ext, $allowedExts)) {
-                        $error = 'Invalid photo format. Please upload JPG, PNG, or WebP.';
-                    } elseif ($fileSize > 5 * 1024 * 1024) {
-                        $error = 'Photo file size exceeds 5MB limit.';
+                if (!empty($_FILES['profile_photo']['name'])) {
+                    if ($_FILES['profile_photo']['error'] === UPLOAD_ERR_INI_SIZE || $_FILES['profile_photo']['error'] === UPLOAD_ERR_FORM_SIZE) {
+                        $error = 'Photo file size exceeds the server upload limit.';
+                    } elseif ($_FILES['profile_photo']['error'] !== UPLOAD_ERR_OK) {
+                        $error = 'Failed to upload photo (error code: ' . $_FILES['profile_photo']['error'] . '). Please try again.';
                     } else {
-                        $uploadDir = __DIR__ . '/../uploads/avatars/';
-                        if (!is_dir($uploadDir)) {
-                            mkdir($uploadDir, 0755, true);
-                        }
+                        $allowedExts = ['jpg', 'jpeg', 'png', 'webp'];
+                        $fileTmp = $_FILES['profile_photo']['tmp_name'];
+                        $fileSize = $_FILES['profile_photo']['size'];
+                        $ext = strtolower(pathinfo($_FILES['profile_photo']['name'], PATHINFO_EXTENSION));
 
-                        $uniqueFilename = 'avatar_admin_' . $userId . '_' . time() . '_' . bin2hex(random_bytes(3)) . '.' . $ext;
-                        $targetPath = $uploadDir . $uniqueFilename;
-
-                        if (move_uploaded_file($fileTmp, $targetPath)) {
-                            // Clean old photo if exists
-                            if (!empty($user['profile_photo'])) {
-                                $oldFile = __DIR__ . '/../' . ltrim($user['profile_photo'], '/');
-                                if (file_exists($oldFile) && !is_dir($oldFile)) {
-                                    @unlink($oldFile);
-                                }
-                            }
-                            $photoPath = 'uploads/avatars/' . $uniqueFilename;
+                        if (!in_array($ext, $allowedExts)) {
+                            $error = 'Invalid photo format. Please upload JPG, PNG, or WebP.';
+                        } elseif ($fileSize > 25 * 1024 * 1024) {
+                            $error = 'Photo file size exceeds 25MB limit.';
                         } else {
-                            $error = 'Failed to save uploaded photo to disk.';
+                            $uploadDir = __DIR__ . '/../uploads/avatars/';
+                            if (!is_dir($uploadDir)) {
+                                @mkdir($uploadDir, 0775, true);
+                            }
+
+                            $uniqueFilename = 'avatar_admin_' . $userId . '_' . time() . '_' . bin2hex(random_bytes(3)) . '.' . $ext;
+                            $targetPath = $uploadDir . $uniqueFilename;
+
+                            if (move_uploaded_file($fileTmp, $targetPath)) {
+                                @chmod($targetPath, 0664);
+                                // Clean old photo if exists
+                                if (!empty($user['profile_photo'])) {
+                                    $oldFile = __DIR__ . '/../' . ltrim($user['profile_photo'], '/');
+                                    if (file_exists($oldFile) && !is_dir($oldFile)) {
+                                        @unlink($oldFile);
+                                    }
+                                }
+                                $photoPath = 'uploads/avatars/' . $uniqueFilename;
+                            } else {
+                                $error = 'Failed to save uploaded photo to disk. Please check storage permissions.';
+                            }
                         }
                     }
                 }
